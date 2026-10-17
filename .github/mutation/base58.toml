@@ -1,0 +1,20 @@
+# Base58 and Base58Check, mutated: the big-integer conversion, the
+# leading zeros, the alphabet tables and the checksum. A digit off by one
+# or a checksum compared on three bytes is a string that decodes to
+# another payload -- silent on any vector the suite already holds, which
+# is what a surviving mutant names.
+
+[cosmic-ray]
+module-path = [
+    "src/base58_bech32/base58.py",
+]
+
+test-command = """python -m pytest -x -q -n0 -p no:randomly \
+  tests/base58_test.py tests/migration_test.py"""
+
+timeout = 300
+
+excluded-modules = []
+
+[cosmic-ray.distributor]
+name = "local"

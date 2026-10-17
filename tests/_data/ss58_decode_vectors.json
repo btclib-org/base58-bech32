@@ -1,0 +1,72 @@
+{
+    "decode": [
+        [
+            "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+            "d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"
+        ],
+        [
+            "F3opxRbN5ZbjJNU511Kj2TLuzFcDq9BGduA9TgiECafpg29",
+            "6d6f646c70792f74727372790000000000000000000000000000000000000000"
+        ],
+        [
+            "KWCv1L3QX9LDPwY4VzvLmarEmXjVJidUzZcinvVnmxAJJCBou",
+            "03b9dc646dd71118e5f7fda681ad9eca36eb3ee96f344f582fbe7b5bcdebb13077"
+        ],
+        [
+            "cLtA6nCDyvwKcEHH4QkZDSHMhS9s78BvUJUsKUbUAn1Jc2SCF",
+            "08e8969768fc14399930d4b8d693f68a2ff6c6a597325d6946095e5e9d9d1b0e"
+        ],
+        [
+            "cnUaoo5wodnTVA4bnr4woSweto8hWZADUvLFXkR9Q6U7BRsbF",
+            "88eafe0305d460d1695cf34c2f786050df8e40d215e488790cc70929c9e8316d"
+        ],
+        [
+            "xw9Hca4RJTmBRgzJT4ieJBh7XCK9gE3NXBDSEmgGHd4TCrbnG",
+            "fc422da6c3bc6dfa2a436a506428072941662f816987baaa8914e02ff5947f4b"
+        ],
+        [
+            "yGHU8YKprxHbHdEv7oUK4rzMZXtsdhcXVG2CAMyC9WhzhjH2k",
+            "d172a74cda4c865912c32ba0a80a57ae69abae410e5ccb59dee84e2f4432db4f"
+        ],
+        [
+            "5GoKvZWG5ZPYL1WUovuHW3zJBWBP5eT8CbqjdRY4Q6iMaQua",
+            "d172a74cda4c865912c32ba0a80a57ae69abae410e5ccb59dee84e2f4432db4f"
+        ],
+        [
+            "4pbsSkWcBaYoFHrKJZp5fDVUKbqSYD9dhZZGvpp3vQ5ysVs5ybV",
+            "035676109c54b9a16d271abeb4954316a40a32bcce023ac14c8e26e958aa68fba9"
+        ]
+    ],
+    "decode_short_payload": [
+        [
+            "F7NZ",
+            "01"
+        ],
+        [
+            "g4b",
+            "01"
+        ],
+        [
+            "3xygo",
+            "0001"
+        ],
+        [
+            "zswfoZa",
+            "01020304"
+        ],
+        [
+            "848Gh2GcGaZia",
+            "2a2c0a0000000000"
+        ]
+    ],
+    "decode_invalid_length": [
+        "y9EMHt34JJo4rWLSaxoLGdYXvjgSXEd4zHUnQgfNzwES8b"
+    ],
+    "decode_invalid_checksum": [
+        "5GoKvZWG5ZPYL1WUovuHW3zJBWBP5eT8CbqjdRY4Q6iMa9cj",
+        "5GoKvZWG5ZPYL1WUovuHW3zJBWBP5eT8CbqjdRY4Q6iMaDwU"
+    ],
+    "decode_invalid_base58": [
+        "F3opIRbN5ZbjJNU511Kj2TLuzFcDq9BGduA9TgiECafpg29"
+    ]
+}

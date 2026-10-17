@@ -1,0 +1,48 @@
+{
+    "b58encode": [
+        [
+            "68656c6c6f20776f726c64",
+            "StV1DL6CwTryKyV"
+        ],
+        [
+            "000068656c6c6f20776f726c64",
+            "11StV1DL6CwTryKyV"
+        ],
+        [
+            "",
+            ""
+        ]
+    ],
+    "b58decode": [
+        [
+            "StV1DL6CwTryKyV",
+            "68656c6c6f20776f726c64"
+        ],
+        [
+            "11StV1DL6CwTryKyV",
+            "000068656c6c6f20776f726c64"
+        ],
+        [
+            "1",
+            "00"
+        ]
+    ],
+    "b58encode_check": [
+        [
+            "68656c6c6f20776f726c64",
+            "3vQB7B6MrGQZaxCuFg4oh"
+        ]
+    ],
+    "b58decode_check_invalid": [
+        "3vQB7B6MrGQZaxCuFg4oH"
+    ],
+    "b58decode_int": [
+        [
+            "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz",
+            "111d38e5fc9071ffcd20b4a763cc9ae4f252bb4e48fd66a835e252ada93ff480d6dd43dc62a641155a5"
+        ]
+    ],
+    "b58decode_invalid": [
+        "xyz\b"
+    ]
+}

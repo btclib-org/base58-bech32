@@ -1,0 +1,311 @@
+# Copyright (c) The btclib developers
+# Distributed under the MIT software license, see the accompanying
+# LICENSE file or https://opensource.org/license/mit for the full text.
+
+# Copyright (c) 2017 Pieter Wuille
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+"""Bech32 and bech32m encoding and decoding, and the bit-group conversion.
+
+A bech32 string is a human-readable part (HRP), the separator "1", and
+5-bit values written with a 32-character alphabet, the last six of them a
+checksum. BIP173 defines bech32 and BIP350 bech32m, which differ only in
+the constant the checksum ends on: the `m` that `bech32_encode` and
+`bech32_decode` take. Nothing here knows what the values mean: a segwit
+address, a Lightning invoice and a Nostr key are all bech32. Without
+`m`, the first value is read as a witness version, as BIP350 says; a
+Lightning invoice or a Nostr key passes `m=BECH32_1_CONST`.
+
+- BIP173: https://github.com/bitcoin/bips/blob/master/bip-0173.mediawiki
+- BIP350: https://github.com/bitcoin/bips/blob/master/bip-0350.mediawiki
+
+This implementation is originally from
+https://github.com/sipa/bech32/tree/master/ref/python, by way of btclib,
+with the following modifications:
+
+* only the codec: the segwit address rules stay with the caller
+* type annotated Python3
+* raising exceptions instead of returning (None, None)
+* no length limit, by decision: BIP173 caps the string at 90 characters
+  and the HRP at 83, and BOLT11's Lightning invoices exceed the first
+* the checksum's inner loop is a 32-entry table of tap combinations
+* detailed error messages
+* an encoder that answers ascii bytes, as the standard library's `base64`
+"""
+
+from __future__ import annotations
+
+from collections.abc import Iterable
+from functools import reduce
+from operator import xor
+
+from base58_bech32._utils import (
+    String,
+    _message_text,
+    assert_type,
+    is_integer,
+    str_from_string,
+)
+from base58_bech32.exceptions import Base58Bech32TypeError, Base58Bech32ValueError
+
+__all__ = [
+    "BECH32_1_CONST",
+    "BECH32_M_CONST",
+    "bech32_decode",
+    "bech32_encode",
+    "convertbits",
+]
+
+_ALPHABET = "qpzry9x8gf2tvdw0s3jn54khce6mua7l"
+#: BIP173's bech32 constant, an `m` of `bech32_encode` and `bech32_decode`.
+BECH32_1_CONST = 1
+#: BIP350's bech32m constant, the other `m`.
+BECH32_M_CONST = 0x2BC830A3
+
+# BIP173's five generator constants, and the XOR of the ones each 5-bit
+# selection picks. What a step of _polymod applies depends on nothing but
+# the top five bits of chk, of which there are 32, so the table computed
+# once here is the whole of the reference's inner loop
+_GENERATOR = (0x3B6A57B2, 0x26508E6D, 0x1EA119FA, 0x3D4233DD, 0x2A1462B3)
+_TAPS = [
+    reduce(xor, [g for i, g in enumerate(_GENERATOR) if top >> i & 1], 0)
+    for top in range(32)
+]
+
+# a digit for every character, built once. -1 rather than None keeps a
+# lookup a plain int and doubles as the validity check, since a digit is
+# never negative; lowercase-only because `_decode` lowers the string
+# before reaching the lookup
+_INDEX_OF = {c: i for i, c in enumerate(_ALPHABET)}
+
+
+def _hrp_in_range(text: str) -> bool:
+    """Whether every character of `text` is in BIP173's HRP range [33-126].
+
+    33 and 126 are the boundary themselves ("!" and "~"); a weakened `<=`
+    at either end would accept 32 (" ") or 127 (DEL).
+    """
+    return all(32 < ord(x) < 127 for x in text)
+
+
+def _polymod(values: Iterable[int]) -> int:
+    """Return the bech32 checksum."""
+    chk = 1
+    for value in values:
+        chk = (chk & 0x1FFFFFF) << 5 ^ value ^ _TAPS[chk >> 25]
+    return chk
+
+
+def _hrp_expand(hrp: str) -> list[int]:
+    """Expand the HRP into values for checksum computation."""
+    return [ord(x) >> 5 for x in hrp] + [0] + [ord(x) & 31 for x in hrp]
+
+
+def _create_checksum(hrp: str, data: list[int], m: int) -> list[int]:
+    """Compute the checksum values given HRP and data."""
+    values = _hrp_expand(hrp) + data
+    polymod = _polymod([*values, 0, 0, 0, 0, 0, 0]) ^ m
+    return [(polymod >> 5 * (5 - i)) & 31 for i in range(6)]
+
+
+def _assert_valid_m(m: int | None) -> None:
+    """Refuse an `m` that is neither None nor one of the two constants.
+
+    Any other integer would write, or verify, a checksum no bech32 reader
+    accepts, and a bool is refused as for every integer field.
+    """
+    if m is None:
+        return
+    if not is_integer(m):
+        raise Base58Bech32TypeError(f"invalid m type: {type(m).__name__}")
+    if m not in (BECH32_1_CONST, BECH32_M_CONST):
+        err_msg = f"invalid m: {_message_text(m)}, "
+        err_msg += "neither BECH32_1_CONST nor BECH32_M_CONST"
+        raise Base58Bech32ValueError(err_msg)
+
+
+def _m_from_wit_ver(data: list[int]) -> int:
+    if not data:
+        raise Base58Bech32ValueError("empty data in bech32 address")
+    wit_ver = data[0]
+    return BECH32_1_CONST if wit_ver == 0 else BECH32_M_CONST
+
+
+def _verify_checksum(hrp: str, data: list[int], m: int) -> bool:
+    """Verify a checksum given HRP and converted data characters."""
+    return _polymod(_hrp_expand(hrp) + data) == m
+
+
+def _decode(bech: String) -> tuple[str, list[int], list[int]]:
+    """Determine a bech32 string HRP, data and checksum."""
+    text = str_from_string(bech, "bech32 string")
+
+    # no refusal quotes `text`: what reaches a decoder can be a private
+    # key pasted in the wrong field, and an exception message is what
+    # ends up in a log
+    pos = text.rfind("1")  # find the separator between hrp and data
+    if pos == -1:
+        raise Base58Bech32ValueError("no separator character")
+    if pos == 0:
+        raise Base58Bech32ValueError("empty HRP")
+    if pos + 7 > len(text):
+        raise Base58Bech32ValueError("too short checksum")
+
+    if not _hrp_in_range(text[:pos]):
+        raise Base58Bech32ValueError("HRP character out of range")
+    # the data part is held to the same range before anything lowers it:
+    # str.lower maps U+212A KELVIN SIGN, its own uppercase, onto "k", so
+    # an all-uppercase string carrying it would pass the case check and
+    # decode as the string spelled with "K"
+    if not _hrp_in_range(text[pos + 1 :]):
+        raise Base58Bech32ValueError("data part character out of range")
+    if text.lower() != text and text.upper() != text:
+        raise Base58Bech32ValueError("mixed case")
+
+    text = text.lower()
+    hrp = text[:pos]
+
+    indices = [_INDEX_OF.get(x, -1) for x in text[pos + 1 :]]
+    if -1 in indices[-6:]:
+        raise Base58Bech32ValueError("invalid character in checksum")
+    if -1 in indices:
+        raise Base58Bech32ValueError("invalid data character")
+
+    return hrp, indices[:-6], indices[-6:]
+
+
+def bech32_decode(bech: String, *, m: int | None = None) -> tuple[str, list[int]]:
+    """Return (hrp, data) from a bech32 string, verifying its checksum.
+
+    `m` picks bech32, `BECH32_1_CONST`, or bech32m, `BECH32_M_CONST`, any
+    other value being refused; None reads it off the first data value,
+    the witness version choosing the constant as BIP350 says. The string
+    is given as a str or as its ascii bytes, and the HRP comes back
+    lowercase.
+
+    BIP173 caps the string at 90 characters and the HRP at 83. This
+    function caps neither, by decision: BOLT11's Lightning invoices are
+    bech32 strings longer than 90. BIP173 states its error-detection
+    properties for a data part of at most 89 characters.
+    """
+    _assert_valid_m(m)
+    hrp, data, checksum = _decode(bech)
+    m = _m_from_wit_ver(data) if m is None else m
+    if _verify_checksum(hrp, data + checksum, m):
+        return hrp, data
+    raise Base58Bech32ValueError("invalid checksum")
+
+
+def bech32_encode(hrp: str, data: list[int], *, m: int | None = None) -> bytes:
+    """Compute a bech32 string given HRP and 5-bit data values.
+
+    `m` is as `bech32_decode` takes it, and `data` is a list. The HRP is
+    checked against the rule `bech32_decode` applies to it: non-empty,
+    every character in BIP173's [33-126] range, and lowercase -- every
+    data character is lowercase, so an uppercase HRP would write a string
+    `bech32_decode` refuses as mixed case.
+
+    Every value is one 5-bit digit, and each is checked rather than left
+    to the alphabet lookup: Python indexes a string from the end, so a
+    negative digit would write a different string and say nothing.
+    """
+    _assert_valid_m(m)
+    assert_type(data, list, "5-bit data")
+    assert_type(hrp, str, "HRP")
+    if not hrp:
+        raise Base58Bech32ValueError("empty HRP")
+    if not _hrp_in_range(hrp):
+        raise Base58Bech32ValueError(f"HRP character out of range: {hrp}")
+    if hrp != hrp.lower():
+        raise Base58Bech32ValueError(f"HRP is not lowercase: {hrp}")
+
+    for d in data:
+        if not is_integer(d):
+            raise Base58Bech32TypeError(f"invalid 5-bit value type: {type(d).__name__}")
+        if not 0 <= d < 32:
+            raise Base58Bech32ValueError(f"invalid 5-bit value: {_message_text(d)}")
+    m = _m_from_wit_ver(data) if m is None else m
+    combined = data + _create_checksum(hrp, data, m)
+    s = f"{hrp}1" + "".join(_ALPHABET[d] for d in combined)
+    return s.encode("ascii")
+
+
+def convertbits(
+    data: Iterable[int], from_bits: int, to_bits: int, pad: bool = True
+) -> list[int]:
+    """Convert a power-of-two digit sequence to another power-of-two base.
+
+    The `convertbits` of BIP173's reference implementation: bytes to 5-bit
+    values with `convertbits(data, 8, 5)`, and back with
+    `convertbits(values, 5, 8, False)`. With `pad` the last group is
+    padded with zero bits; without it, padding of `from_bits` bits or more,
+    or padding that is not zero, is refused.
+
+    Both widths are positive integers and every value is an integer of at
+    most `from_bits` bits, anything else being refused: a wider value
+    would come out as the conversion of a different sequence, `[256]`
+    from 8 to 5 bits as `[0]` does, and a zero `to_bits` would never
+    leave the regrouping loop.
+    """
+    assert_type(pad, bool, "pad")
+    for what, width in (("from_bits", from_bits), ("to_bits", to_bits)):
+        if not is_integer(width):
+            raise Base58Bech32TypeError(f"invalid {what} type: {type(width).__name__}")
+        if width < 1:
+            raise Base58Bech32ValueError(f"invalid {what}: {_message_text(width)} < 1")
+    assert_type(data, Iterable, "data")
+
+    values = list(data)
+    for value in values:
+        if not is_integer(value):
+            raise Base58Bech32TypeError(f"invalid value type: {type(value).__name__}")
+        if value < 0 or (value >> from_bits):
+            raise Base58Bech32ValueError(f"invalid value: {_message_text(value)}")
+    return _convertbits(values, from_bits, to_bits, pad)
+
+
+def _convertbits(
+    data: Iterable[int], from_bits: int, to_bits: int, pad: bool
+) -> list[int]:
+    # the validating wrapper's work, for a caller whose digits are
+    # integers of `from_bits` bits by construction
+    acc = 0
+    bits = 0
+    ret = []
+    maxv = (1 << to_bits) - 1
+    max_acc = (1 << (from_bits + to_bits - 1)) - 1
+    for value in data:
+        acc = ((acc << from_bits) | value) & max_acc
+        bits += from_bits
+        while bits >= to_bits:
+            bits -= to_bits
+            ret.append((acc >> bits) & maxv)
+
+    if pad:
+        if bits:
+            ret.append((acc << (to_bits - bits)) & maxv)
+    elif bits >= from_bits:
+        err_msg = f"zero padding of more than {from_bits - 1} bits"
+        err_msg += f" in {from_bits}-to-{to_bits} conversion"
+        raise Base58Bech32ValueError(err_msg)
+    elif (acc << (to_bits - bits)) & maxv:
+        err_msg = f"non-zero padding in {from_bits}-to-{to_bits} conversion"
+        raise Base58Bech32ValueError(err_msg)
+
+    return ret

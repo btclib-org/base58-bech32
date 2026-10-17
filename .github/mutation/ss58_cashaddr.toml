@@ -1,0 +1,20 @@
+# SS58 and CashAddr, mutated: the prefix forms and checksum of the one,
+# the 40-bit polymod, the version byte and the prefix rules of the other.
+# Each is a bit layout where a wrong shift still round-trips, which the
+# published vectors are what tell apart.
+
+[cosmic-ray]
+module-path = [
+    "src/base58_bech32/ss58.py",
+    "src/base58_bech32/cashaddr.py",
+]
+
+test-command = """python -m pytest -x -q -n0 -p no:randomly \
+  tests/ss58_test.py tests/cashaddr_test.py"""
+
+timeout = 300
+
+excluded-modules = []
+
+[cosmic-ray.distributor]
+name = "local"

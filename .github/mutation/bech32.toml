@@ -1,0 +1,19 @@
+# bech32, bech32m and convertbits, mutated: the polymod and its taps, the
+# range and case checks, and the bit regrouping with its padding rules. A
+# tap or a padding bound wrong is a string accepted that BIP173 and
+# BIP350 refuse, or the reverse.
+
+[cosmic-ray]
+module-path = [
+    "src/base58_bech32/bech32.py",
+]
+
+test-command = """python -m pytest -x -q -n0 -p no:randomly \
+  tests/bech32_test.py tests/migration_test.py"""
+
+timeout = 300
+
+excluded-modules = []
+
+[cosmic-ray.distributor]
+name = "local"
