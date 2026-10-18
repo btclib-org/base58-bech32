@@ -112,7 +112,7 @@ def test_bech32_encode_and_bech32_decode(hrp: str, data: list[int]) -> None:
     """bech32, both ways."""
     encoded = bech32.bech32_encode(hrp, data, m=bech32.BECH32_1_CONST).decode()
     assert encoded == bech32_package.bech32_encode(hrp, data)
-    assert bech32.bech32_decode(encoded, m=bech32.BECH32_1_CONST) == (
+    assert bech32.bech32_decode(encoded, m=bech32.BECH32_1_CONST)[:2] == (
         bech32_package.bech32_decode(encoded)
     )
 
@@ -157,13 +157,13 @@ def test_the_bech32_differences() -> None:
     # bech32m, which the package refuses
     bech32m = "a1lqfn3a"
     assert bech32_package.bech32_decode(bech32m) == (None, None)
-    assert bech32.bech32_decode(bech32m, m=bech32.BECH32_M_CONST) == ("a", [])
+    assert bech32.bech32_decode(bech32m) == ("a", [], bech32.BECH32_M_CONST)
 
     # an HRP of 84 characters
     long_hrp = "a" * 84
     encoded = bech32.bech32_encode(long_hrp, [0], m=bech32.BECH32_1_CONST).decode()
     assert bech32_package.bech32_decode(encoded) == (None, None)
-    assert bech32.bech32_decode(encoded, m=bech32.BECH32_1_CONST) == (long_hrp, [0])
+    assert bech32.bech32_decode(encoded, m=bech32.BECH32_1_CONST)[:2] == (long_hrp, [0])
 
 
 def test_bech32_data_is_a_list_here() -> None:

@@ -75,7 +75,7 @@ def test_the_integers_a_bool_refusal_must_not_take_with_it() -> None:
     assert bytes_from_octets(b"\x01", 1) == b"\x01"
     assert b58decode_check(_ONE, out_size=1) == b"\x01"
     assert bech32_encode("a", [1]) == bech32_encode("a", [1], m=BECH32_M_CONST)
-    assert bech32_decode("a12uel5l", m=1) == ("a", [])
+    assert bech32_decode("a12uel5l", m=1) == ("a", [], 1)
     assert convertbits([1], 1, 8) == [128]
     assert convertbits([1], 8, 1) == [0, 0, 0, 0, 0, 0, 0, 1]
     assert ss58_encode(1, bytes(32)) != ss58_encode(0, bytes(32))

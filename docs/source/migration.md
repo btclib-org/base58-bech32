@@ -56,7 +56,7 @@ arrow is this package's.
 
 - `bech32_encode(hrp, data)` →
   `bech32_encode(hrp, data, m=BECH32_1_CONST).decode()`
-- `bech32_decode(bech)` → `bech32_decode(bech, m=BECH32_1_CONST)`
+- `bech32_decode(bech)` → `bech32_decode(bech, m=BECH32_1_CONST)[:2]`
 - `convertbits(data, frombits, tobits, pad)` →
   `convertbits(data, frombits, tobits, pad)`
 - `bech32_verify_checksum`, `bech32_create_checksum` → not published:
@@ -76,8 +76,11 @@ Where the two differ:
 - **`data` is a list**, and `m` is `None` or one of the two constants;
   anything else is refused.
 - **bech32m.** `m=BECH32_M_CONST` is BIP350's bech32m, which `bech32` 1.2.0
-  does not have. Without `m`, both functions read it off the first value,
-  as a witness version: `bech32` always means `BECH32_1_CONST`.
+  does not have, and `bech32` always means `BECH32_1_CONST`. Without `m`,
+  `bech32_encode` reads it off the first value, as a witness version, and
+  `bech32_decode` accepts either constant.
+- **`bech32_decode` returns `(hrp, data, m)`**, `m` being the constant the
+  checksum verifies with.
 - **No length limit.** BIP173 caps a string at 90 characters and its HRP
   at 83, and `bech32_decode` refuses an HRP over 83. Here neither is
   bounded, by decision: BOLT11's Lightning invoices are longer than 90.
