@@ -181,7 +181,8 @@ def test_a_mistyped_wif_quotes_neither_checksum() -> None:
 # decision (the docstring of `base58_bech32.bech32`), so it reads the
 # strings with a valid checksum and writes the words that only a limit
 # refuses. That is not a defect: each such vector is asserted as read, in
-# `test_the_strings_peers_refuse_for_their_length_are_read`.
+# `test_the_strings_peers_refuse_for_their_length_are_read` and
+# `test_the_words_bitcoinjs_refuses_for_their_length_are_written`.
 
 
 # btcd's `invalidStringTests` in `address/base58/base58_test.go`. The first
@@ -221,7 +222,7 @@ def test_btcds_invalid_base58_strings_are_refused(text: str | bytes) -> None:
 
 
 # libbase58's `tests/decode-highbit.sh` and `decode-highbit-prefix.sh`: the
-# bytes 1, 0x99, 2 (`decode-highbit.sh`) and 0x99, 2, 3
+# bytes "1", 0x99, "2" (`decode-highbit.sh`) and 0x99, "2", "3"
 # (`decode-highbit-prefix.sh`), each with a byte above 127
 @pytest.mark.parametrize("text", [b"\x9923", b"1\x992"])
 def test_libbase58s_high_bit_strings_are_refused(text: bytes) -> None:

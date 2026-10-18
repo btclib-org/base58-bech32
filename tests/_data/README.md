@@ -233,8 +233,9 @@ lowercased.
 - **The Bitcoin wiki's WIF pair and Ripple's zero account**, inline in
   `tests/base58_test.py`.
 - **The refusals of btcd and libbase58, and polkadot-js's `check.spec.ts`
-  and `checksum.spec.ts`**, inline in `tests/refusals_test.py` beside the
-  citation of each, being a handful of strings each. Read at btcd
+  and `checksum.spec.ts`**, inline, being a handful of strings each: all in
+  `tests/refusals_test.py` but `checksum.spec.ts`'s addresses, which are in
+  `tests/ss58_test.py`. Read at btcd
   `c615bd70971ac4976de7e7d7f797a23fb0fe9998` (`address/base58/base58_test.go`
   and `address/bech32/bech32_test.go`), at libbase58
   `b1dd03fa8d1be4be076bb6152325c6b5cf64f678` (`tests/decode-*.sh`) and at
