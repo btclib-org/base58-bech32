@@ -518,23 +518,47 @@ The two trusted publishers `RELEASING.md`'s *One-time setup* names, on
 PyPI and on TestPyPI, were added as pending publishers on 2026-10-17
 under the project name `base58-bech32`, environment `pypi` and
 `testpypi` respectively and workflow `release.yml` for both, adding them
-being an account action and the maintainer's. That rests on the
-maintainer's statement rather than on a call: none here reads a
-publisher back. What a call does read is whether each index holds the
-project, which it answers `404` for until a first upload creates it:
+being an account action and the maintainer's. No call here reads a
+publisher back. What a call reads is whether each index holds the
+project, and what was uploaded to it:
 
 ```shell
-curl -s -o /dev/null -w '%{http_code}\n' \
-  https://pypi.org/pypi/base58-bech32/json
-# 404
-curl -s -o /dev/null -w '%{http_code}\n' \
-  https://test.pypi.org/pypi/base58-bech32/json
-# 404
+for u in https://pypi.org/pypi/base58-bech32/json \
+         https://test.pypi.org/pypi/base58-bech32/json; do
+  curl -s -o /dev/null -w '%{http_code}\n' "$u"
+  curl -s "$u" | jq -c '{version: .info.version,
+    releases: (.releases | keys),
+    files: [.urls[] | .filename]}'
+done
+# 200
+# {"version":"2026.10.18","releases":["2026.10.18"],
+#  "files":["base58_bech32-2026.10.18-py3-none-any.whl",
+#   "base58_bech32-2026.10.18.tar.gz"]}
+# 200
+# {"version":"2026.10.18.dev301",
+#  "releases":["2026.10.18.dev201","2026.10.18.dev301"],
+#  "files":["base58_bech32-2026.10.18.dev301-py3-none-any.whl",
+#   "base58_bech32-2026.10.18.dev301.tar.gz"]}
 ```
 
-Both still answered `404` on 2026-10-18T06:19Z. *Pending*: both answer
-`200` once the first release is uploaded, and each pending publisher
-becomes an ordinary one then.
+Read on 2026-10-18T12:11Z, the project pages `/project/base58-bech32/`
+on both indexes answered `200` too. Each pending publisher became an
+ordinary one with its first upload. The `pypi` upload is the `Publish to
+PyPI` job of release run 39125580342, which succeeded. The repository and
+both environments hold no secret, so the upload had only the OIDC token
+`release.yml` gives the job, which is trusted publishing:
+
+```shell
+r=btclib-org/base58-bech32
+for e in pypi testpypi; do
+  gh api repos/$r/environments/$e/secrets --jq .total_count
+done
+# 0
+# 0
+```
+
+The two `.dev` versions on TestPyPI are rehearsal uploads; the release
+run's `Publish to TestPyPI` job was skipped.
 
 **The repository's `.homepage` names this tree's own documentation
 site**, set under *Creating the repository* and read back here rather
@@ -583,28 +607,37 @@ its homepage is the repository rather than the site it serves.
 
 `stable` follows the highest semantic-version tag, so each release
 changes this answer with nothing here having decided differently. Read
-at 2026-10-17T23:15:08Z:
+at 2026-10-18T12:11Z:
 
 ```shell
 curl -s "$p/versions/?active=true" \
   | jq -c '.results[] | select(.slug == "latest" or .slug == "stable")
            | [.slug, .type, .ref]'
 # ["latest","branch",null]
+# ["stable","tag","v2026.10.18"]
+curl -s "$p/versions/?active=true" | jq -c '[.results[].slug]'
+# ["latest","stable","v2026.10.18"]
 git tag --list 'v*' --sort=version:refname | tail -1
-# (nothing: no tag yet)
+# v2026.10.18
+for v in latest stable v2026.10.18; do
+  curl -sL -o /dev/null -w '%{http_code} %{url_effective}\n' \
+    https://base58-bech32.readthedocs.io/en/$v/
+done
+# 200 https://base58-bech32.readthedocs.io/en/latest/
+# 200 https://base58-bech32.readthedocs.io/en/stable/
+# 200 https://base58-bech32.readthedocs.io/en/v2026.10.18/
 ```
 
-Read again at 2026-10-18T06:31Z, it printed the same; `latest` is built
-and `stable` is absent.
-*Pending*: `stable` appears, naming the tag, after the first release.
-
-An automation rule, "Activate each v* release tag", is to activate each
-new `v*` tag: it matches tags against the custom pattern `^v` and
-activates the version. *Pending*: the maintainer adds it before the
-first release. No call reads it back: the API does not expose it,
+An automation rule, "Activate each v* release tag", activates each new
+`v*` tag: it matches tags against the custom pattern `^v` and activates
+the version. The maintainer's session added it in the Read the Docs
+interface. No call reads it back: the API does not expose it,
 `automation-rules/` answering `404` where an endpoint needing a token,
-such as `redirects/`, answers `401`. It rests on the maintainer's
-statement rather than on a call.
+such as `redirects/`, answers `401`. What shows it at work is the
+release: the `documented / Check read the docs built the tag` job of run
+39125580342 succeeded, and `/en/v2026.10.18/` answers `200` above, so the
+tag was activated and built. That is evidence of the rule's effect, not
+a read of the rule.
 
 **Neither the `default_branch` call nor the versions call fails on a
 slug nothing holds.** The first reads the `404` body,
