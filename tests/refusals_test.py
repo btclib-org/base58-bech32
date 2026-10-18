@@ -250,7 +250,10 @@ def test_libbase58s_high_bit_strings_are_refused(text: bytes) -> None:
     ],
 )
 def test_libbase58s_checked_decodes_are_refused(text: str) -> None:
-    """Refused for the checksum, with and without the payload size libbase58's 25 bytes hold."""
+    """Refused for the checksum, with and without the payload size.
+
+    The payload is 21 bytes, the 25 libbase58 is given less the checksum.
+    """
     for out_size in (None, 21):
         with pytest.raises(Base58Bech32ValueError, match="^invalid checksum$"):
             b58decode_check(text, out_size=out_size)
