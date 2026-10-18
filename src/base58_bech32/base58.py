@@ -248,21 +248,16 @@ def b58decode_check(
     *,
     out_size: int | None = None,
     alphabet: bytes = BITCOIN_ALPHABET,
-    secret: bool = False,
 ) -> bytes:
     """Decode a Base58Check string, verifying its checksum.
 
     `out_size` is the payload size required. A checksum mismatch quotes
-    both checksums, unless `secret` is true: the expected checksum is a
-    hash of the payload, so a caller whose payload is a private key must
-    not publish it.
+    neither checksum: the expected one is a hash of the payload, which can
+    be a private key.
 
     Capped at `MAX_LENGTH` characters, unlike `b58encode_check`: a string
     written from a payload of roughly 80 bytes or more is refused here.
-    `secret` is a bool, anything else being refused: `0`, `None` and `""`
-    would read as false and quote the checksums.
     """
-    assert_type(secret, bool, "secret")
     _assert_valid_alphabet(alphabet)
     v = _ascii_bytes(v)
 
@@ -279,10 +274,7 @@ def b58decode_check(
     result, checksum = result[:-4], result[-4:]
     expected = hashlib.sha256(hashlib.sha256(result).digest()).digest()[:4]
     if checksum != expected:
-        err_msg = "invalid checksum"
-        if not secret:
-            err_msg += f": 0x{checksum.hex()} instead of 0x{expected.hex()}"
-        raise Base58Bech32ValueError(err_msg)
+        raise Base58Bech32ValueError("invalid checksum")
 
     # a bool would accept a one-octet payload and call it a checked size
     if out_size is not None and not is_integer(out_size):

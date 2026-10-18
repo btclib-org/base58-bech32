@@ -83,7 +83,7 @@ def test_the_base58_packages_checked_vectors(hexed: str, encoded: str) -> None:
 @pytest.mark.parametrize("encoded", PACKAGE["b58decode_check_invalid"])
 def test_the_base58_packages_checksum_failure(encoded: str) -> None:
     """The `base58` package's corrupted string fails the checksum here too."""
-    with pytest.raises(Base58Bech32ValueError, match="^invalid checksum: "):
+    with pytest.raises(Base58Bech32ValueError, match="^invalid checksum$"):
         b58decode_check(encoded)
 
 
@@ -231,13 +231,8 @@ def test_exceptions() -> None:
         b58decode_check(encoded, out_size=5)
 
     invalid_checksum = encoded[:-4] + b"1111"
-    with pytest.raises(Base58Bech32ValueError, match="invalid checksum: "):
-        b58decode_check(invalid_checksum, out_size=4)
-
-    # the expected checksum is quoted unless the caller says its payload is
-    # secret
     with pytest.raises(Base58Bech32ValueError, match="^invalid checksum$"):
-        b58decode_check(invalid_checksum, out_size=4, secret=True)
+        b58decode_check(invalid_checksum, out_size=4)
 
     # a character outside ascii is an invalid base58 character like any
     # other, not a UnicodeEncodeError
