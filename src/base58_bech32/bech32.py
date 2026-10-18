@@ -183,9 +183,7 @@ def _decode(bech: String) -> tuple[str, list[int], list[int]]:
     return hrp, indices[:-6], indices[-6:]
 
 
-def bech32_decode(
-    bech: String, *, m: int | None = None
-) -> tuple[str, list[int], int]:
+def bech32_decode(bech: String, *, m: int | None = None) -> tuple[str, list[int], int]:
     """Return (hrp, data, m) from a bech32 string, verifying its checksum.
 
     The `m` returned is the constant the checksum verifies with:
