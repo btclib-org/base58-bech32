@@ -541,20 +541,44 @@ done
 #   "base58_bech32-2026.10.18.dev301.tar.gz"]}
 ```
 
-Read on 2026-10-18T12:11Z, the project pages `/project/base58-bech32/`
-on both indexes answered `200` too. Each pending publisher became an
-ordinary one with its first upload. The `pypi` upload is the `Publish to
-PyPI` job of release run 39125580342, which succeeded. The repository and
-both environments hold no secret, so the upload had only the OIDC token
-`release.yml` gives the job, which is trusted publishing:
+Read on 2026-10-18T12:32Z, the project pages answer `200` on both
+indexes, and the release run's jobs ended as the next block prints:
 
 ```shell
-r=btclib-org/base58-bech32
-for e in pypi testpypi; do
-  gh api repos/$r/environments/$e/secrets --jq .total_count
+for u in https://pypi.org/project/base58-bech32/ \
+         https://test.pypi.org/project/base58-bech32/; do
+  curl -s -o /dev/null -w '%{http_code}\n' "$u"
 done
-# 0
-# 0
+# 200
+# 200
+gh run view 39125580342 --repo btclib-org/base58-bech32 --json jobs \
+  --jq '.jobs[] | select(.name == "Publish to PyPI"
+        or .name == "Publish to TestPyPI"
+        or (.name | startswith("documented"))) | [.name, .conclusion]'
+# ["documented / Check read the docs built the tag","success"]
+# ["Publish to PyPI","success"]
+# ["Publish to TestPyPI","skipped"]
+```
+
+Each pending publisher became an ordinary one with its first upload. The
+`pypi` upload is the `Publish to PyPI` job of that run. Its step passes
+`pypa/gh-action-pypi-publish` no password, so it uploads with the OIDC
+token `release.yml` gives the job, which is trusted publishing. The
+last command finds no `password` in the workflow:
+
+```shell
+git grep -n -B1 -A2 'uses: pypa/gh-action-pypi-publish' \
+  -- .github/workflows/release.yml | sed 's#.github/workflows/##'
+# release.yml-187-      - name: Publish to TestPyPI
+# release.yml:188:        uses: pypa/gh-action-pypi-publish@dc37677… # v1.14.2
+# release.yml-189-        with:
+# release.yml-190-          repository-url: https://test.pypi.org/legacy/
+# --
+# release.yml-230-      - name: Publish to PyPI
+# release.yml:231:        uses: pypa/gh-action-pypi-publish@dc37677… # v1.14.2
+# (line 232 is empty)
+git grep -n 'password' -- .github/workflows/release.yml
+# (nothing, exit 1)
 ```
 
 The two `.dev` versions on TestPyPI are rehearsal uploads; the release
@@ -630,8 +654,9 @@ done
 
 An automation rule, "Activate each v* release tag", activates each new
 `v*` tag: it matches tags against the custom pattern `^v` and activates
-the version. The maintainer's session added it in the Read the Docs
-interface. No call reads it back: the API does not expose it,
+the version. The maintainer added it in the Read the Docs interface;
+its name and pattern rest on that statement. No call reads it back:
+the API does not expose it,
 `automation-rules/` answering `404` where an endpoint needing a token,
 such as `redirects/`, answers `401`. What shows it at work is the
 release: the `documented / Check read the docs built the tag` job of run
