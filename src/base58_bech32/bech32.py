@@ -43,7 +43,8 @@ with the following modifications:
 * raising exceptions instead of returning (None, None)
 * the decoder's 90-character limit, BIP173's, is a keyword, `limit`,
   1023 by default and taken by the encoder too: BOLT11's Lightning
-  invoices exceed 90
+  invoices exceed 90, and `bech32_decode` says what the checksum
+  guarantees within 89 characters, within 1023 and beyond
 * the checksum's inner loop is a 32-entry table of tap combinations
 * detailed error messages
 * an encoder that answers ascii bytes, as the standard library's `base64`
