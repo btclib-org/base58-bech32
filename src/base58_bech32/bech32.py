@@ -41,10 +41,9 @@ with the following modifications:
 * only the codec: the segwit address rules stay with the caller
 * type annotated Python3
 * raising exceptions instead of returning (None, None)
-* the decoder's 90-character limit, BIP173's, is a keyword, `limit`,
-  1023 by default and taken by the encoder too: BOLT11's Lightning
-  invoices exceed 90, and `bech32_decode` says what the checksum
-  guarantees within 89 characters, within 1023 and beyond
+* the length limit is a keyword, `limit`, of the decoder and the
+  encoder, 1023 by default rather than BIP173's 90; `bech32_decode` says
+  why, and what the checksum guarantees at each length
 * the checksum's inner loop is a 32-entry table of tap combinations
 * detailed error messages
 * an encoder that answers ascii bytes, as the standard library's `base64`
@@ -224,8 +223,10 @@ def bech32_decode(
       most 4 characters is detected (BIP173), which `limit=90` keeps;
     * within 1023, the code's length, up to 3 errors are detected
       (Bitcoin Core's `src/bech32.cpp`), which the default keeps;
-    * beyond 1023 nothing is: two characters 1023 apart, changed by the
-      same XOR of their values, leave the checksum valid.
+    * beyond 1023, one changed character is still detected, and up to 3
+      within any 1023 consecutive characters, but two characters 1023
+      apart, changed by the same XOR of their values, leave the checksum
+      valid.
 
     The default is not 90 because BOLT11's Lightning invoices are longer.
     """

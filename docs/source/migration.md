@@ -88,4 +88,4 @@ Where the two differ:
   characters and its HRP at 83, and `bech32_decode` refuses an HRP over
   83 and caps no string. Here the HRP is not bounded, and `limit` caps
   the string: 1023 by default, 90 for BIP173's cap, `None` for none.
-  BOLT11's Lightning invoices are longer than 90.
+  The default is not 90 because BOLT11's Lightning invoices are longer.
