@@ -357,13 +357,10 @@ def test_a_changed_character_fails_the_checksum(
 
 
 def test_a_value_that_is_no_5_bit_digit_is_refused() -> None:
-    """A negative digit would wrap around the alphabet into another string.
+    """A digit outside 0..31 is refused, and so is a value that is no integer.
 
-    `_ALPHABET[d]` is a plain string index, so Python reads -1 as the
-    last character and -32 as the first: unchecked, the encoder would
-    answer a correctly checksummed string spelling a payload nobody asked
-    for. A digit above 31 would raise `IndexError`, and a float
-    `TypeError`.
+    Unchecked, a digit from 32 to 255 would write a NUL byte, any other
+    would leave as a built-in `ValueError`, and a float a `TypeError`.
     """
     valid = [0, 1, 30, 31]
     assert bech32_decode(bech32_encode("bc", valid)) == ("bc", valid)

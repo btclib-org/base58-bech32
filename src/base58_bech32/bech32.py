@@ -104,8 +104,8 @@ def _hrp_in_range(text: str) -> bool:
     """Whether every character of `text` is in BIP173's HRP range [33-126].
 
     Printable ascii is [32-126], so the range is the printable ascii
-    characters but the space: three passes of C, where a test per
-    character would be one of Python. `tests/bech32_test.py` holds it
+    characters but the space: three passes in C instead of one Python
+    test per character. `tests/bech32_test.py` holds it
     equal to `all(32 < ord(x) < 127 for x in text)` over every code point
     below U+3000.
     """
@@ -231,8 +231,9 @@ def bech32_encode(hrp: str, data: list[int], *, m: int | None = None) -> bytes:
     `bech32_decode` refuses as mixed case.
 
     Every value is one 5-bit digit, and each is checked rather than left
-    to the alphabet lookup: Python indexes a string from the end, so a
-    negative digit would write a different string and say nothing.
+    to the translation table: a digit from 32 to 255 would write a NUL
+    byte and say nothing, and any other would leave as a built-in error
+    rather than the package's.
     """
     _assert_valid_m(m)
     assert_type(data, list, "5-bit data")
@@ -286,8 +287,8 @@ def convertbits(
     assert_type(data, Iterable, "data")
 
     values = list(data)
-    # as in `bech32_encode`, the fast path takes an int below 2**from_bits
-    # and the loop names any other value
+    # as in `bech32_encode`: the fast path takes an int of `from_bits`
+    # bits, and the loop judges anything else
     top = 1 << from_bits
     if not all(type(value) is int and 0 <= value < top for value in values):
         for value in values:
