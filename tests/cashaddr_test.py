@@ -173,7 +173,7 @@ def test_the_encoder_refusals() -> None:
 
 
 def test_the_uppercase_form_for_qr_codes_is_read_back() -> None:
-    """`cashaddr_decode` reads the `.upper()` of what `cashaddr_encode` wrote."""
+    """`cashaddr_decode` reads the `.upper()` of what `cashaddr_encode` made."""
     for prefix, kind, size in (("bitcoincash", 0, 20), ("bchtest", 1, 32)):
         digest = bytes(range(size))
         written = cashaddr_encode(prefix, kind, digest)
