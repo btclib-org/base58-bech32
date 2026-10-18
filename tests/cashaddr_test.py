@@ -207,7 +207,7 @@ _PREFIX_END = _ADDRESS.index(":")
 def test_a_character_folding_onto_ascii_is_refused_in_each_region(
     char: str, position: int, address: str
 ) -> None:
-    """Each of the three, in the prefix and in the payload.
+    """Each of `_FOLDING`, in the prefix, the payload and the checksum.
 
     `_split` holds every character to ascii before it lowers the string,
     so none of them is read as the letter it folds onto.

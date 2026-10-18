@@ -185,8 +185,8 @@ def test_a_mistyped_wif_quotes_neither_checksum() -> None:
 # `test_the_words_bitcoinjs_refuses_for_their_length_are_written`.
 
 
-# btcd's `invalidStringTests` in `address/base58/base58_test.go`. The first
-# four are the characters the alphabet leaves out; "abcd\xd80" is the Go
+# btcd's `invalidStringTests` in `address/base58/base58_test.go`. "0", "O",
+# "I" and "l" are the characters the alphabet leaves out; "abcd\xd80" is the Go
 # string with the byte 0xd8 in it, and the last has U+20BF, the bitcoin sign
 _BTCD_BASE58_INVALID: list[str | bytes] = [
     "0",
@@ -237,7 +237,8 @@ def test_libbase58s_high_bit_strings_are_refused(text: bytes) -> None:
 
 
 # libbase58's `tests/decode-b58c-fail.sh`, `decode-b58c-toolong.sh` and
-# `decode-b58c-tooshort.sh`, each run as `base58 -d 25 -c`: an address whose
+# `decode-b58c-tooshort.sh`, each run as `base58 -d 25 -c`, 25 being the bytes
+# with the 4 of the checksum, so a payload of 21: an address whose
 # checksum is wrong, the same with two more leading "1", and a string that
 # decodes to 24 bytes. The checksum is checked before the size
 @pytest.mark.parametrize(
@@ -249,8 +250,8 @@ def test_libbase58s_high_bit_strings_are_refused(text: bytes) -> None:
     ],
 )
 def test_libbase58s_checked_decodes_are_refused(text: str) -> None:
-    """Refused for the checksum, with and without the size libbase58 gets."""
-    for out_size in (None, 25):
+    """Refused for the checksum, with and without the payload size libbase58's 25 bytes hold."""
+    for out_size in (None, 21):
         with pytest.raises(Base58Bech32ValueError, match="^invalid checksum$"):
             b58decode_check(text, out_size=out_size)
 
@@ -468,7 +469,7 @@ _CORE_ERRORS = {
     "Invalid Bech32 checksum": "^invalid checksum$",
     "Invalid Bech32m checksum": "^invalid checksum$",
     # Core's string of one hundred "q" has no separator, and is refused for
-    # that here; the other two of this error are read
+    # that here; the others of this error are read
     "Bech32 string too long": "^no separator character$",
 }
 

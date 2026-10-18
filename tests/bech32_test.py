@@ -369,30 +369,23 @@ _FOLDING = [
 
 
 @pytest.mark.parametrize("char", _FOLDING)
-@pytest.mark.parametrize(
-    "position, err_msg",
-    [
-        pytest.param(0, "^HRP character out of range$", id="hrp"),
-        pytest.param(3, "^data part character out of range$", id="data"),
-        pytest.param(-1, "^data part character out of range$", id="checksum"),
-    ],
-)
 @pytest.mark.parametrize("address", [_UPPER, _UPPER.lower()], ids=["upper", "lower"])
-def test_a_character_folding_onto_ascii_is_refused_in_each_region(
-    char: str, position: int, err_msg: str, address: str
+def test_a_character_folding_onto_ascii_is_refused_in_the_hrp(
+    char: str, address: str
 ) -> None:
-    """Each of the three, in the HRP, the data and the checksum.
+    """Each of `_FOLDING`, in the HRP, under either `m`.
 
-    scure-base's suite puts the Kelvin sign in each of these places.
-    Whatever the string's case, the refusal is the package's and never an
-    acceptance.
+    The data and the checksum are
+    `test_a_data_part_character_out_of_range_is_refused_first`'s. Whatever
+    the string's case, the refusal is the package's and never an acceptance.
     """
     chars = list(address)
-    chars[position] = char
-    with pytest.raises(Base58Bech32ValueError, match=err_msg):
-        bech32_decode("".join(chars))
-    with pytest.raises(Base58Bech32ValueError, match=err_msg):
-        bech32_decode("".join(chars), m=BECH32_1_CONST)
+    chars[0] = char
+    for m in (None, BECH32_1_CONST):
+        with pytest.raises(
+            Base58Bech32ValueError, match="^HRP character out of range$"
+        ):
+            bech32_decode("".join(chars), m=m)
 
 
 @pytest.mark.parametrize("char", _FOLDING)
