@@ -150,7 +150,7 @@ def test_a_decoders_refusal_quotes_nothing_of_its_input(
 
 
 def test_a_mistyped_wif_quotes_neither_checksum() -> None:
-    """The expected checksum is a hash of the key, and the written one is input."""
+    """Neither the expected checksum, a hash of the key, nor the written one."""
     payload = b"\x80" + _SECRET + b"\x01"
     mistyped = _corrupted(b58encode_check(payload))
     expected = hashlib.sha256(hashlib.sha256(payload).digest()).digest()[:4]
