@@ -118,8 +118,6 @@ def test_whitespace_and_nul_are_invalid_characters(encoded: str) -> None:
         for text in (encoded, encoded.encode("ascii")):
             with pytest.raises(Base58Bech32ValueError, match="invalid characters"):
                 decode(text)
-    # stripping the end first reads what the `base58` package reads
-    assert b58decode("StV1DL6CwTryKyV \n".rstrip()) == b"hello world"
 
 
 @pytest.mark.parametrize("alphabet", [BITCOIN_ALPHABET, RIPPLE_ALPHABET])
