@@ -633,8 +633,8 @@ def test_the_default_limit_is_1023(length: int) -> None:
 def test_the_limit_comes_before_the_characters() -> None:
     """A string too long and out of the alphabet is refused for its length.
 
-    Nothing of the string is read before its length: neither its
-    characters nor its checksum.
+    Only a bytes argument's ascii decoding comes before the length: the
+    HRP, the data characters and the checksum are checked after it.
     """
     with pytest.raises(Base58Bech32ValueError, match="^too many bech32 characters"):
         bech32_decode("a1" + "b" * 9, limit=10)

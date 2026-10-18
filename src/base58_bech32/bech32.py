@@ -215,9 +215,9 @@ def bech32_decode(
     as BIP350 says. The string is given as a str or as its ascii bytes,
     and the HRP comes back lowercase.
 
-    A string longer than `limit` characters is refused before its
-    characters and its checksum are checked; None refuses none. The
-    default is not 90, BIP173's limit, because BOLT11's Lightning
+    A string longer than `limit` characters is refused before its HRP,
+    its data characters and its checksum are checked; None refuses none.
+    The default is not 90, BIP173's limit, because BOLT11's Lightning
     invoices are longer.
 
     The limit bounds what the checksum guarantees for errors that change
@@ -228,9 +228,9 @@ def bech32_decode(
     * within 1023, the code's length, up to 3 errors are detected
       (Bitcoin Core's `src/bech32.cpp`), which the default keeps;
     * beyond 1023, one changed character is still detected, and up to 3
-      within any 1023 consecutive characters, but two characters 1023
-      apart, changed by the same XOR of their values, leave the checksum
-      valid.
+      within any 1023 consecutive characters, but two data characters
+      1023 apart, changed by the same XOR of their values, leave the
+      checksum valid.
 
     Without that assumption the checksum runs over more values than the
     string has characters: each HRP character's high bits come first, as
