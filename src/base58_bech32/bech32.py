@@ -27,8 +27,9 @@ A bech32 string is a human-readable part (HRP), the separator "1", and
 5-bit values written with a 32-character alphabet, the last six of them a
 checksum. BIP173 defines bech32 and BIP350 bech32m, which differ only in
 the constant the checksum ends on: the `m` that `bech32_encode` and
-`bech32_decode` take. Nothing here knows what the values mean: a segwit
-address, a Lightning invoice and a Nostr key are all bech32.
+`bech32_decode` take. Nothing here knows what the values mean, except
+`bech32_encode` without `m` (its docstring says how): a segwit address,
+a Lightning invoice and a Nostr key are all bech32.
 
 - BIP173: https://github.com/bitcoin/bips/blob/master/bip-0173.mediawiki
 - BIP350: https://github.com/bitcoin/bips/blob/master/bip-0350.mediawiki
@@ -187,9 +188,9 @@ def bech32_decode(bech: String, *, m: int | None = None) -> tuple[str, list[int]
     """Return (hrp, data, m) from a bech32 string, verifying its checksum.
 
     The `m` returned is the constant the checksum verifies with:
-    `BECH32_1_CONST` for bech32, `BECH32_M_CONST` for bech32m. None
-    accepts either; a constant passed as `m` is required, and any other
-    value is refused. A caller holding a segwit address checks the
+    `BECH32_1_CONST` for bech32, `BECH32_M_CONST` for bech32m. With `m`
+    None either constant verifies; a constant passed as `m` must be the
+    one that verifies; any other value is refused. A caller holding a segwit address checks the
     returned `m` against the witness version, as BIP350 says. The string
     is given as a str or as its ascii bytes, and the HRP comes back
     lowercase.
@@ -201,15 +202,15 @@ def bech32_decode(bech: String, *, m: int | None = None) -> tuple[str, list[int]
     """
     _assert_valid_m(m)
     hrp, data, checksum = _decode(bech)
-    # a function of the payload: a refusal names the constant it equals
-    # and never prints it
-    verified = _polymod(_hrp_expand(hrp) + data + checksum)
-    if verified not in (BECH32_1_CONST, BECH32_M_CONST):
+    # the residue depends on the payload: a refusal names the constant it
+    # matches and never prints it
+    residue = _polymod(_hrp_expand(hrp) + data + checksum)
+    if residue not in (BECH32_1_CONST, BECH32_M_CONST):
         raise Base58Bech32ValueError("invalid checksum")
-    if m is not None and verified != m:
-        name = "BECH32_1_CONST" if verified == BECH32_1_CONST else "BECH32_M_CONST"
+    if m is not None and residue != m:
+        name = "BECH32_1_CONST" if residue == BECH32_1_CONST else "BECH32_M_CONST"
         raise Base58Bech32ValueError(f"invalid checksum: {name} verifies")
-    return hrp, data, verified
+    return hrp, data, residue
 
 
 def bech32_encode(hrp: str, data: list[int], *, m: int | None = None) -> bytes:

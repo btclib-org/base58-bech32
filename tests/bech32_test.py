@@ -486,9 +486,11 @@ def test_without_m_the_constant_that_verified_is_returned() -> None:
 
 
 def test_bip350s_rule_is_the_callers() -> None:
-    """A caller passing the constant the witness version asks for is refused.
+    """BIP350's rule, applied by a caller passing `m`.
 
-    The refusal names the constant that verifies, and nothing else.
+    A string checksummed with the constant its witness version forbids is
+    refused under the one it asks for. The refusal names the constant
+    that verifies, and nothing else.
     """
     with pytest.raises(
         Base58Bech32ValueError, match="^invalid checksum: BECH32_1_CONST verifies$"
