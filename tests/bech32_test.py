@@ -41,9 +41,9 @@ from hypothesis import strategies as st
 
 from base58_bech32.bech32 import (
     _ALPHABET,
-    _GENERATOR,
     _CHAR_OF,
     _DIGIT_OF,
+    _GENERATOR,
     _NOT_A_DIGIT,
     _TAPS,
     BECH32_1_CONST,
@@ -165,9 +165,11 @@ def test_hrp_range_matches_bip173() -> None:
 
 
 def test_hrp_range_predicate_is_the_per_character_test() -> None:
-    """The three C passes accept what `32 < ord(x) < 127` does, character
-    by character, over every code point below U+3000, and a string only
-    when each of its characters is accepted."""
+    """The three C passes are `32 < ord(x) < 127`, character by character.
+
+    Held over every code point below U+3000, and a string is accepted
+    only when each of its characters is.
+    """
     for code in range(0x3000):
         char = chr(code)
         assert _hrp_in_range(char) == (32 < code < 127), code

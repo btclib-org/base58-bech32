@@ -95,8 +95,7 @@ _TAPS = [
 # _CHAR_OF is the inverse, defined on the digits 0..31 only
 _NOT_A_DIGIT = 255
 _DIGIT_OF = bytes(
-    _ALPHABET.index(chr(b)) if chr(b) in _ALPHABET else _NOT_A_DIGIT
-    for b in range(256)
+    _ALPHABET.index(chr(b)) if chr(b) in _ALPHABET else _NOT_A_DIGIT for b in range(256)
 )
 _CHAR_OF = _ALPHABET.encode("ascii").ljust(256, b"\0")
 
