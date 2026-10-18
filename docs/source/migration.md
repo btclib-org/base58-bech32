@@ -36,7 +36,10 @@ Where the two differ:
 - **A str to encode is hex here.** `b58encode("00ff")` encodes the bytes
   `00 ff`, where `base58` encodes the four ascii characters.
 - **Nothing is stripped.** `base58`'s decoders drop trailing whitespace;
-  here a blank is an invalid character.
+  here whitespace is an invalid character wherever it stands, as a
+  leading or an embedded blank is in `base58`. Both refuse NUL.
+  `b58decode(v.rstrip())` reads what `base58` reads. Bitcoin Core's
+  `DecodeBase58` also skips leading whitespace.
 - **The alphabet is 58 distinct ascii bytes.** `base58` takes any alphabet,
   Base45's included.
 - **No `autofix`.** `base58`'s `autofix=True` reads "0" and "O" as "o",

@@ -224,6 +224,10 @@ def bech32_encode(hrp: str, data: list[int], *, m: int | None = None) -> bytes:
     Every value is one 5-bit digit, and each is checked rather than left
     to the alphabet lookup: Python indexes a string from the end, so a
     negative digit would write a different string and say nothing.
+
+    The string is lowercase. BIP173 says to use uppercase in a QR code,
+    where it fits the smaller alphanumeric mode, and `bech32_decode` reads
+    the `.upper()` of what this writes.
     """
     _assert_valid_m(m)
     assert_type(data, list, "5-bit data")
@@ -256,6 +260,10 @@ def convertbits(
     `convertbits(values, 5, 8, False)`. With `pad` the last group is
     padded with zero bits; without it, padding of `from_bits` bits or more,
     or padding that is not zero, is refused.
+
+    `data` is any finite iterable of integers, such as a list, bytes or a
+    generator, and is read to its end before the first value is checked:
+    an unbounded iterator never returns.
 
     Both widths are positive integers and every value is an integer of at
     most `from_bits` bits, anything else being refused: a wider value

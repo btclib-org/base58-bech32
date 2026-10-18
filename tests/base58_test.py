@@ -106,6 +106,24 @@ def test_the_base58_packages_invalid_input(encoded: str) -> None:
         b58decode(encoded)
 
 
+@pytest.mark.parametrize(
+    "encoded", ["1 ", " 1", "1\0", "\x001", "\t1\n", "1\x0b", "StV1DL6Cw TryKyV"]
+)
+def test_whitespace_and_nul_are_invalid_characters(encoded: str) -> None:
+    """Leading, trailing and embedded whitespace, and NUL, are refused.
+
+    Bitcoin Core's `DecodeBase58` skips whitespace at both ends and the
+    `base58` package strips it at the end; here it is a character outside
+    the alphabet, as the docstring and the migration page say.
+    """
+    for decode in (b58decode, b58decode_check):
+        for text in (encoded, encoded.encode("ascii")):
+            with pytest.raises(Base58Bech32ValueError, match="invalid characters"):
+                decode(text)
+    # stripping the end first reads what the `base58` package reads
+    assert b58decode("StV1DL6CwTryKyV \n".rstrip()) == b"hello world"
+
+
 @pytest.mark.parametrize("alphabet", [BITCOIN_ALPHABET, RIPPLE_ALPHABET])
 def test_round_trips_over_both_alphabets(alphabet: bytes) -> None:
     """The `base58` package's round trip: every short string of four bytes.
