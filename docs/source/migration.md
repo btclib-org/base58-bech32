@@ -80,8 +80,9 @@ Where the two differ:
   HRP that is empty, out of BIP173's range or not lowercase, and a value
   that is not a 5-bit digit, which `bech32` writes or raises an
   `IndexError` for.
-- **`data` is a list**, and `m` is `None` or one of the two constants;
-  anything else is refused.
+- **`data` is a list**, and `m` is `None` or one of the two constants
+  for `bech32_encode` and `bech32_decode`; the bytes pair takes one of the
+  two constants and refuses `None`. Anything else is refused.
 - **bech32m.** `m=BECH32_M_CONST` is BIP350's bech32m, which `bech32` 1.2.0
   does not have, and `bech32` always means `BECH32_1_CONST`. Without `m`,
   `bech32_encode` reads it off the first value, as a witness version, and
@@ -92,4 +93,4 @@ Where the two differ:
   characters and its HRP at 83, and `bech32_decode` refuses an HRP over
   83 and caps no string. Here the HRP is not bounded on its own, and the
   string is capped by `limit`, whose default `bech32_decode`'s docstring
-  gives.
+  gives. The bytes pair takes the same `limit`.
