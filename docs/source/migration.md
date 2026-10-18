@@ -86,6 +86,5 @@ Where the two differ:
   checksum verifies with.
 - **A string is capped at 1023 characters.** BIP173 caps a string at 90
   characters and its HRP at 83, and `bech32_decode` refuses an HRP over
-  83 and caps no string. Here the HRP is not bounded, and `limit` caps
-  the string: 1023 by default, 90 for BIP173's cap, `None` for none.
-  The default is not 90 because BOLT11's Lightning invoices are longer.
+  83 and caps no string. Here the HRP is not bounded, and the string is
+  capped by `limit`, which `bech32_decode`'s docstring describes.

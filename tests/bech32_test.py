@@ -663,7 +663,7 @@ def test_a_negative_limit_is_refused() -> None:
 
 @pytest.mark.parametrize("distance", [1022, 1023])
 def test_past_1023_characters_two_errors_can_cancel(distance: int) -> None:
-    """What the default limit keeps: two changes within 1023 are detected.
+    """What the default limit keeps: two changes to the data part are detected.
 
     1023 is the code's length, so two characters that far apart, changed
     by the same XOR of their values, leave the checksum valid; one closer
@@ -681,3 +681,21 @@ def test_past_1023_characters_two_errors_can_cancel(distance: int) -> None:
         return
     with pytest.raises(Base58Bech32ValueError, match="^invalid checksum$"):
         bech32_decode(corrupted, m=BECH32_1_CONST, limit=None)
+
+
+def test_an_hrp_change_to_the_high_bits_can_cancel_within_the_limit() -> None:
+    """The guarantee holds only for HRP changes to the low 5 bits.
+
+    "!" for "a" changes the HRP character's high bits, a value checksummed
+    before the separator; the checksum character 1022 places later, 1023
+    checksummed values later, changed by the same XOR, cancels it in a
+    string of 1023 characters, within the default limit.
+    """
+    encoded = list(bech32_encode("a", [0] * 1015, m=BECH32_1_CONST).decode("ascii"))
+    assert len(encoded) == 1023
+    xor = (ord("a") >> 5) ^ (ord("!") >> 5)
+    encoded[0] = "!"
+    encoded[1022] = _ALPHABET[_ALPHABET.index(encoded[1022]) ^ xor]
+    corrupted = "".join(encoded)
+    expected = ("!", [0] * 1015, BECH32_1_CONST)
+    assert bech32_decode(corrupted, m=BECH32_1_CONST) == expected
