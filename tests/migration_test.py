@@ -143,14 +143,16 @@ def test_convertbits(data: list[int], widths: tuple[int, int], pad: bool) -> Non
 def test_the_bytes_pair(hrp: str, payload: bytes) -> None:
     """The 5-bit pair with `convertbits` beside it, both ways."""
     encoded = bech32.bech32_encode_bytes(hrp, payload, m=bech32.BECH32_1_CONST)
-    expected = bech32_package.bech32_encode(
-        hrp, bech32_package.convertbits(payload, 8, 5)
-    )
+    data = bech32_package.convertbits(payload, 8, 5)
+    assert data is not None
+    expected = bech32_package.bech32_encode(hrp, data)
     assert encoded.decode() == expected
     values = bech32_package.bech32_decode(expected)[1]
-    assert bech32.bech32_decode_bytes(expected, m=bech32.BECH32_1_CONST)[1] == bytes(
-        bech32_package.convertbits(values, 5, 8, False)
-    )
+    assert values is not None
+    octets = bech32_package.convertbits(values, 5, 8, False)
+    assert octets is not None
+    decoded = bech32.bech32_decode_bytes(expected, m=bech32.BECH32_1_CONST)
+    assert decoded == (hrp, bytes(octets))
 
 
 def test_the_bech32_differences() -> None:

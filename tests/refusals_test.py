@@ -59,6 +59,11 @@ _WRONG_TYPES: list[tuple[str, Callable[[], Any], str]] = [
         "invalid m type: NoneType",
     ),
     (
+        "bech32_decode_bytes(bech=None)",
+        lambda: bech32_decode_bytes(None, m=1),  # type: ignore[arg-type]
+        "invalid bech32 string type: NoneType",
+    ),
+    (
         "bech32_decode_bytes(m=None)",
         lambda: bech32_decode_bytes("a12uel5l", m=None),  # type: ignore[arg-type]
         "invalid m type: NoneType",
