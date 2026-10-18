@@ -211,7 +211,7 @@ def test_round_trip(prefix: int, payload: bytes) -> None:
     assert ss58_decode(address.decode("ascii")) == (prefix, payload)
 
 
-def test_the_checksum_is_compared_in_constant_time(
+def test_the_checksum_is_compared_with_compare_digest(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """`ss58_decode` compares checksums with `hmac.compare_digest`."""

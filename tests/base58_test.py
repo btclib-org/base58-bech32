@@ -385,7 +385,7 @@ def test_a_string_decodes_the_same_on_both_sides_of_the_plain_loop() -> None:
         assert _b58decode_to_int(s, _DIGIT_OF) == expected
 
 
-def test_the_checksum_is_compared_in_constant_time(
+def test_the_checksum_is_compared_with_compare_digest(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """`b58decode_check` compares checksums with `hmac.compare_digest`."""

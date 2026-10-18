@@ -65,19 +65,19 @@ RIPPLE_ALPHABET = b"rpshnaf39wBUDNEGHJKLM4PQRST7VWXYZ2bcdeCg65jkm8oFqi1tuvAxyz"
 _BASE = 58
 
 # how many digits the encoder, and the decoder of a long string, carry
-# through the big-integer arithmetic at a time. 58**10 < 2**64, so a
-# chunk's ten digits come out of an int the machine holds in a register,
-# and the multiplication or division that costs O(size of the number) is
-# paid once per ten digits instead of once per digit. Both loops stay
-# quadratic in the length of the string -- the accumulator grows -- with a
-# tenth of the coefficient
+# through the big-integer arithmetic at a time. The multiplication or
+# division that costs O(size of the number) is paid once per ten digits
+# instead of once per digit. Both loops stay quadratic in the length of
+# the string -- the accumulator grows -- and the chunks make the cost of a
+# long string several times smaller
 _CHUNK = 10
 _CHUNK_BASE = _BASE**_CHUNK
 
 # the decoder reads a string of at most this many characters one digit at
-# a time: for a short string the chunks' slicing and extra multiplication
-# cost more than they save, and past this length they pay. The length is
-# measured, and differs by interpreter
+# a time, and a longer one in chunks: the chunks' slicing and extra
+# multiplication cost more than they save on a short string and pay on a
+# long one. Where the two cross differs by interpreter, and this is about
+# the earliest measured
 _PLAIN_MAX = 64
 
 #: The longest string `b58decode_check` decodes: a BIP32 extended key,
@@ -117,7 +117,7 @@ def _tables(alphabet: bytes) -> tuple[bytes, bytes]:
 
 def _assert_valid_alphabet(alphabet: bytes) -> None:
     """Refuse what is not 58 distinct ascii bytes."""
-    # the type first: an unhashable alphabet would reach the cache's key
+    # the type first: _tables checks only size, distinctness and ascii
     assert_type(alphabet, bytes, "alphabet")
     _tables(alphabet)
 
