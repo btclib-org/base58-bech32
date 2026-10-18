@@ -21,9 +21,10 @@ them.
 
 Each section carries the command that sets its setting and the command
 that reads it back, and the `#` lines under a read-back are what it
-printed on 2026-10-17 (UTC), before `main` was first pushed. A read-back
-marked *pending* answers only once `main` exists or a first release is
-out, and is read again then — section 16's last step. Section 11 makes
+printed on 2026-10-17 (UTC), before `main` was first pushed, except where
+the text beside it gives a later date. A read-back marked *pending* answers
+only once a first release is out, and is read again
+then — section 16's last step. Section 11 makes
 such an answer documentation, with a reader as its check: nothing re-runs
 these commands, so an answer that differs today, a pending one aside, is
 a change made since that date.
@@ -198,8 +199,8 @@ gh api repos/btclib-org/base58-bech32/branches/main/protection \
 #  "strict":false}
 ```
 
-*Pending*: the expected answer, set once `main` exists. On the empty
-repository the call answers `404`, `Branch not found`.
+Read on 2026-10-18T06:19Z, after `main` was pushed, it printed the answer
+above.
 
 Three rulesets sit beside it, additive — rules aggregate across rulesets
 and classic protection, taking the most restrictive combination.
@@ -216,13 +217,19 @@ gh api -X POST repos/btclib-org/base58-bech32/rulesets --input - <<'JSON'
 JSON
 ```
 
-`main-self-merge` requires a pull request and has no bypass actor, so
-every merge needs an approval from somebody other than its author. A
-direct push to `main` is refused for everyone.
-btclib-org/.github's
+`main-self-merge` requires a pull request, so a direct push to `main` is
+refused, and a merge needs an approval from somebody other than its
+author. The maintainer can merge without one, through the bypass. The
+bypass is one actor, the maintainer, and it is **temporary**: the
+standard allows no bypass in a tree whose `README.md` carries the OpenSSF
+Best Practices badge, as this one does (section 11 of
+[btclib-org/.github's `README.md`](https://github.com/btclib-org/.github#branch-protection-and-rulesets)).
+The maintainer set it on 2026-10-18, by [the decision recorded in btclib
+ISS 2712](https://github.com/btclib-org/btclib/issues/2712#issuecomment-6247443374),
+until the first release. btclib-org/.github's
 [`GOVERNANCE.md`](https://github.com/btclib-org/.github/blob/main/GOVERNANCE.md#how-a-decision-is-made),
-*How a decision is made*, says when the maintainer adds the bypass back,
-and `CONTRIBUTING.md`'s *Landing it* has the commands.
+*How a decision is made*, says when a bypass is added back once this one
+is removed, and `CONTRIBUTING.md`'s *Landing it* has the commands.
 
 ```shell
 gh api -X POST repos/btclib-org/base58-bech32/rulesets --input - <<'JSON'
@@ -239,9 +246,59 @@ gh api -X POST repos/btclib-org/base58-bech32/rulesets --input - <<'JSON'
 JSON
 ```
 
-The bypass, when the maintainer adds it back, is actor `3296421`,
-`fametrano`'s account id (`gh api users/fametrano --jq .id`), in
-`pull_request` mode.
+This ruleset was created with the bypass already in it, as its single
+history version shows; the `POST` above is the standard's form. Read on
+2026-10-18T07:36Z:
+
+```shell
+gh api repos/btclib-org/base58-bech32/rulesets/25333526/history --jq length
+# 1
+```
+
+The bypass is actor `3296421`, `fametrano`'s account id
+(`gh api users/fametrano --jq .id`), in `pull_request` mode. A `PUT` of
+the whole ruleset, `25333526`, with that entry in `bypass_actors` adds it:
+
+```shell
+gh api -X PUT repos/btclib-org/base58-bech32/rulesets/25333526 \
+  --input - <<'JSON'
+{"name": "main-self-merge", "target": "branch", "enforcement": "active",
+ "conditions": {"ref_name": {"include": ["refs/heads/main"], "exclude": []}},
+ "bypass_actors": [{"actor_id": 3296421, "actor_type": "User",
+                    "bypass_mode": "pull_request"}],
+ "rules": [{"type": "pull_request", "parameters": {
+   "allowed_merge_methods": ["squash"],
+   "dismiss_stale_reviews_on_push": true,
+   "dismissal_restriction": {"allowed_actors": [], "enabled": false},
+   "require_code_owner_review": false,
+   "require_extra_approval_for_unattributed_changes": true,
+   "require_last_push_approval": false,
+   "required_approving_review_count": 1,
+   "required_review_thread_resolution": true,
+   "required_reviewers": []}}]}
+JSON
+```
+
+The same `PUT` with `"bypass_actors": []` removes it:
+
+```shell
+gh api -X PUT repos/btclib-org/base58-bech32/rulesets/25333526 \
+  --input - <<'JSON'
+{"name": "main-self-merge", "target": "branch", "enforcement": "active",
+ "conditions": {"ref_name": {"include": ["refs/heads/main"], "exclude": []}},
+ "bypass_actors": [],
+ "rules": [{"type": "pull_request", "parameters": {
+   "allowed_merge_methods": ["squash"],
+   "dismiss_stale_reviews_on_push": true,
+   "dismissal_restriction": {"allowed_actors": [], "enabled": false},
+   "require_code_owner_review": false,
+   "require_extra_approval_for_unattributed_changes": true,
+   "require_last_push_approval": false,
+   "required_approving_review_count": 1,
+   "required_review_thread_resolution": true,
+   "required_reviewers": []}}]}
+JSON
+```
 
 Classic protection's own copy of the signature rule is off:
 
@@ -251,7 +308,7 @@ gh api repos/btclib-org/base58-bech32/branches/main/protection \
 # false
 ```
 
-*Pending*, as the protection read-back above.
+Read on 2026-10-18T06:19Z: `false`, as printed.
 
 No ruleset over `main` carries `required_signatures`, so nothing refuses an
 unsigned commit at the push: `verified-signatures.yml` checks after each push
@@ -292,7 +349,7 @@ done
 #  "methods":[],"name":"main-integrity",
 #  "rules":["required_linear_history","non_fast_forward","deletion"],
 #  "target":"branch"}
-# {"bypass":[],"enforcement":"active",
+# {"bypass":[[3296421,"pull_request"]],"enforcement":"active",
 #  "include":["refs/heads/main"],"methods":[["squash"]],
 #  "name":"main-self-merge","rules":["pull_request"],"target":"branch"}
 # {"bypass":[],"enforcement":"active","include":["refs/tags/v*"],
@@ -300,8 +357,14 @@ done
 #  "target":"tag"}
 ```
 
-*Pending*: the expected answer, the rulesets being created once `main`
-exists. On 2026-10-17 the loop printed nothing, there being no ruleset.
+Read on 2026-10-18T06:19Z, the loop printed the three rulesets above
+(ids 25333525, 25333526 and 25333527 for `main-integrity`,
+`main-self-merge` and `tag-integrity`). `main-self-merge` differs from
+the standard in its `bypass`, which is **temporary** (see above); the
+other two match it. *Pending*: the bypass is removed after the first
+release, which [ISS 4](https://github.com/btclib-org/base58-bech32/issues/4)
+tracks with the removal `PUT` and this read-back in its *Done when*; this
+loop then prints `"bypass":[]` for `main-self-merge`.
 
 A `v*` tag push that brings an unsigned commit is refused. A tag on a
 commit already on `main` is accepted whether it is signed, unsigned or
@@ -475,8 +538,9 @@ curl -s -o /dev/null -w '%{http_code}\n' \
 # 404
 ```
 
-*Pending*: both answer `200` once the first release is uploaded, and each
-pending publisher becomes an ordinary one then.
+Both still answered `404` on 2026-10-18T06:19Z. *Pending*: both answer
+`200` once the first release is uploaded, and each pending publisher
+becomes an ordinary one then.
 
 **The repository's `.homepage` names this tree's own documentation
 site**, set under *Creating the repository* and read back here rather
@@ -500,11 +564,11 @@ site:
 ```shell
 curl -sL -o /dev/null -w '%{http_code} %{url_effective}\n' \
   https://base58-bech32.readthedocs.io/
-# 404 https://base58-bech32.readthedocs.io/en/latest/
+# 200 https://base58-bech32.readthedocs.io/en/latest/
 ```
 
-*Pending*: `200` once a build of `main` succeeds; there was nothing to
-build on 2026-10-17.
+Read at 2026-10-18T06:31Z, after Read the Docs build 35219072 of
+`dd032a1`.
 
 The project's public API answers without a token:
 
@@ -536,6 +600,8 @@ git tag --list 'v*' --sort=version:refname | tail -1
 # (nothing: no tag yet)
 ```
 
+Read again at 2026-10-18T06:31Z, it printed the same; `latest` is built
+and `stable` is absent.
 *Pending*: `stable` appears, naming the tag, after the first release.
 
 An automation rule, "Activate each v* release tag", is to activate each
@@ -574,6 +640,35 @@ gh api repos/btclib-org/base58-bech32/hooks --jq length
 
 A hook the second command finds is stale and is deleted rather than
 repaired, which is section 11's rule.
+
+## Claude Code review
+
+`claude-review.yml` needs the Claude Code GitHub App on the repository.
+The organization's installation of it, `150677504`, covers selected
+repositories, not all:
+
+```shell
+gh api orgs/btclib-org/installations \
+  --jq '.installations[] | select(.app_slug == "claude")
+        | [.id, .repository_selection]'
+# [150677504,"selected"]
+```
+
+Read on 2026-10-18T07:36Z. The maintainer added this repository to that
+installation on 2026-10-18. The installation's repository list needs a
+user token with the `read:user` scope, which this read-back lacks, so a
+successful `claude-review` run is the evidence. Run 39103299839 on pull
+request 1 passed, and the bot's latest review there starts with its ACK.
+Read on 2026-10-18T08:06Z:
+
+```shell
+r=btclib-org/base58-bech32
+gh run view 39103299839 --repo $r --json conclusion --jq .conclusion
+# success
+gh pr view 1 --repo $r --json reviews --jq '[.reviews[]
+  | select(.author.login == "claude")] | last | .body | split("\n")[0]'
+# ACK a51fdf386fd7b970bbca70818300ffa8912c222d
+```
 
 ## Security settings
 
