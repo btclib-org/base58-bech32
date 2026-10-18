@@ -6,9 +6,10 @@
 
 The rest of the suite is fixed vectors: exactly what conformance needs,
 and blind to the malformed strings that never make it into a
-specification's test section. This file is the converse. It does not
-assert that a decoder accepts the right things -- the vectors do that --
-but that it *fails the way the package says it fails*, whatever it is
+specification's test section. This file is the converse. Apart from its
+last test, it does not assert that a decoder accepts the right things --
+the vectors do that -- but that it *fails the way the package says it
+fails*, whatever it is
 handed: an IndexError off a short slice or a KeyError off an alphabet
 lookup reaches a caller who catches `Base58Bech32ValueError` to reject
 bad input and has no reason to expect anything else.

@@ -176,15 +176,12 @@ def test_a_mistyped_wif_quotes_neither_checksum() -> None:
 
 
 # What the peers refuse, and the refusal this package gives each string.
-# The sources and their pins are in tests/_data/README.md. A string a peer
-# refuses and this package reads is marked `xfail`, strictly, so that the
-# day it is refused the marker turns red.
-_NO_LIMIT = "bech32 has no length limit, by decision"
-
-
-def _xfail(reason: str | None) -> list[Any]:
-    """Return the marks of a vector this package reads and a peer refuses."""
-    return [pytest.mark.xfail(strict=True, reason=reason)] if reason else []
+# The sources and their pins are in tests/_data/README.md. The peers refuse
+# a bech32 string over their length limit. This package has none, by
+# decision (the docstring of `base58_bech32.bech32`), so it reads the
+# strings with a valid checksum and writes the words that only a limit
+# refuses. That is not a defect: each such vector is asserted as read, in
+# `test_the_strings_peers_refuse_for_their_length_are_read`.
 
 
 # btcd's `invalidStringTests` in `address/base58/base58_test.go`. The first
@@ -224,7 +221,8 @@ def test_btcds_invalid_base58_strings_are_refused(text: str | bytes) -> None:
 
 
 # libbase58's `tests/decode-highbit.sh` and `decode-highbit-prefix.sh`: the
-# bytes 0x99, "2", "3" and "1", 0x99, "2", each with a byte above 127
+# bytes 1, 0x99, 2 (`decode-highbit.sh`) and 0x99, 2, 3
+# (`decode-highbit-prefix.sh`), each with a byte above 127
 @pytest.mark.parametrize("text", [b"\x9923", b"1\x992"])
 def test_libbase58s_high_bit_strings_are_refused(text: bytes) -> None:
     """A byte with its high bit set is no Base58 character, anywhere."""
@@ -239,8 +237,8 @@ def test_libbase58s_high_bit_strings_are_refused(text: bytes) -> None:
 
 # libbase58's `tests/decode-b58c-fail.sh`, `decode-b58c-toolong.sh` and
 # `decode-b58c-tooshort.sh`, each run as `base58 -d 25 -c`: an address whose
-# checksum is wrong, the same with two more leading "1", and a string of
-# 25 bytes whose checksum is wrong. The checksum is checked before the size
+# checksum is wrong, the same with two more leading "1", and a string that
+# decodes to 24 bytes. The checksum is checked before the size
 @pytest.mark.parametrize(
     "text",
     [
@@ -325,7 +323,7 @@ def _bitcoinjs_decode_message(exception: str) -> str:
     for start, err_msg in _BITCOINJS_DECODE:
         if exception.startswith(start):
             return err_msg
-    # "abc1rzg too short" and "16plkw9 too short", the second with no HRP
+    # "abc1rzg too short", "s1vcsyn too short" and "16plkw9 too short"
     assert exception.endswith("too short"), exception
     return "^(empty HRP|too short checksum)$"
 
@@ -333,8 +331,9 @@ def _bitcoinjs_decode_message(exception: str) -> str:
 def _bitcoinjs_decodes() -> list[Any]:
     """Return the strings bitcoinjs/bech32 refuses, as test parameters.
 
-    The one string over its limit whose checksum holds is read here, and
-    is marked. The other is refused for its checksum.
+    The `an84` strings are over the limit with a valid checksum and are
+    read, so they are not here. The other string over it is refused for its
+    checksum.
     """
     params = []
     for section, m in _M.items():
@@ -346,15 +345,12 @@ def _bitcoinjs_decodes() -> list[Any]:
             else:
                 continue
             long = row["exception"] == _BITCOINJS_LENGTH
-            reason = _NO_LIMIT if long and text.startswith("an84") else None
+            if long and text.startswith("an84"):
+                continue
             err_msg = "^invalid checksum$" if long else None
             if not long:
                 err_msg = _bitcoinjs_decode_message(row["exception"])
-            params.append(
-                pytest.param(
-                    text, m, err_msg, id=f"{section}-{index}", marks=_xfail(reason)
-                )
-            )
+            params.append(pytest.param(text, m, err_msg, id=f"{section}-{index}"))
     return params
 
 
@@ -371,19 +367,19 @@ def _bitcoinjs_encodes() -> list[Any]:
     """Return the `prefix` and `words` bitcoinjs/bech32 refuses to encode.
 
     Those over its limit hold a word of 128, refused as it is, except the
-    one that holds only the word 20, which this package writes.
+    one that holds only the word 20, which this package writes and which is
+    not here.
     """
     params = []
     for section, m in _M.items():
         for index, row in enumerate(FIXTURES[section]["invalid"]):
             if "prefix" not in row:
                 continue
-            reason = _NO_LIMIT if set(row["words"]) == {20} else None
-            err_msg = None
+            if set(row["words"]) == {20}:
+                continue
+            err_msg = "^HRP character out of range"
             if 128 in row["words"]:
                 err_msg = "^invalid 5-bit value: 128$"
-            elif reason is None:
-                err_msg = "^HRP character out of range"
             params.append(
                 pytest.param(
                     row["prefix"],
@@ -391,7 +387,6 @@ def _bitcoinjs_encodes() -> list[Any]:
                     m,
                     err_msg,
                     id=f"{section}-{index}",
-                    marks=_xfail(reason),
                 )
             )
     return params
@@ -472,62 +467,83 @@ _CORE_ERRORS = {
     "Invalid Bech32 checksum": "^invalid checksum$",
     "Invalid Bech32m checksum": "^invalid checksum$",
     # Core's string of one hundred "q" has no separator, and is refused for
-    # that here, the length limit being Core's
+    # that here; the other two of this error are read
     "Bech32 string too long": "^no separator character$",
 }
+
+
+def _core_is_read(text: str, error: str) -> bool:
+    """Whether Core refuses `text` for its length and this package reads it."""
+    return error == "Bech32 string too long" and "1" in text
 
 
 def _core() -> list[Any]:
     """Return Core's invalid strings, as test parameters.
 
-    The long ones whose checksum holds are read here, and are marked.
+    The long ones whose checksum holds are read, so they are not here.
     """
     return [
-        pytest.param(
-            text,
-            m,
-            error,
-            _CORE_ERRORS[error],
-            id=f"{section}-{index}",
-            marks=_xfail(
-                _NO_LIMIT if error == "Bech32 string too long" and "1" in text else None
-            ),
-        )
+        pytest.param(text, m, _CORE_ERRORS[error], id=f"{section}-{index}")
         for section, m in _M.items()
         for index, (text, error, _) in enumerate(CORE[section])
+        if not _core_is_read(text, error)
     ]
 
 
-@pytest.mark.parametrize("text, m, error, err_msg", _core())
-def test_cores_invalid_strings_are_refused(
-    text: str, m: int, error: str, err_msg: str
-) -> None:
-    """Each string, with the message that answers Core's `error`."""
+@pytest.mark.parametrize("text, m, err_msg", _core())
+def test_cores_invalid_strings_are_refused(text: str, m: int, err_msg: str) -> None:
+    """Each string, with the message that answers Core's error."""
     with pytest.raises(Base58Bech32ValueError, match=err_msg):
         bech32_decode(text, m=m)
 
 
+def _read_for_length() -> list[Any]:
+    """Return the strings and words peers refuse only for their length."""
+    params = [
+        pytest.param(text, m, id=f"core-{section}-{index}")
+        for section, m in _M.items()
+        for index, (text, error, _) in enumerate(CORE[section])
+        if _core_is_read(text, error)
+    ]
+    for section, m in _M.items():
+        for index, row in enumerate(FIXTURES[section]["invalid"]):
+            if row.get("string", "").startswith("an84"):
+                params.append(
+                    pytest.param(row["string"], m, id=f"bitcoinjs-{section}-{index}")
+                )
+    return params
+
+
+@pytest.mark.parametrize("text, m", _read_for_length())
+def test_the_strings_peers_refuse_for_their_length_are_read(text: str, m: int) -> None:
+    """Over the 90 characters of BIP173, with a valid checksum: read."""
+    assert len(text) > 90
+    hrp, values, verified = bech32_decode(text, m=m)
+    assert verified == m
+    assert bech32_encode(hrp, values, m=m) == text.encode("ascii")
+
+
+@pytest.mark.parametrize("section, m", list(_M.items()))
+def test_the_words_bitcoinjs_refuses_for_their_length_are_written(
+    section: str, m: int
+) -> None:
+    """The `foobar` words of the fixtures, written and read back."""
+    (row,) = (
+        r
+        for r in FIXTURES[section]["invalid"]
+        if "words" in r and set(r["words"]) == {20}
+    )
+    text = bech32_encode(row["prefix"], row["words"], m=m)
+    assert len(text) > 90
+    assert bech32_decode(text, m=m) == (row["prefix"], row["words"], m)
+
+
 # polkadot-js's `checkAddress` tests in `check.spec.ts`: the address whose
-# fifth character is an "I", which the Base58 alphabet does not have. The
-# prefix 69 and 252 addresses of its `checksum.spec.ts` are valid, each
-# with a two-byte prefix before a payload of 32 bytes
+# fifth character is an "I", which the Base58 alphabet does not have
 _POLKADOT_I = "5EnxIUmEbw8DkENKiYuZ1DwQuMoB2UWEQJZZXrTsxoz7SpgG"
-_POLKADOT_TWO_BYTE_PREFIXES = [
-    ("cnVvyMzRdqjwejTFuByQQ4w2yu78V2hpFixjHQz5zr6NSYsxA", 69),
-    ("xw8Ffc2SZtDqUJKd9Ky4vc7PRz2D2asuVkEEzf3WGAbw9cnfq", 252),
-]
 
 
 def test_polkadot_js_invalid_character_is_refused() -> None:
     """An "I" in an address is refused as a Base58 character."""
     with pytest.raises(Base58Bech32ValueError, match="invalid characters"):
         ss58_decode(_POLKADOT_I)
-
-
-@pytest.mark.parametrize("address, prefix", _POLKADOT_TWO_BYTE_PREFIXES)
-def test_polkadot_js_two_byte_prefixes_are_read(address: str, prefix: int) -> None:
-    """The prefix, and the payload with which the address is written again."""
-    decoded_prefix, payload = ss58_decode(address)
-    assert decoded_prefix == prefix
-    assert len(payload) == 32
-    assert ss58_encode(prefix, payload) == address.encode("ascii")

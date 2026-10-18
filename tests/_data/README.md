@@ -105,13 +105,14 @@ behind  0 revisions; that commit is the tip of the path
 Verdict: **transcribed**. The `CASES` and `ERRORS` of
 `bech32_testvectors_invalid` and `bech32m_testvectors_invalid`, paired as
 `[string, Core's error, where it locates it]`. A byte with its high bit set
-is written as the code point of that value. Not taken: the valid vectors, which
-`tests/bech32_test.py` carries from the specifications, and `LocateErrors`'s
-positions, which this package does not compute.
+is written as the code point of that value. The positions `LocateErrors`
+gives are taken and not asserted, this package not computing them. Not taken:
+the valid vectors, which `tests/bech32_test.py` carries from the
+specifications.
 
-Core refuses a string over its character limit and this package has no limit,
-so its over-long vector with a valid checksum is read, and its test marks it
-`xfail`.
+Core refuses a string over its character limit and this package has no limit.
+The over-long vector of each table whose checksum holds is read, and
+`tests/refusals_test.py` asserts that.
 
 ## Other projects
 
@@ -153,8 +154,10 @@ behind  0 revisions; that commit is the tip of the path
 Verdict: **identical**. Each invalid string and each invalid `prefix` with
 `words` comes with the message bitcoinjs expects, and `fromWords` has its
 padding refusals. `tests/refusals_test.py` asserts the refusal of each,
-and that a valid string is refused under the other constant. The strings
-over bitcoinjs's length limit are read by this package, which has none.
+and that a valid string is refused under the other constant. This package
+has no length limit, so it reads the `an84` strings and writes the `foobar`
+words that bitcoinjs refuses for their length; the other string over the
+limit is refused for its checksum.
 
 ### `tests/_data/ss58_encode_vectors.json`
 

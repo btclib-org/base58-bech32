@@ -208,3 +208,20 @@ def test_round_trip(prefix: int, payload: bytes) -> None:
     assert len(address) <= 51
     assert ss58_decode(address) == (prefix, payload)
     assert ss58_decode(address.decode("ascii")) == (prefix, payload)
+
+
+# the addresses of polkadot-js's `checksum.spec.ts` with a two-byte prefix of
+# 69 and of 252, whose payload is 32 bytes; its decode vectors have others
+@pytest.mark.parametrize(
+    "address, prefix",
+    [
+        ("cnVvyMzRdqjwejTFuByQQ4w2yu78V2hpFixjHQz5zr6NSYsxA", 69),
+        ("xw8Ffc2SZtDqUJKd9Ky4vc7PRz2D2asuVkEEzf3WGAbw9cnfq", 252),
+    ],
+)
+def test_polkadot_js_two_byte_prefixes_are_read(address: str, prefix: int) -> None:
+    """The prefix, and the payload with which the address is written again."""
+    decoded_prefix, payload = ss58_decode(address)
+    assert decoded_prefix == prefix
+    assert len(payload) == 32
+    assert ss58_encode(prefix, payload) == address.encode("ascii")
