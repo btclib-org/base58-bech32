@@ -190,10 +190,10 @@ def bech32_decode(bech: String, *, m: int | None = None) -> tuple[str, list[int]
     The `m` returned is the constant the checksum verifies with:
     `BECH32_1_CONST` for bech32, `BECH32_M_CONST` for bech32m. With `m`
     None either constant verifies; a constant passed as `m` must be the
-    one that verifies; any other value is refused. A caller holding a segwit address checks the
-    returned `m` against the witness version, as BIP350 says. The string
-    is given as a str or as its ascii bytes, and the HRP comes back
-    lowercase.
+    one that verifies; any other value is refused. A caller holding a
+    segwit address checks the returned `m` against the witness version,
+    as BIP350 says. The string is given as a str or as its ascii bytes,
+    and the HRP comes back lowercase.
 
     BIP173 caps the string at 90 characters and the HRP at 83. This
     function caps neither, by decision: BOLT11's Lightning invoices are
