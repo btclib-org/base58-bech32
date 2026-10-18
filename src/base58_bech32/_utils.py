@@ -65,7 +65,9 @@ def _assert_byte_shaped(octets: bytes | bytearray | memoryview) -> None:
 def bytes_from_octets(
     octets: Octets, out_size: int | Iterable[int] | None = None
 ) -> bytes:
-    """Return bytes from a hex-string, stripping leading/trailing spaces.
+    """Return bytes from a hex-string, as `bytes.fromhex` reads it.
+
+    `bytes.fromhex` skips ASCII whitespace between bytes.
 
     A `bytearray` or a `memoryview` is copied, which is what makes the
     `bytes` this promises true: handed back as it came, either is still
