@@ -21,10 +21,10 @@ from hypothesis import given
 from hypothesis import strategies as st
 
 from base58_bech32.base58 import (
+    _PLAIN_MAX,
     BITCOIN_ALPHABET,
     MAX_LENGTH,
     RIPPLE_ALPHABET,
-    _PLAIN_MAX,
     _b58decode_to_int,
     _b58encode_from_int,
     _tables,
@@ -356,7 +356,7 @@ def test_round_trip(payload: bytes) -> None:
 
 
 def test_a_refused_alphabet_is_refused_whatever_was_cached() -> None:
-    """Validation shares `_tables`' cache: neither outcome leaks to the other."""
+    """A refused alphabet stays refused, and an accepted one accepted."""
     bad = BITCOIN_ALPHABET[:-1] + b"1"
     err_msg = "invalid alphabet: repeated characters"
     _tables.cache_clear()
