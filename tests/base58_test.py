@@ -112,9 +112,7 @@ def test_the_base58_packages_invalid_input(encoded: str) -> None:
 def test_whitespace_and_nul_are_invalid_characters(encoded: str) -> None:
     """Leading, trailing and embedded whitespace, and NUL, are refused.
 
-    Bitcoin Core's `DecodeBase58` skips whitespace at both ends and the
-    `base58` package strips it at the end; here it is a character outside
-    the alphabet, as the docstring and the migration page say.
+    As `b58decode`'s docstring says.
     """
     for decode in (b58decode, b58decode_check):
         for text in (encoded, encoded.encode("ascii")):

@@ -239,10 +239,9 @@ def b58decode(v: String, *, alphabet: bytes = BITCOIN_ALPHABET) -> bytes:
     No checksum is verified and no length is capped: `b58decode_check`
     does both. Decoding is quadratic in the length of the string.
 
-    Whitespace and NUL are characters outside the alphabet like any other,
-    and are refused. Bitcoin Core's `DecodeBase58` skips leading and
-    trailing whitespace, and the `base58` package strips trailing
-    whitespace: strip the string first to read what they read.
+    Whitespace and NUL are refused, unless the alphabet holds them.
+    Bitcoin Core's `DecodeBase58` skips leading and trailing whitespace,
+    and the `base58` package strips trailing whitespace.
     """
     _assert_valid_alphabet(alphabet)
     return _b58decode(_ascii_bytes(v), alphabet)
