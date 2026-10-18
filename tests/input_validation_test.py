@@ -41,9 +41,10 @@ to do without. `tests/bool_parameter_test.py` carries that table for the
 
 A function taking a plain `str`, an `int` or a list of 5-bit values
 needs a value the vocabulary does not build, and is driven by the tests
-of its own module. `test_the_walk_reaches_what_it_claims` pins what the
-walk does find, so a narrowing of it fails here rather than quietly
-running over less.
+of its own module. So is one with a keyword-only parameter that has no
+default: the walk passes its arguments by position.
+`test_the_walk_reaches_what_it_claims` pins what the walk does find, so
+a narrowing of it fails here rather than quietly running over less.
 """
 
 from __future__ import annotations
@@ -106,6 +107,10 @@ def _drivable() -> dict[str, list[str]]:
         module = ".".join(path.relative_to(_LIBRARY.parent).with_suffix("").parts)
         for node in ast.parse(path.read_text(encoding="utf-8")).body:
             if not isinstance(node, ast.FunctionDef) or node.name.startswith("_"):
+                continue
+            # a required keyword-only parameter, which `kw_defaults` holds
+            # as None
+            if None in node.args.kw_defaults:
                 continue
             positional = [*node.args.posonlyargs, *node.args.args]
             required = positional[: len(positional) - len(node.args.defaults)]
@@ -204,13 +209,13 @@ def test_the_vocabulary_is_the_packages_input_types() -> None:
 
 
 def test_the_walk_reaches_what_it_claims() -> None:
-    """The shapes the walk must find, and two it must not.
+    """The shapes the walk must find, and those it must not.
 
     A walk that found nothing would pass every test above. One function
     per shape it has to reach -- either type, and one behind a keyword it
-    must ignore -- and the two kinds it must leave alone: a private name,
-    and a function whose required parameters are not all in the
-    vocabulary.
+    must ignore -- and one of each kind it must leave alone: a private
+    name, a function whose required parameters are not all in the
+    vocabulary, and one with a required keyword-only parameter.
     """
     assert _DRIVABLE["base58_bech32.base58.b58encode"] == ["Octets"]
     assert _DRIVABLE["base58_bech32.cashaddr.cashaddr_decode"] == ["String"]
@@ -221,3 +226,5 @@ def test_the_walk_reaches_what_it_claims() -> None:
     assert "base58_bech32.base58._ascii_bytes" not in _DRIVABLE
     # a required parameter the vocabulary does not build: the prefix
     assert "base58_bech32.ss58.ss58_encode" not in _DRIVABLE
+    # a required keyword-only parameter: `m`
+    assert "base58_bech32.bech32.bech32_decode_bytes" not in _DRIVABLE

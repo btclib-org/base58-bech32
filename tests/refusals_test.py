@@ -26,7 +26,9 @@ from base58_bech32.bech32 import (
     BECH32_1_CONST,
     BECH32_M_CONST,
     bech32_decode,
+    bech32_decode_bytes,
     bech32_encode,
+    bech32_encode_bytes,
     convertbits,
 )
 from base58_bech32.cashaddr import cashaddr_decode, cashaddr_encode
@@ -50,6 +52,16 @@ _WRONG_TYPES: list[tuple[str, Callable[[], Any], str]] = [
         "bech32_encode(data=[float])",
         lambda: bech32_encode("bc", [1.0]),  # type: ignore[list-item]
         "invalid 5-bit value type: float",
+    ),
+    (
+        "bech32_encode_bytes(m=None)",
+        lambda: bech32_encode_bytes("a", _SECRET, m=None),  # type: ignore[arg-type]
+        "invalid m type: NoneType",
+    ),
+    (
+        "bech32_decode_bytes(m=None)",
+        lambda: bech32_decode_bytes("a12uel5l", m=None),  # type: ignore[arg-type]
+        "invalid m type: NoneType",
     ),
     (
         "convertbits(data=None)",
@@ -131,6 +143,18 @@ _DECODERS: list[tuple[str, Callable[[], Any]]] = [
         "bech32_decode, mixed case",
         lambda: bech32_decode(
             bech32_encode("a", convertbits(_SECRET, 8, 5)).decode().capitalize()
+        ),
+    ),
+    (
+        "bech32_decode_bytes",
+        lambda: bech32_decode_bytes(
+            _corrupted(bech32_encode_bytes("a", _SECRET, m=1)), m=1
+        ),
+    ),
+    (
+        "bech32_decode_bytes, padding",
+        lambda: bech32_decode_bytes(
+            bech32_encode("a", [*convertbits(_SECRET, 8, 5), 1], m=1), m=1
         ),
     ),
     ("ss58_decode", lambda: ss58_decode(_corrupted(ss58_encode(42, _SECRET)))),
