@@ -34,7 +34,7 @@ from base58_bech32._utils import (
     is_integer,
     str_from_string,
 )
-from base58_bech32.bech32 import _ALPHABET, _INDEX_OF, _convertbits
+from base58_bech32.bech32 import _CHAR_OF, _DIGIT_OF, _NOT_A_DIGIT, _convertbits
 from base58_bech32.exceptions import Base58Bech32TypeError, Base58Bech32ValueError
 
 __all__ = [
@@ -98,8 +98,7 @@ def cashaddr_encode(prefix: str, kind: int, digest: Octets) -> bytes:
     payload = _convertbits([version, *digest], 8, 5, True)
     mod = _polymod(_prefix_expand(prefix) + payload + [0] * _CHECKSUM_SIZE)
     checksum = [(mod >> 5 * (7 - i)) & 31 for i in range(_CHECKSUM_SIZE)]
-    text = f"{prefix}:" + "".join(_ALPHABET[d] for d in payload + checksum)
-    return text.encode("ascii")
+    return f"{prefix}:".encode("ascii") + bytes(payload + checksum).translate(_CHAR_OF)
 
 
 def _split(text: str) -> tuple[str | None, str]:
@@ -109,7 +108,12 @@ def _split(text: str) -> tuple[str | None, str]:
     ascii letter, digit or ":", a second ":", a ":" first, a digit before
     the ":", and upper and lower case mixed. No refusal quotes the string.
     """
-    if not all(x.isascii() and (x.isalnum() or x == ":") for x in text):
+    # every ":" is taken out for the character check and counted after it,
+    # so that a second one is refused for what it is
+    letters_and_digits = text.replace(":", "")
+    if not (
+        text.isascii() and (letters_and_digits.isalnum() or not letters_and_digits)
+    ):
         raise Base58Bech32ValueError("invalid CashAddr character")
     if text.count(":") > 1:
         raise Base58Bech32ValueError("more than one CashAddr separator")
@@ -140,9 +144,11 @@ def _decode(address: String, prefix: str | None) -> tuple[str, list[int]]:
 
     if len(payload) < _CHECKSUM_SIZE:
         raise Base58Bech32ValueError("too short checksum")
-    values = [_INDEX_OF.get(x, -1) for x in payload]
-    if -1 in values:
+    # ascii by `_split`
+    digits = payload.encode("ascii").translate(_DIGIT_OF)
+    if _NOT_A_DIGIT in digits:
         raise Base58Bech32ValueError("invalid CashAddr payload character")
+    values = list(digits)
     if _polymod(_prefix_expand(written) + values):
         raise Base58Bech32ValueError("invalid checksum")
     return written, values[:-_CHECKSUM_SIZE]

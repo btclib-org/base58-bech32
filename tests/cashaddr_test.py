@@ -111,6 +111,28 @@ def test_the_string_refusals(address: str, err_msg: str) -> None:
         cashaddr_decode(address)
 
 
+@pytest.mark.parametrize(
+    "address, err_msg",
+    [
+        # the character check, then the separator count, then the case
+        ("a:b:\u00e9", "invalid CashAddr character"),
+        ("a:b:C", "more than one CashAddr separator"),
+        ("a:b:c", "more than one CashAddr separator"),
+        ("a:b c", "invalid CashAddr character"),
+        ("a:b_c", "invalid CashAddr character"),
+        ("A:b", "mixed case"),
+        ("::", "more than one CashAddr separator"),
+        (":", "empty CashAddr prefix"),
+        ("", "no CashAddr prefix, and none given"),
+        ("qqqq", "no CashAddr prefix, and none given"),
+    ],
+)
+def test_the_split_refusals_and_their_order(address: str, err_msg: str) -> None:
+    """The character check does not take a second ":" for a character."""
+    with pytest.raises(Base58Bech32ValueError, match=f"^{err_msg}$"):
+        cashaddr_decode(address)
+
+
 def test_the_prefix_refusals() -> None:
     """A prefix missing from both, or different from the one expected."""
     payload = _ADDRESS.split(":")[1]
