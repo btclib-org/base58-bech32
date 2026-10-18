@@ -104,8 +104,8 @@ behind  0 revisions; that commit is the tip of the path
 
 Verdict: **transcribed**. The `CASES` and `ERRORS` of
 `bech32_testvectors_invalid` and `bech32m_testvectors_invalid`, paired as
-`[string, Core's error, where it locates it]`. A byte above 127 is written as
-the code point of that value. Not taken: the valid vectors, which
+`[string, Core's error, where it locates it]`. A byte with its high bit set
+is written as the code point of that value. Not taken: the valid vectors, which
 `tests/bech32_test.py` carries from the specifications, and `LocateErrors`'s
 positions, which this package does not compute.
 

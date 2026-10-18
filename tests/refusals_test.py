@@ -225,7 +225,7 @@ def test_btcds_invalid_base58_strings_are_refused(text: str | bytes) -> None:
 
 # libbase58's `tests/decode-highbit.sh` and `decode-highbit-prefix.sh`: the
 # bytes 0x99, "2", "3" and "1", 0x99, "2", each with a byte above 127
-@pytest.mark.parametrize("text", [b"\x99" b"23", b"1\x99" b"2"])
+@pytest.mark.parametrize("text", [b"\x9923", b"1\x992"])
 def test_libbase58s_high_bit_strings_are_refused(text: bytes) -> None:
     """A byte with its high bit set is no Base58 character, anywhere."""
     err_msg = "^Base58 string contains invalid characters$"
@@ -250,7 +250,7 @@ def test_libbase58s_high_bit_strings_are_refused(text: bytes) -> None:
     ],
 )
 def test_libbase58s_checked_decodes_are_refused(text: str) -> None:
-    """Refused for the checksum, with and without the size libbase58 is given."""
+    """Refused for the checksum, with and without the size libbase58 gets."""
     for out_size in (None, 25):
         with pytest.raises(Base58Bech32ValueError, match="^invalid checksum$"):
             b58decode_check(text, out_size=out_size)
@@ -311,8 +311,10 @@ _BITCOINJS_DECODE = [
     ("Invalid checksum", "^invalid checksum$"),
     (
         "Unknown character",
-        "^(invalid data character|invalid character in checksum"
-        "|data part character out of range)$",
+        (
+            "^(invalid data character|invalid character in checksum"
+            "|data part character out of range)$"
+        ),
     ),
 ]
 _BITCOINJS_LENGTH = "Exceeds length limit"

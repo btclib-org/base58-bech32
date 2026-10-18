@@ -201,7 +201,9 @@ _PREFIX_END = _ADDRESS.index(":")
         pytest.param(-1, id="checksum"),
     ],
 )
-@pytest.mark.parametrize("address", [_ADDRESS, _ADDRESS.upper()], ids=["lower", "upper"])
+@pytest.mark.parametrize(
+    "address", [_ADDRESS, _ADDRESS.upper()], ids=["lower", "upper"]
+)
 def test_a_character_folding_onto_ascii_is_refused_in_each_region(
     char: str, position: int, address: str
 ) -> None:
@@ -221,7 +223,7 @@ def test_a_character_folding_onto_ascii_is_refused_in_each_region(
 def test_a_character_folding_onto_ascii_is_refused_in_a_given_prefix(
     char: str, prefix: str
 ) -> None:
-    """The prefix `cashaddr_encode` and `cashaddr_decode` take is held to letters."""
+    """The prefix both functions take is held to ascii lowercase letters."""
     prefix = prefix.format(char)
     with pytest.raises(Base58Bech32ValueError, match="^invalid CashAddr prefix: "):
         cashaddr_encode(prefix, 0, bytes(20))
