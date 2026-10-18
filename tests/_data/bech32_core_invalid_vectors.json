@@ -1,0 +1,39 @@
+{
+  "bech32": [
+    [" 1nwldj5", "Invalid character or mixed case", [0]],
+    ["\u007f1axkwrx", "Invalid character or mixed case", [0]],
+    ["\u00801eym55h", "Invalid character or mixed case", [0]],
+    ["an84characterslonghumanreadablepartthatcontainsthenumber1andtheexcludedcharactersbio1569pvx", "Bech32 string too long", [90]],
+    ["pzry9x0s0muk", "Missing separator", []],
+    ["1pzry9x0s0muk", "Invalid separator position", [0]],
+    ["x1b4n0q5v", "Invalid Base 32 character", [2]],
+    ["li1dgmt3", "Invalid separator position", [2]],
+    ["de1lg7wt\u00ff", "Invalid character or mixed case", [8]],
+    ["A1G7SGD8", "Invalid checksum", []],
+    ["10a06t8", "Invalid separator position", [0]],
+    ["1qzzfhee", "Invalid separator position", [0]],
+    ["a12UEL5L", "Invalid character or mixed case", [3, 4, 5, 7]],
+    ["A12uEL5L", "Invalid character or mixed case", [3]],
+    ["abcdef1qpzrz9x8gf2tvdw0s3jn54khce6mua7lmqqqxw", "Invalid Bech32 checksum", [11]],
+    ["test1zg69w7y6hn0aqy352euf40x77qddq3dc", "Invalid Bech32 checksum", [9, 16]],
+    ["qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq", "Bech32 string too long", [90]]
+  ],
+  "bech32m": [
+    [" 1xj0phk", "Invalid character or mixed case", [0]],
+    ["\u007f1g6xzxy", "Invalid character or mixed case", [0]],
+    ["\u00801vctc34", "Invalid character or mixed case", [0]],
+    ["an84characterslonghumanreadablepartthatcontainsthetheexcludedcharactersbioandnumber11d6pts4", "Bech32 string too long", [90]],
+    ["qyrz8wqd2c9m", "Missing separator", []],
+    ["1qyrz8wqd2c9m", "Invalid separator position", [0]],
+    ["y1b0jsk6g", "Invalid Base 32 character", [2]],
+    ["lt1igcx5c0", "Invalid Base 32 character", [3]],
+    ["in1muywd", "Invalid separator position", [2]],
+    ["mm1crxm3i", "Invalid Base 32 character", [8]],
+    ["au1s5cgom", "Invalid Base 32 character", [7]],
+    ["M1VUXWEZ", "Invalid checksum", []],
+    ["16plkw9", "Invalid separator position", [0]],
+    ["1p2gdwpf", "Invalid separator position", [0]],
+    ["abcdef1l7aum6echk45nj2s0wdvt2fg8x9yrzpqzd3ryx", "Invalid Bech32m checksum", [21]],
+    ["test1zg69v7y60n00qy352euf40x77qcusag6", "Invalid Bech32m checksum", [13, 32]]
+  ]
+}

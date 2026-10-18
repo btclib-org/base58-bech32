@@ -359,6 +359,52 @@ def test_a_data_part_character_out_of_range_is_refused_first(
         bech32_decode("".join(chars))
 
 
+# the characters that case-fold onto ascii: U+212A lowers onto "k", U+0130
+# lowers to "i" and a combining dot, and U+017F uppercases onto "S"
+_FOLDING = [
+    pytest.param("\N{KELVIN SIGN}", id="kelvin-sign"),
+    pytest.param("\N{LATIN CAPITAL LETTER I WITH DOT ABOVE}", id="capital-i-with-dot"),
+    pytest.param("\N{LATIN SMALL LETTER LONG S}", id="long-s"),
+]
+
+
+@pytest.mark.parametrize("char", _FOLDING)
+@pytest.mark.parametrize(
+    "position, err_msg",
+    [
+        pytest.param(0, "^HRP character out of range$", id="hrp"),
+        pytest.param(3, "^data part character out of range$", id="data"),
+        pytest.param(-1, "^data part character out of range$", id="checksum"),
+    ],
+)
+@pytest.mark.parametrize("address", [_UPPER, _UPPER.lower()], ids=["upper", "lower"])
+def test_a_character_folding_onto_ascii_is_refused_in_each_region(
+    char: str, position: int, err_msg: str, address: str
+) -> None:
+    """Each of the three, in the HRP, the data and the checksum.
+
+    scure-base's suite puts the Kelvin sign in each of these places.
+    Whatever the string's case, the refusal is the package's and never an
+    acceptance.
+    """
+    chars = list(address)
+    chars[position] = char
+    with pytest.raises(Base58Bech32ValueError, match=err_msg):
+        bech32_decode("".join(chars))
+    with pytest.raises(Base58Bech32ValueError, match=err_msg):
+        bech32_decode("".join(chars), m=BECH32_1_CONST)
+
+
+@pytest.mark.parametrize("char", _FOLDING)
+@pytest.mark.parametrize("hrp", ["{}", "b{}", "{}c"])
+def test_a_character_folding_onto_ascii_is_refused_in_the_encoders_hrp(
+    char: str, hrp: str
+) -> None:
+    """`bech32_encode` refuses the HRP, as `bech32_decode` refuses its own."""
+    with pytest.raises(Base58Bech32ValueError, match="^HRP character out of range"):
+        bech32_encode(hrp.format(char), [0])
+
+
 @given(
     char=st.characters(exclude_characters=[chr(c) for c in range(33, 127)]),
     position=st.integers(min_value=0),
@@ -467,7 +513,7 @@ def test_the_uppercase_form_for_qr_codes_is_read_back(m: int | None) -> None:
         written = bech32_encode(hrp, data, m=m)
         assert written == written.lower()
         for upper in (written.upper(), written.upper().decode("ascii")):
-            assert bech32_decode(upper, m=m) == (hrp, data)
+            assert bech32_decode(upper, m=m)[:2] == (hrp, data)
 
 
 def test_the_witness_program_round_trip() -> None:

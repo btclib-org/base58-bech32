@@ -182,6 +182,53 @@ def test_the_uppercase_form_for_qr_codes_is_read_back() -> None:
             assert cashaddr_decode(upper) == (prefix, kind, digest)
 
 
+# the characters that case-fold onto ascii: U+212A lowers onto "k", U+0130
+# lowers to "i" and a combining dot, and U+017F uppercases onto "S"
+_FOLDING = [
+    pytest.param("\N{KELVIN SIGN}", id="kelvin-sign"),
+    pytest.param("\N{LATIN CAPITAL LETTER I WITH DOT ABOVE}", id="capital-i-with-dot"),
+    pytest.param("\N{LATIN SMALL LETTER LONG S}", id="long-s"),
+]
+_PREFIX_END = _ADDRESS.index(":")
+
+
+@pytest.mark.parametrize("char", _FOLDING)
+@pytest.mark.parametrize(
+    "position",
+    [
+        pytest.param(0, id="prefix"),
+        pytest.param(_PREFIX_END + 1, id="payload"),
+        pytest.param(-1, id="checksum"),
+    ],
+)
+@pytest.mark.parametrize("address", [_ADDRESS, _ADDRESS.upper()], ids=["lower", "upper"])
+def test_a_character_folding_onto_ascii_is_refused_in_each_region(
+    char: str, position: int, address: str
+) -> None:
+    """Each of the three, in the prefix and in the payload.
+
+    `_split` holds every character to ascii before it lowers the string,
+    so none of them is read as the letter it folds onto.
+    """
+    chars = list(address)
+    chars[position] = char
+    with pytest.raises(Base58Bech32ValueError, match="^invalid CashAddr character$"):
+        cashaddr_decode("".join(chars))
+
+
+@pytest.mark.parametrize("char", _FOLDING)
+@pytest.mark.parametrize("prefix", ["{}", "b{}", "{}c"])
+def test_a_character_folding_onto_ascii_is_refused_in_a_given_prefix(
+    char: str, prefix: str
+) -> None:
+    """The prefix `cashaddr_encode` and `cashaddr_decode` take is held to letters."""
+    prefix = prefix.format(char)
+    with pytest.raises(Base58Bech32ValueError, match="^invalid CashAddr prefix: "):
+        cashaddr_encode(prefix, 0, bytes(20))
+    with pytest.raises(Base58Bech32ValueError, match="^invalid CashAddr prefix: "):
+        cashaddr_decode(_ADDRESS.split(":")[1], prefix=prefix)
+
+
 @given(
     prefix=st.text(alphabet="abcdefghijklmnopqrstuvwxyz", min_size=1, max_size=12),
     kind=st.integers(0, 15),
