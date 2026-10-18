@@ -24,14 +24,16 @@ by way of btclib, with the following modifications:
 * type annotated Python3
 * the checked decoder refuses a string longer than `MAX_LENGTH`
 * an optional check on the decoded size
-* translation tables and ten digits per big-integer step, where the
-  original reads one character at a time
+* translation tables, and ten digits per big-integer step in the encoder
+  and in the decoder of a long string, where the original reads one
+  character at a time
 """
 
 from __future__ import annotations
 
 import functools
 import hashlib
+import hmac
 from collections.abc import Iterable
 
 from base58_bech32._utils import (
@@ -62,14 +64,21 @@ RIPPLE_ALPHABET = b"rpshnaf39wBUDNEGHJKLM4PQRST7VWXYZ2bcdeCg65jkm8oFqi1tuvAxyz"
 
 _BASE = 58
 
-# how many digits are carried through the big-integer arithmetic at a
-# time. 58**10 < 2**64, so a chunk's ten digits come out of an int the
-# machine holds in a register, and the multiplication or division that
-# costs O(size of the number) is paid once per ten digits instead of once
-# per digit. Both loops stay quadratic in the length of the string -- the
-# accumulator grows -- with a tenth of the coefficient
+# how many digits the encoder, and the decoder of a long string, carry
+# through the big-integer arithmetic at a time. 58**10 < 2**64, so a
+# chunk's ten digits come out of an int the machine holds in a register,
+# and the multiplication or division that costs O(size of the number) is
+# paid once per ten digits instead of once per digit. Both loops stay
+# quadratic in the length of the string -- the accumulator grows -- with a
+# tenth of the coefficient
 _CHUNK = 10
 _CHUNK_BASE = _BASE**_CHUNK
+
+# the decoder reads a string of at most this many characters one digit at
+# a time: for a short string the chunks' slicing and extra multiplication
+# cost more than they save, and past this length they pay. The length is
+# measured, and differs by interpreter
+_PLAIN_MAX = 64
 
 #: The longest string `b58decode_check` decodes: a BIP32 extended key,
 #: 78 bytes of payload and 4 of checksum, takes at most 112 characters.
@@ -84,19 +93,15 @@ MAX_LENGTH = 112
 def _tables(alphabet: bytes) -> tuple[bytes, bytes]:
     """Return the digit-of and character-of translation tables of an alphabet.
 
+    Refuse what is not 58 distinct ascii bytes. Validation and tables
+    share one cache, so that an alphabet is never in one and not the
+    other; a refusal is not cached.
+
     A whole string is translated in one C pass, where looking a character
     up in the alphabet is a scan of 58 bytes. `bytes.maketrans` leaves
     every byte it is not given alone, which is why a decoder asks first
     whether every character is in the alphabet.
     """
-    digit_of = bytes.maketrans(alphabet, bytes(range(_BASE)))
-    char_of = bytes.maketrans(bytes(range(_BASE)), alphabet)
-    return digit_of, char_of
-
-
-def _assert_valid_alphabet(alphabet: bytes) -> None:
-    """Refuse what is not 58 distinct ascii bytes."""
-    assert_type(alphabet, bytes, "alphabet")
     if len(alphabet) != _BASE:
         err_msg = f"invalid alphabet size: {len(alphabet)} bytes instead of {_BASE}"
         raise Base58Bech32ValueError(err_msg)
@@ -105,6 +110,16 @@ def _assert_valid_alphabet(alphabet: bytes) -> None:
     # the encoders answer ascii bytes, and a decoder reads ascii only
     if not alphabet.isascii():
         raise Base58Bech32ValueError("invalid alphabet: non-ascii byte")
+    digit_of = bytes.maketrans(alphabet, bytes(range(_BASE)))
+    char_of = bytes.maketrans(bytes(range(_BASE)), alphabet)
+    return digit_of, char_of
+
+
+def _assert_valid_alphabet(alphabet: bytes) -> None:
+    """Refuse what is not 58 distinct ascii bytes."""
+    # the type first: an unhashable alphabet would reach the cache's key
+    assert_type(alphabet, bytes, "alphabet")
+    _tables(alphabet)
 
 
 def _b58encode_from_int(i: int, char_of: bytes) -> bytes:
@@ -172,6 +187,10 @@ def b58encode_check(
 def _b58decode_to_int(v: bytes, digit_of: bytes) -> int:
     digits = v.translate(digit_of)
     i = 0
+    if len(digits) <= _PLAIN_MAX:
+        for digit in digits:
+            i = i * _BASE + digit
+        return i
     for start in range(0, len(digits), _CHUNK):
         chunk = digits[start : start + _CHUNK]
         value = 0
@@ -278,7 +297,7 @@ def b58decode_check(
 
     result, checksum = result[:-4], result[-4:]
     expected = hashlib.sha256(hashlib.sha256(result).digest()).digest()[:4]
-    if checksum != expected:
+    if not hmac.compare_digest(checksum, expected):
         err_msg = "invalid checksum"
         if not secret:
             err_msg += f": 0x{checksum.hex()} instead of 0x{expected.hex()}"
