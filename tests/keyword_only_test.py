@@ -39,12 +39,12 @@ if TYPE_CHECKING:
 # public callable that takes at least one keyword-only parameter, and the
 # names of those parameters in declaration order
 KEYWORD_ONLY: dict[str, list[str]] = {
-    "base58_bech32.base58:b58decode": ["alphabet"],
+    "base58_bech32.base58:b58decode": ["alphabet", "max_length"],
     "base58_bech32.base58:b58decode_check": ["out_size", "alphabet"],
     "base58_bech32.base58:b58encode": ["alphabet"],
     "base58_bech32.base58:b58encode_check": ["in_size", "alphabet"],
-    "base58_bech32.bech32:bech32_decode": ["m"],
-    "base58_bech32.bech32:bech32_encode": ["m"],
+    "base58_bech32.bech32:bech32_decode": ["m", "limit"],
+    "base58_bech32.bech32:bech32_encode": ["m", "limit"],
     "base58_bech32.cashaddr:cashaddr_decode": ["prefix"],
 }
 

@@ -114,8 +114,8 @@ to, and what counters each.
 - **Uncontrolled resource consumption (CWE-400).** Base58 decoding is
   quadratic in the string's length, so `b58decode_check` refuses a string
   over `MAX_LENGTH` characters and `ss58_decode` one over the longest an
-  SS58 address can be. Plain `b58decode` has no cap, as the `base58`
-  package has none.
+  SS58 address can be. Plain `b58decode` caps nothing unless its caller
+  passes `max_length`, the `base58` package having no cap at all.
 - **Exposure of sensitive information (CWE-209).** No decoder's refusal
   quotes the string it was handed (`tests/refusals_test.py`), nor a
   checksum, which is computed from the payload: each codec's tests

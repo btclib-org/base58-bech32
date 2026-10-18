@@ -53,7 +53,7 @@ def test_core_codec_vectors(hexed: str, encoded: str) -> None:
     """Both directions of Core's codec vectors, over plain Base58.
 
     One row is 256 bytes, 348 characters: `b58decode_check` would refuse
-    it on `MAX_LENGTH`, the plain decoder being uncapped.
+    it on `MAX_LENGTH`, the plain decoder being uncapped by default.
     """
     raw = bytes.fromhex(hexed)
     assert b58encode(raw) == encoded.encode("ascii")
@@ -332,8 +332,46 @@ def test_max_length() -> None:
         b58decode_check(b"1" * (MAX_LENGTH + 1))
     with pytest.raises(Base58Bech32ValueError, match=err_msg):
         b58decode_check("1" * (MAX_LENGTH + 1))
-    # the plain decoder is uncapped
+    # the plain decoder is uncapped by default
     assert b58decode("1" * (MAX_LENGTH + 1)) == bytes(MAX_LENGTH + 1)
+
+
+def test_the_plain_decoder_caps_at_max_length() -> None:
+    """A string longer than `max_length` is refused, one that long is not."""
+    assert b58decode("1" * 10, max_length=10) == bytes(10)
+    err_msg = "^too many base58 characters: 11, max is 10$"
+    with pytest.raises(Base58Bech32ValueError, match=err_msg):
+        b58decode("1" * 11, max_length=10)
+    with pytest.raises(Base58Bech32ValueError, match=err_msg):
+        b58decode(b"1" * 11, max_length=10)
+
+
+def test_the_length_refusal_comes_before_the_character_refusal() -> None:
+    """`"0"` is no Base58 character, and a string too long is refused for that.
+
+    The cap is there to refuse before any work: a string refused for a
+    character would have been read first.
+    """
+    with pytest.raises(Base58Bech32ValueError, match="^too many base58 characters"):
+        b58decode("0" * 11, max_length=10)
+    with pytest.raises(Base58Bech32ValueError, match="invalid characters$"):
+        b58decode("0" * 10, max_length=10)
+
+
+@pytest.mark.parametrize("max_length", [True, False, "10", 10.0])
+def test_max_length_is_an_integer(max_length: object) -> None:
+    """A cap of any other type is refused, a bool included."""
+    with pytest.raises(Base58Bech32TypeError, match="^invalid max_length type: "):
+        b58decode("1", max_length=max_length)  # type: ignore[arg-type]
+
+
+def test_a_negative_max_length_is_refused() -> None:
+    """No string is shorter than zero characters; zero refuses all but ""."""
+    with pytest.raises(Base58Bech32ValueError, match="^invalid max_length: -1 < 0$"):
+        b58decode("1", max_length=-1)
+    assert b58decode("", max_length=0) == b""
+    with pytest.raises(Base58Bech32ValueError, match="^too many base58 characters"):
+        b58decode("1", max_length=0)
 
 
 def test_decode_refuses_a_memoryview_of_the_wrong_shape() -> None:
