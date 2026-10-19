@@ -541,7 +541,7 @@ done
 #   "base58_bech32-2026.10.18.dev301.tar.gz"]}
 ```
 
-Read on 2026-10-18T12:32Z, the project pages answer `200` on both
+Read on 2026-10-19T10:19Z, the project pages answer `200` on both
 indexes, and the release run's jobs ended as the next block prints:
 
 ```shell
@@ -567,16 +567,15 @@ token `release.yml` gives the job, which is trusted publishing. The
 last command finds no `password` in the workflow:
 
 ```shell
-git grep -n -B1 -A2 'uses: pypa/gh-action-pypi-publish' \
-  -- .github/workflows/release.yml | sed 's#.github/workflows/##'
+git grep -n -B1 'uses: pypa/gh-action-pypi-publish' \
+  -- .github/workflows/release.yml \
+  | sed -e 's#.github/workflows/##' \
+        -e 's/@\([0-9a-f]\{7\}\)[0-9a-f]*/@\1…/'
 # release.yml-187-      - name: Publish to TestPyPI
 # release.yml:188:        uses: pypa/gh-action-pypi-publish@dc37677… # v1.14.2
-# release.yml-189-        with:
-# release.yml-190-          repository-url: https://test.pypi.org/legacy/
 # --
 # release.yml-230-      - name: Publish to PyPI
 # release.yml:231:        uses: pypa/gh-action-pypi-publish@dc37677… # v1.14.2
-# (line 232 is empty)
 git grep -n 'password' -- .github/workflows/release.yml
 # (nothing, exit 1)
 ```
@@ -660,8 +659,9 @@ the API does not expose it,
 `automation-rules/` answering `404` where an endpoint needing a token,
 such as `redirects/`, answers `401`. What shows it at work is the
 release: the `documented / Check read the docs built the tag` job of run
-39125580342 succeeded, and `/en/v2026.10.18/` answers `200` above, so the
-tag was activated and built. That is evidence of the rule's effect, not
+39125580342 succeeded (the job list under *Publishing* prints it), and
+`/en/v2026.10.18/` answers `200` above, so the tag was activated and
+built. That is evidence of the rule's effect, not
 a read of the rule.
 
 **Neither the `default_branch` call nor the versions call fails on a
@@ -858,7 +858,12 @@ gh api repos/btclib-org/base58-bech32/actions/secrets --jq .total_count
 # 0
 gh api repos/btclib-org/base58-bech32/dependabot/secrets --jq .total_count
 # 0
+gh api repos/btclib-org/base58-bech32/actions/organization-secrets \
+  --jq '[.total_count, [.secrets[].name]]'
+# [1,["CLAUDE_CODE_OAUTH_TOKEN"]]
 ```
+
+The third call reads the organization secrets the repository can see.
 
 **A switch this repository does not set.** `claude-review.yml` calls
 `btclib-org/.github`'s `reusable-claude-review.yml`, whose jobs guard on
