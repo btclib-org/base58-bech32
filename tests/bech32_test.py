@@ -51,10 +51,13 @@ from base58_bech32.bech32 import (
     _create_checksum,
     _hrp_in_range,
     bech32_decode,
+    bech32_decode_bytes,
     bech32_encode,
+    bech32_encode_bytes,
     convertbits,
 )
 from base58_bech32.exceptions import Base58Bech32TypeError, Base58Bech32ValueError
+from tests import FOLDING
 
 
 def test_the_tap_table_holds_the_taps_it_replaces() -> None:
@@ -400,9 +403,7 @@ def test_a_character_lowering_onto_the_alphabet_is_refused() -> None:
 @pytest.mark.parametrize(
     "char",
     [
-        "\u212a",  # KELVIN SIGN, lowers to "k"
-        "\u0130",  # LATIN CAPITAL LETTER I WITH DOT ABOVE, lowers to two
-        "\u017f",  # LATIN SMALL LETTER LONG S, uppercases to "S"
+        *FOLDING,
         "\u1e9e",  # LATIN CAPITAL LETTER SHARP S, casefolds to "ss"
         "\x7f",  # DEL, one above the range
         "\x80",  # one above ASCII
@@ -428,6 +429,36 @@ def test_a_data_part_character_out_of_range_is_refused_first(
         Base58Bech32ValueError, match="data part character out of range"
     ):
         bech32_decode("".join(chars))
+
+
+@pytest.mark.parametrize("char", FOLDING)
+@pytest.mark.parametrize("address", [_UPPER, _UPPER.lower()], ids=["upper", "lower"])
+def test_a_character_folding_onto_ascii_is_refused_in_the_hrp(
+    char: str, address: str
+) -> None:
+    """Each of `FOLDING`, in the HRP, under either `m`.
+
+    The data and the checksum are
+    `test_a_data_part_character_out_of_range_is_refused_first`'s. Whatever
+    the string's case, the refusal is the package's and never an acceptance.
+    """
+    chars = list(address)
+    chars[0] = char
+    for m in (None, BECH32_1_CONST):
+        with pytest.raises(
+            Base58Bech32ValueError, match="^HRP character out of range$"
+        ):
+            bech32_decode("".join(chars), m=m)
+
+
+@pytest.mark.parametrize("char", FOLDING)
+@pytest.mark.parametrize("hrp", ["{}", "b{}", "{}c"])
+def test_a_character_folding_onto_ascii_is_refused_in_the_encoders_hrp(
+    char: str, hrp: str
+) -> None:
+    """`bech32_encode` refuses the HRP, as `bech32_decode` refuses its own."""
+    with pytest.raises(Base58Bech32ValueError, match="^HRP character out of range"):
+        bech32_encode(hrp.format(char), [0])
 
 
 @given(
@@ -631,3 +662,230 @@ def test_both_constants_and_none_are_accepted() -> None:
         assert bech32_decode(bech32_encode("a", [1], m=m), m=m) == ("a", [1], m)
         assert bech32_decode(bech32_encode("a", [1], m=m)) == ("a", [1], m)
     assert bech32_decode(bech32_encode("a", [1])) == ("a", [1], BECH32_M_CONST)
+
+
+# btcd's `TestCanDecodeUnlimitedBech32` (btcsuite/btcd,
+# `address/bech32/bech32_test.go`): 91 characters, one over BIP173's 90
+_BTCD_91 = (
+    "11qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqsqqqqqqqqqqqqqqqqqqq"
+    "qqqqqqqqqqqqqqqqq5kx0yd"
+)
+
+
+def test_btcd_91_characters_and_the_bip173_limit() -> None:
+    """Refused at BIP173's 90, decoded without a limit and by default."""
+    assert len(_BTCD_91) == 91
+    with pytest.raises(
+        Base58Bech32ValueError, match="^too many bech32 characters: 91, limit is 90$"
+    ):
+        bech32_decode(_BTCD_91, limit=90)
+    # btcd's expected values: one 16, the "s", among zeros
+    expected = ("1", [0] * 46 + [16] + [0] * 36, BECH32_1_CONST)
+    assert bech32_decode(_BTCD_91, limit=None) == expected
+    assert bech32_decode(_BTCD_91) == expected
+
+
+@pytest.mark.parametrize("length", [1023, 1024])
+def test_the_default_limit_is_1023(length: int) -> None:
+    """1023 characters are written and read, 1024 are not, either way."""
+    data = [0] * (length - 8)  # "a", "1" and six checksum characters
+    encoded = bech32_encode("a", data, limit=None)
+    assert len(encoded) == length
+    if length == 1023:
+        assert bech32_encode("a", data) == encoded
+        assert bech32_decode(encoded) == ("a", data, BECH32_1_CONST)
+        return
+    err_msg = "^too many bech32 characters: 1024, limit is 1023$"
+    with pytest.raises(Base58Bech32ValueError, match=err_msg):
+        bech32_encode("a", data)
+    with pytest.raises(Base58Bech32ValueError, match=err_msg):
+        bech32_decode(encoded)
+    assert bech32_decode(encoded, limit=None) == ("a", data, BECH32_1_CONST)
+
+
+def test_the_limit_comes_before_the_characters() -> None:
+    """A string too long and out of the alphabet is refused for its length.
+
+    Only a bytes argument's ascii decoding comes before the length: the
+    HRP, the data characters and the checksum are checked after it.
+    """
+    with pytest.raises(Base58Bech32ValueError, match="^too many bech32 characters"):
+        bech32_decode("a1" + "b" * 9, limit=10)
+    with pytest.raises(Base58Bech32ValueError, match="^invalid character in checksum$"):
+        bech32_decode("a1" + "b" * 9, limit=11)
+
+
+@pytest.mark.parametrize("limit", [True, False, "90", 90.0])
+def test_the_limit_is_an_integer(limit: object) -> None:
+    """A limit of any other type is refused, a bool included."""
+    with pytest.raises(Base58Bech32TypeError, match="^invalid limit type: "):
+        bech32_encode("a", [0], limit=limit)  # type: ignore[arg-type]
+    with pytest.raises(Base58Bech32TypeError, match="^invalid limit type: "):
+        bech32_decode("a12uel5l", limit=limit)  # type: ignore[arg-type]
+
+
+def test_a_negative_limit_is_refused() -> None:
+    """No string is shorter than zero characters; zero refuses every one."""
+    with pytest.raises(Base58Bech32ValueError, match="^invalid limit: -1 < 0$"):
+        bech32_encode("a", [0], limit=-1)
+    with pytest.raises(Base58Bech32ValueError, match="^invalid limit: -1 < 0$"):
+        bech32_decode("a12uel5l", limit=-1)
+    with pytest.raises(Base58Bech32ValueError, match="^too many bech32 characters"):
+        bech32_decode("a12uel5l", limit=0)
+
+
+@pytest.mark.parametrize("distance", [1022, 1023])
+def test_past_1023_characters_two_errors_can_cancel(distance: int) -> None:
+    """What the default limit keeps: two changes to the data part are detected.
+
+    1023 is the code's length, so two characters that far apart, changed
+    by the same XOR of their values, leave the checksum valid; one closer
+    is refused.
+    """
+    data = [0] * 1030
+    encoded = bech32_encode("a", data, m=BECH32_1_CONST, limit=None).decode("ascii")
+    chars = list(encoded)
+    for i in (3, 3 + distance):
+        chars[i] = _ALPHABET[_ALPHABET.index(chars[i]) ^ 7]
+    corrupted = "".join(chars)
+    if distance == 1023:
+        hrp, values, _ = bech32_decode(corrupted, m=BECH32_1_CONST, limit=None)
+        assert (hrp, values) != ("a", data)
+        return
+    with pytest.raises(Base58Bech32ValueError, match="^invalid checksum$"):
+        bech32_decode(corrupted, m=BECH32_1_CONST, limit=None)
+
+
+def test_an_hrp_change_to_the_high_bits_can_cancel_within_the_limit() -> None:
+    """The guarantee holds only for HRP changes to the low 5 bits.
+
+    "!" for "a" changes the HRP character's high bits, a value checksummed
+    before the separator; the checksum character 1022 places later, 1023
+    checksummed values later, changed by the same XOR, cancels it in a
+    string of 1023 characters, within the default limit.
+    """
+    encoded = list(bech32_encode("a", [0] * 1015, m=BECH32_1_CONST).decode("ascii"))
+    assert len(encoded) == 1023
+    xor = (ord("a") >> 5) ^ (ord("!") >> 5)
+    encoded[0] = "!"
+    encoded[1022] = _ALPHABET[_ALPHABET.index(encoded[1022]) ^ xor]
+    corrupted = "".join(encoded)
+    expected = ("!", [0] * 1015, BECH32_1_CONST)
+    assert bech32_decode(corrupted, m=BECH32_1_CONST) == expected
+
+
+# NIP-19's examples (nostr-protocol/nips, 19.md): a public key and its npub
+_NPUBS = [
+    (
+        "3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d",
+        "npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6",
+    ),
+    (
+        "7e7e9c42a91bfef19fa929e5fda1b72e0ebc1a4c1141673e2794234d86addf4e",
+        "npub10elfcs4fr0l0r8af98jlmgdh9c8tcxjvz9qkw038js35mp4dma8qzvjptg",
+    ),
+]
+
+
+@pytest.mark.parametrize("key, npub", _NPUBS)
+def test_the_bytes_pair_on_nip19s_examples(key: str, npub: str) -> None:
+    """A Nostr public key is a payload of bytes in a bech32 string."""
+    assert bech32_encode_bytes("npub", key, m=BECH32_1_CONST) == npub.encode()
+    assert bech32_decode_bytes(npub, m=BECH32_1_CONST) == ("npub", bytes.fromhex(key))
+
+
+@given(
+    hrp=HRP,
+    payload=st.binary(max_size=80),
+    m=st.sampled_from([BECH32_1_CONST, BECH32_M_CONST]),
+)
+def test_the_bytes_pair_is_the_5_bit_pair_and_convertbits(
+    hrp: str, payload: bytes, m: int
+) -> None:
+    """The bytes round-trip, through the string the 5-bit pair writes."""
+    encoded = bech32_encode_bytes(hrp, payload, m=m)
+    assert encoded == bech32_encode(hrp, convertbits(payload, 8, 5), m=m)
+    assert bech32_decode_bytes(encoded, m=m) == (hrp, payload)
+    other = BECH32_M_CONST if m == BECH32_1_CONST else BECH32_1_CONST
+    name = "BECH32_1_CONST" if m == BECH32_1_CONST else "BECH32_M_CONST"
+    err_msg = f"^invalid checksum: {name} verifies$"
+    with pytest.raises(Base58Bech32ValueError, match=err_msg):
+        bech32_decode_bytes(encoded, m=other)
+
+
+def test_bech32_encode_bytes_takes_octets() -> None:
+    """A hex string, a bytearray or a memoryview, as `b58encode` takes."""
+    expected = bech32_encode_bytes("a", b"\x00\xff", m=BECH32_1_CONST)
+    for octets in ("00ff", bytearray(b"\x00\xff"), memoryview(b"\x00\xff")):
+        assert bech32_encode_bytes("a", octets, m=BECH32_1_CONST) == expected
+    with pytest.raises(Base58Bech32TypeError, match="^invalid octets type: list$"):
+        bech32_encode_bytes("a", [0, 255], m=BECH32_1_CONST)  # type: ignore[arg-type]
+    with pytest.raises(Base58Bech32ValueError, match="^invalid hex string: "):
+        bech32_encode_bytes("a", "0", m=BECH32_1_CONST)
+    with pytest.raises(Base58Bech32ValueError, match="^HRP is not lowercase: A$"):
+        bech32_encode_bytes("A", b"", m=BECH32_1_CONST)
+
+
+@pytest.mark.parametrize(
+    "values, err_msg",
+    [
+        # 15 bits: a byte and 7 bits of padding
+        ([0, 0, 0], "zero padding of more than 4 bits in 5-to-8 conversion"),
+        # 10 bits: a byte and 2 bits of padding, the last one set
+        ([0, 1], "non-zero padding in 5-to-8 conversion"),
+    ],
+)
+def test_bech32_decode_bytes_refuses_the_padding_convertbits_refuses(
+    values: list[int], err_msg: str
+) -> None:
+    """A string `bech32_decode` reads, and no payload of bytes encodes to."""
+    encoded = bech32_encode("a", values, m=BECH32_1_CONST)
+    assert bech32_decode(encoded, m=BECH32_1_CONST) == ("a", values, BECH32_1_CONST)
+    with pytest.raises(Base58Bech32ValueError, match=f"^{err_msg}$"):
+        bech32_decode_bytes(encoded, m=BECH32_1_CONST)
+
+
+@pytest.mark.parametrize("m", [None, True, False, "x", 1.0, b"\x01"])
+def test_the_bytes_pair_takes_an_integer_m(m: object) -> None:
+    """None, a bool or any other non-integer `m` is refused as a type."""
+    with pytest.raises(Base58Bech32TypeError, match="^invalid m type: "):
+        bech32_encode_bytes("a", b"", m=m)  # type: ignore[arg-type]
+    with pytest.raises(Base58Bech32TypeError, match="^invalid m type: "):
+        bech32_decode_bytes("a12uel5l", m=m)  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize("m", [0, 2, 5, BECH32_M_CONST + 1, -1])
+def test_the_bytes_pair_takes_one_of_the_two_constants(m: int) -> None:
+    """Any other integer is refused, as by the 5-bit pair."""
+    err_msg = "neither BECH32_1_CONST nor BECH32_M_CONST$"
+    with pytest.raises(Base58Bech32ValueError, match=err_msg):
+        bech32_encode_bytes("a", b"", m=m)
+    with pytest.raises(Base58Bech32ValueError, match=err_msg):
+        bech32_decode_bytes("a12uel5l", m=m)
+
+
+def test_the_bytes_pair_takes_the_limit_of_the_5_bit_pair() -> None:
+    """A string over `limit` is refused, written or read; `None` caps none."""
+    payload = bytes(range(100))
+    encoded = bech32_encode_bytes("a", payload, m=BECH32_1_CONST)
+    size = len(encoded)
+    assert bech32_encode_bytes("a", payload, m=BECH32_1_CONST, limit=size) == encoded
+    assert bech32_decode_bytes(encoded, m=BECH32_1_CONST, limit=size) == ("a", payload)
+    err_msg = f"^too many bech32 characters: {size}, limit is {size - 1}$"
+    with pytest.raises(Base58Bech32ValueError, match=err_msg):
+        bech32_encode_bytes("a", payload, m=BECH32_1_CONST, limit=size - 1)
+    with pytest.raises(Base58Bech32ValueError, match=err_msg):
+        bech32_decode_bytes(encoded, m=BECH32_1_CONST, limit=size - 1)
+
+
+def test_the_bytes_pair_caps_a_string_at_1023_characters_by_default() -> None:
+    """The default is the 5-bit pair's, and `limit=None` lifts it."""
+    payload = bytes(700)
+    err_msg = "^too many bech32 characters: 1128, limit is 1023$"
+    with pytest.raises(Base58Bech32ValueError, match=err_msg):
+        bech32_encode_bytes("a", payload, m=BECH32_1_CONST)
+    encoded = bech32_encode_bytes("a", payload, m=BECH32_1_CONST, limit=None)
+    assert len(encoded) == 1128
+    with pytest.raises(Base58Bech32ValueError, match=err_msg):
+        bech32_decode_bytes(encoded, m=BECH32_1_CONST)
+    assert bech32_decode_bytes(encoded, m=BECH32_1_CONST, limit=None) == ("a", payload)

@@ -30,9 +30,19 @@ import re
 from pathlib import Path
 from typing import Any
 
+import pytest
+
 import base58_bech32
 
 _TESTS_DIR = Path(__file__).parent
+
+# the characters that case-fold onto ascii: U+212A lowers onto "k", U+0130
+# lowers to "i" and a combining dot, and U+017F uppercases onto "S"
+FOLDING = [
+    pytest.param("\N{KELVIN SIGN}", id="kelvin-sign"),
+    pytest.param("\N{LATIN CAPITAL LETTER I WITH DOT ABOVE}", id="capital-i-with-dot"),
+    pytest.param("\N{LATIN SMALL LETTER LONG S}", id="long-s"),
+]
 
 
 def module_names() -> list[str]:

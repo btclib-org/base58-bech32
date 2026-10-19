@@ -20,11 +20,13 @@ from typing import Any
 import pytest
 
 from base58_bech32._utils import bytes_from_octets, is_integer
-from base58_bech32.base58 import b58decode_check, b58encode_check
+from base58_bech32.base58 import b58decode, b58decode_check, b58encode_check
 from base58_bech32.bech32 import (
     BECH32_M_CONST,
     bech32_decode,
+    bech32_decode_bytes,
     bech32_encode,
+    bech32_encode_bytes,
     convertbits,
 )
 from base58_bech32.cashaddr import cashaddr_encode
@@ -38,9 +40,22 @@ _ONE = b58encode_check(b"\x01")
 _CASES: list[tuple[str, Callable[[Any], object]]] = [
     ("octets size", lambda v: bytes_from_octets(b"\x01", v)),
     ("base58check payload size", lambda v: b58decode_check(_ONE, out_size=v)),
+    ("base58 max_length", lambda v: b58decode("1", max_length=v)),
     ("bech32 5-bit value", lambda v: bech32_encode("a", [v])),
     ("bech32_encode m", lambda v: bech32_encode("a", [0], m=v)),
     ("bech32_decode m", lambda v: bech32_decode("a12uel5l", m=v)),
+    ("bech32_encode limit", lambda v: bech32_encode("a", [0], limit=v)),
+    ("bech32_decode limit", lambda v: bech32_decode("a12uel5l", limit=v)),
+    ("bech32_encode_bytes m", lambda v: bech32_encode_bytes("a", b"", m=v)),
+    ("bech32_decode_bytes m", lambda v: bech32_decode_bytes("a12uel5l", m=v)),
+    (
+        "bech32_encode_bytes limit",
+        lambda v: bech32_encode_bytes("a", b"", m=1, limit=v),
+    ),
+    (
+        "bech32_decode_bytes limit",
+        lambda v: bech32_decode_bytes("a12uel5l", m=1, limit=v),
+    ),
     ("convertbits value", lambda v: convertbits([v], 1, 8)),
     ("convertbits from_bits", lambda v: convertbits([1], v, 8)),
     ("convertbits to_bits", lambda v: convertbits([1], 8, v)),
@@ -74,8 +89,15 @@ def test_the_integers_a_bool_refusal_must_not_take_with_it() -> None:
     """
     assert bytes_from_octets(b"\x01", 1) == b"\x01"
     assert b58decode_check(_ONE, out_size=1) == b"\x01"
+    assert b58decode("1", max_length=1) == b"\x00"
     assert bech32_encode("a", [1]) == bech32_encode("a", [1], m=BECH32_M_CONST)
     assert bech32_decode("a12uel5l", m=1) == ("a", [], 1)
+    assert bech32_encode("a", [0], limit=9) == bech32_encode("a", [0])
+    assert bech32_decode("a12uel5l", m=1, limit=8) == ("a", [], 1)
+    assert bech32_encode_bytes("a", b"", m=1) == b"a12uel5l"
+    assert bech32_decode_bytes("a12uel5l", m=1) == ("a", b"")
+    assert bech32_encode_bytes("a", b"", m=1, limit=8) == b"a12uel5l"
+    assert bech32_decode_bytes("a12uel5l", m=1, limit=8) == ("a", b"")
     assert convertbits([1], 1, 8) == [128]
     assert convertbits([1], 8, 1) == [0, 0, 0, 0, 0, 0, 0, 1]
     assert ss58_encode(1, bytes(32)) != ss58_encode(0, bytes(32))
