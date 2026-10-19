@@ -39,8 +39,7 @@ Where the two differ:
   and refuse it elsewhere; here it is refused wherever it stands, unless
   the alphabet holds it. Both refuse NUL.
   `b58decode(v.rstrip())` reads what `base58` reads. Bitcoin Core's
-  `DecodeBase58` also skips leading whitespace: the `b58decode` docstring
-  names the revision.
+  `DecodeBase58` differs too: the `b58decode` docstring says how.
 - **The alphabet is 58 distinct ascii bytes.** `base58` takes any alphabet,
   Base45's included.
 - **No `autofix`.** `base58`'s `autofix=True` reads "0" and "O" as "o",
