@@ -63,8 +63,10 @@ but the standard library.
   (`base58`)
 - [bech32](https://github.com/bitcoin/bips/blob/master/bip-0173.mediawiki)
   and [bech32m](https://github.com/bitcoin/bips/blob/master/bip-0350.mediawiki),
-  with no length limit, and `convertbits`, the regrouping of bytes into
-  5-bit values and back (`bech32`)
+  with a length limit the caller sets, `bech32_decode`'s docstring giving
+  the default and why,
+  and `convertbits`, the regrouping of bytes into 5-bit values and back
+  (`bech32`)
 - SS58, the address format of Polkadot and the Substrate chains, with
   both prefix forms (`ss58`)
 - [CashAddr](https://github.com/bitcoincashorg/bitcoincash.org/blob/master/spec/cashaddr.md),
