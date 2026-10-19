@@ -67,7 +67,8 @@ def bytes_from_octets(
 ) -> bytes:
     """Return bytes from a hex-string, as `bytes.fromhex` reads it.
 
-    `bytes.fromhex` skips ASCII whitespace between bytes.
+    `bytes.fromhex` skips ASCII whitespace (space, tab, newline, vertical
+    tab, form feed, carriage return) anywhere but inside a byte.
 
     A `bytearray` or a `memoryview` is copied, which is what makes the
     `bytes` this promises true: handed back as it came, either is still
