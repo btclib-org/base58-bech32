@@ -360,7 +360,7 @@ def test_a_changed_character_fails_the_checksum(
 
 
 def test_a_value_that_is_no_5_bit_digit_is_refused() -> None:
-    """A digit outside 0..31 is refused, and so is a value that is no integer."""
+    """A digit outside 0..31 is refused, and so is a non-integer value."""
     valid = [0, 1, 30, 31]
     assert bech32_decode(bech32_encode("bc", valid))[:2] == ("bc", valid)
 
