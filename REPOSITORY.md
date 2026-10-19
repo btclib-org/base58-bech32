@@ -520,7 +520,7 @@ under the project name `base58-bech32`, environment `pypi` and
 `testpypi` respectively and workflow `release.yml` for both, adding them
 being an account action and the maintainer's. No call here reads a
 publisher back. What a call reads is whether each index holds the
-project, and what was uploaded to it:
+project, and what was uploaded to it, read on 2026-10-19T10:19Z:
 
 ```shell
 for u in https://pypi.org/pypi/base58-bech32/json \
@@ -541,8 +541,8 @@ done
 #   "base58_bech32-2026.10.18.dev301.tar.gz"]}
 ```
 
-Read on 2026-10-19T10:19Z, the project pages answer `200` on both
-indexes, and the release run's jobs ended as the next block prints:
+Then the project pages answer `200` on both indexes, and the release
+run's jobs ended as the next block prints:
 
 ```shell
 for u in https://pypi.org/project/base58-bech32/ \
