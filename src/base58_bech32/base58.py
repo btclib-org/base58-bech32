@@ -22,7 +22,8 @@ This implementation is originally from https://github.com/keis/base58,
 by way of btclib, with the following modifications:
 
 * type annotated Python3
-* the checked decoder refuses a string longer than `MAX_LENGTH`
+* the checked decoder refuses a string longer than `MAX_LENGTH`, and
+  the plain one a string longer than its `max_length`
 * an optional check on the decoded size
 * translation tables, and ten digits per big-integer step in the encoder
   and in the decoder of a long string, where the original reads one
@@ -250,11 +251,16 @@ def _ascii_bytes(v: String) -> bytes:
     return bytes(v)
 
 
-def b58decode(v: String, *, alphabet: bytes = BITCOIN_ALPHABET) -> bytes:
+def b58decode(
+    v: String, *, alphabet: bytes = BITCOIN_ALPHABET, max_length: int | None = None
+) -> bytes:
     """Decode a Base58 string, given as ascii bytes or as a str.
 
-    No checksum is verified and no length is capped: `b58decode_check`
-    does both. Decoding is quadratic in the length of the string.
+    No checksum is verified: `b58decode_check` does that. Decoding is
+    quadratic in the length of the string, so a string longer than
+    `max_length` characters is refused before it is checked against the
+    alphabet. None, the default, caps nothing: with no checksum the
+    decoder does not know what payload it reads, nor how long it may be.
 
     Whitespace and NUL are refused, unless the alphabet holds them.
     Bitcoin Core's `DecodeBase58` skips leading and trailing whitespace,
@@ -262,7 +268,18 @@ def b58decode(v: String, *, alphabet: bytes = BITCOIN_ALPHABET) -> bytes:
     checks. The `base58` package strips trailing whitespace.
     """
     _assert_valid_alphabet(alphabet)
-    return _b58decode(_ascii_bytes(v), alphabet)
+    if max_length is not None:
+        if not is_integer(max_length):
+            err_msg = f"invalid max_length type: {type(max_length).__name__}"
+            raise Base58Bech32TypeError(err_msg)
+        if max_length < 0:
+            err_msg = f"invalid max_length: {_message_text(max_length)} < 0"
+            raise Base58Bech32ValueError(err_msg)
+    v = _ascii_bytes(v)
+    if max_length is not None and len(v) > max_length:
+        err_msg = f"too many base58 characters: {len(v)}, max is {max_length}"
+        raise Base58Bech32ValueError(err_msg)
+    return _b58decode(v, alphabet)
 
 
 def b58decode_check(

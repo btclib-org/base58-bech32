@@ -41,8 +41,9 @@ with the following modifications:
 * only the codec: the segwit address rules stay with the caller
 * type annotated Python3
 * raising exceptions instead of returning (None, None)
-* no length limit, by decision: BIP173 caps the string at 90 characters
-  and the HRP at 83, and BOLT11's Lightning invoices exceed the first
+* the length limit is a keyword, `limit`, of the decoder and the
+  encoder, whose default is not BIP173's 90; `bech32_decode` says why, and
+  what the checksum guarantees at each length
 * the checksum's inner loop is a 32-entry table of tap combinations
 * detailed error messages
 * an encoder that answers ascii bytes, as the standard library's `base64`
@@ -139,6 +140,22 @@ def _assert_valid_m(m: int | None) -> None:
         raise Base58Bech32ValueError(err_msg)
 
 
+def _assert_valid_limit(limit: int | None) -> None:
+    """Refuse a `limit` that is neither None nor a non-negative integer."""
+    if limit is None:
+        return
+    if not is_integer(limit):
+        raise Base58Bech32TypeError(f"invalid limit type: {type(limit).__name__}")
+    if limit < 0:
+        raise Base58Bech32ValueError(f"invalid limit: {_message_text(limit)} < 0")
+
+
+def _assert_within_limit(length: int, limit: int | None) -> None:
+    if limit is not None and length > limit:
+        err_msg = f"too many bech32 characters: {length}, limit is {limit}"
+        raise Base58Bech32ValueError(err_msg)
+
+
 def _m_from_wit_ver(data: list[int]) -> int:
     if not data:
         raise Base58Bech32ValueError("empty data in bech32 address")
@@ -146,9 +163,10 @@ def _m_from_wit_ver(data: list[int]) -> int:
     return BECH32_1_CONST if wit_ver == 0 else BECH32_M_CONST
 
 
-def _decode(bech: String) -> tuple[str, list[int], list[int]]:
+def _decode(bech: String, limit: int | None) -> tuple[str, list[int], list[int]]:
     """Determine a bech32 string HRP, data and checksum."""
     text = str_from_string(bech, "bech32 string")
+    _assert_within_limit(len(text), limit)
 
     # no refusal quotes `text`: what reaches a decoder can be a private
     # key pasted in the wrong field, and an exception message is what
@@ -184,7 +202,9 @@ def _decode(bech: String) -> tuple[str, list[int], list[int]]:
     return hrp, indices[:-6], indices[-6:]
 
 
-def bech32_decode(bech: String, *, m: int | None = None) -> tuple[str, list[int], int]:
+def bech32_decode(
+    bech: String, *, m: int | None = None, limit: int | None = 1023
+) -> tuple[str, list[int], int]:
     """Return (hrp, data, m) from a bech32 string, verifying its checksum.
 
     The `m` returned is the constant the checksum verifies with:
@@ -195,13 +215,33 @@ def bech32_decode(bech: String, *, m: int | None = None) -> tuple[str, list[int]
     as BIP350 says. The string is given as a str or as its ascii bytes,
     and the HRP comes back lowercase.
 
-    BIP173 caps the string at 90 characters and the HRP at 83. This
-    function caps neither, by decision: BOLT11's Lightning invoices are
-    bech32 strings longer than 90. BIP173 states its error-detection
-    properties for a data part of at most 89 characters.
+    A string longer than `limit` characters is refused before its HRP,
+    its data characters and its checksum are checked; None refuses none.
+    The default is not 90, BIP173's limit, because BOLT11's Lightning
+    invoices are longer.
+
+    The limit bounds what the checksum guarantees for errors that change
+    only the low 5 bits of an HRP character, as BIP173 assumes:
+
+    * within 89 characters besides the separator, any error affecting at
+      most 4 characters is detected (BIP173), which `limit=90` keeps;
+    * within 1023, the code's length, up to 3 errors are detected
+      (Bitcoin Core's `src/bech32.cpp`), which the default keeps;
+    * beyond 1023, one changed character is still detected, and up to 3
+      within any 1023 consecutive characters, but two data characters
+      1023 apart, changed by the same XOR of their values, leave the
+      checksum valid.
+
+    Without that assumption the checksum runs over more values than the
+    string has characters: each HRP character's high bits come first, as
+    a value of their own. A change to those bits, such as a digit for a
+    letter, can cancel a change 1023 checksummed values later, which is
+    1023 minus the HRP's length characters later in the string, so two
+    errors can pass within the default limit.
     """
     _assert_valid_m(m)
-    hrp, data, checksum = _decode(bech)
+    _assert_valid_limit(limit)
+    hrp, data, checksum = _decode(bech, limit)
     # the residue depends on the payload: a refusal names the constant it
     # matches and never prints it
     residue = _polymod(_hrp_expand(hrp) + data + checksum)
@@ -213,17 +253,20 @@ def bech32_decode(bech: String, *, m: int | None = None) -> tuple[str, list[int]
     return hrp, data, residue
 
 
-def bech32_encode(hrp: str, data: list[int], *, m: int | None = None) -> bytes:
+def bech32_encode(
+    hrp: str, data: list[int], *, m: int | None = None, limit: int | None = 1023
+) -> bytes:
     """Compute a bech32 string given HRP and 5-bit data values.
 
     `m` is `BECH32_1_CONST` or `BECH32_M_CONST`, any other value being
     refused; None reads it off the first value as a witness version, as
     BIP350 says, so a Lightning invoice or a Nostr key passes
-    `m=BECH32_1_CONST`. `data` is a list. The HRP is
-    checked against the rule `bech32_decode` applies to it: non-empty,
-    every character in BIP173's [33-126] range, and lowercase -- every
-    data character is lowercase, so an uppercase HRP would write a string
-    `bech32_decode` refuses as mixed case.
+    `m=BECH32_1_CONST`. `limit` is as `bech32_decode` takes it: a string
+    longer than `limit` is refused rather than written. `data` is a list.
+    The HRP is checked against the rule `bech32_decode` applies to it:
+    non-empty, every character in BIP173's [33-126] range, and lowercase
+    -- every data character is lowercase, so an uppercase HRP would write
+    a string `bech32_decode` refuses as mixed case.
 
     Every value is one 5-bit digit, and each is checked rather than left
     to the alphabet lookup: Python indexes a string from the end, so a
@@ -234,6 +277,7 @@ def bech32_encode(hrp: str, data: list[int], *, m: int | None = None) -> bytes:
     the `.upper()` of what this writes.
     """
     _assert_valid_m(m)
+    _assert_valid_limit(limit)
     assert_type(data, list, "5-bit data")
     assert_type(hrp, str, "HRP")
     if not hrp:
@@ -248,6 +292,8 @@ def bech32_encode(hrp: str, data: list[int], *, m: int | None = None) -> bytes:
             raise Base58Bech32TypeError(f"invalid 5-bit value type: {type(d).__name__}")
         if not 0 <= d < 32:
             raise Base58Bech32ValueError(f"invalid 5-bit value: {_message_text(d)}")
+    # the HRP, the separator, the data and the six checksum characters
+    _assert_within_limit(len(hrp) + 1 + len(data) + 6, limit)
     m = _m_from_wit_ver(data) if m is None else m
     combined = data + _create_checksum(hrp, data, m)
     s = f"{hrp}1" + "".join(_ALPHABET[d] for d in combined)
