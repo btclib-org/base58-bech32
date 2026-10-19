@@ -219,8 +219,8 @@ JSON
 
 `main-self-merge` requires a pull request, so a direct push to `main` is
 refused, and a merge needs an approval from somebody other than its
-author. It has no bypass actor either, as the standard asks of a tree
-whose `README.md` carries the OpenSSF Best Practices badge, as this one
+author. It has no bypass actor either: the standard asks that of a tree
+whose `README.md` carries the OpenSSF Best Practices badge, and this one
 does (section 11 of
 [btclib-org/.github's `README.md`](https://github.com/btclib-org/.github#branch-protection-and-rulesets)).
 btclib-org/.github's
@@ -254,8 +254,9 @@ gh api repos/btclib-org/base58-bech32/rulesets/25333526 --jq .bypass_actors
 The bypass is added back and removed with a `PUT`. A `PUT` replaces the
 whole ruleset, so each body carries every parameter the ruleset holds,
 which the read above (without `--jq`) shows. The `POST` above omits some
-of them. The bypass is actor `3296421`, `fametrano`'s account id
-(`gh api users/fametrano --jq .id`), in `pull_request` mode. To add it:
+of them. When added back, the bypass is actor `3296421`, `fametrano`'s
+account id (`gh api users/fametrano --jq .id`), in `pull_request` mode.
+To add it:
 
 ```shell
 gh api -X PUT repos/btclib-org/base58-bech32/rulesets/25333526 \
