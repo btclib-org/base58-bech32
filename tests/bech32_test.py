@@ -818,3 +818,14 @@ def test_the_bytes_pair_caps_a_string_at_1023_characters_by_default() -> None:
     with pytest.raises(Base58Bech32ValueError, match=err_msg):
         bech32_decode_bytes(encoded, m=BECH32_1_CONST)
     assert bech32_decode_bytes(encoded, m=BECH32_1_CONST, limit=None) == ("a", payload)
+
+def test_convertbits_excessive_width() -> None:
+    # A width above 64 must be refused with Base58Bech32ValueError, not OverflowError
+    with pytest.raises(Base58Bech32ValueError, match="invalid from_bits"):
+        convertbits([0], 2**64, 5)
+
+    with pytest.raises(Base58Bech32ValueError, match="invalid to_bits"):
+        convertbits([0], 5, 2**64)
+
+    with pytest.raises(Base58Bech32ValueError, match="invalid from_bits"):
+        convertbits([], 2**64, 5)
