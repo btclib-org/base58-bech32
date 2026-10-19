@@ -82,6 +82,12 @@ def test_the_base58_differences() -> None:
     assert base58_package.b58decode("StV1DL6CwTryKyV \n") == b"hello world"
     with pytest.raises(Base58Bech32ValueError, match="invalid characters"):
         base58.b58decode("StV1DL6CwTryKyV \n")
+    # refused elsewhere, NUL included, and `rstrip` reads what it reads
+    for refused in (" 1", "StV1DL6Cw TryKyV", "1\0"):
+        with pytest.raises(ValueError, match="Invalid character"):
+            base58_package.b58decode(refused)
+    stripped = "StV1DL6CwTryKyV \n"
+    assert base58.b58decode(stripped.rstrip()) == base58_package.b58decode(stripped)
     # autofix
     assert base58_package.b58decode("StVlDL6CwTryKyV", autofix=True) == b"hello world"
     with pytest.raises(Base58Bech32ValueError, match="invalid characters"):

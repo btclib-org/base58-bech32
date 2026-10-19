@@ -452,6 +452,21 @@ def test_the_padding_without_pad(values: list[int], err_msg: str) -> None:
         convertbits(values, 5, 8, False)
 
 
+@pytest.mark.parametrize("m", [None, BECH32_1_CONST, BECH32_M_CONST])
+def test_the_uppercase_form_for_qr_codes_is_read_back(m: int | None) -> None:
+    """`bech32_decode` reads the `.upper()` of what `bech32_encode` wrote.
+
+    BIP173 says uppercase is the form for a QR code, and the encoder
+    answers lowercase.
+    """
+    values = convertbits(bytes(range(20)), 8, 5)
+    for hrp, data in (("bc", [0, *values]), ("lnbc", values), ("a~!", [1, *values])):
+        written = bech32_encode(hrp, data, m=m)
+        assert written == written.lower()
+        for upper in (written.upper(), written.upper().decode("ascii")):
+            assert bech32_decode(upper, m=m) == (hrp, data)
+
+
 def test_the_witness_program_round_trip() -> None:
     """Bytes to 5-bit values and back, the conversion a segwit address makes."""
     program = bytes(range(32))

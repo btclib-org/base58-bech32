@@ -172,6 +172,16 @@ def test_the_encoder_refusals() -> None:
         cashaddr_encode("p", 0, bytes(21))
 
 
+def test_the_uppercase_form_for_qr_codes_is_read_back() -> None:
+    """`cashaddr_decode` reads the `.upper()` of what `cashaddr_encode` made."""
+    for prefix, kind, size in (("bitcoincash", 0, 20), ("bchtest", 1, 32)):
+        digest = bytes(range(size))
+        written = cashaddr_encode(prefix, kind, digest)
+        assert written == written.lower()
+        for upper in (written.upper(), written.upper().decode("ascii")):
+            assert cashaddr_decode(upper) == (prefix, kind, digest)
+
+
 @given(
     prefix=st.text(alphabet="abcdefghijklmnopqrstuvwxyz", min_size=1, max_size=12),
     kind=st.integers(0, 15),
