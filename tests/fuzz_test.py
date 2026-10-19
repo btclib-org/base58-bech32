@@ -24,8 +24,9 @@ checksum and the length checks behind the alphabet lookup.
 The last test draws its input the way Bitcoin Core's `bech32_roundtrip`
 fuzz target does, in `src/test/fuzz/bech32.cpp`: an HRP of the characters
 from 33 to 126 less the uppercase letters, and any bytes regrouped from
-8 bits to 5. Core stops at the 90 characters of BIP173's limit and this
-package at nothing, so the sizes here are the rest of the file's.
+8 bits to 5. Core stops at the 90 characters of BIP173's limit; the sizes
+here are the rest of the file's, for the reason `tests/refusals_test.py`
+gives.
 """
 
 from __future__ import annotations

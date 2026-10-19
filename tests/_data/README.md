@@ -110,9 +110,9 @@ gives are taken and not asserted, this package not computing them. Not taken:
 the valid vectors, which `tests/bech32_test.py` carries from the
 specifications.
 
-Core refuses a string over its character limit and this package has no limit.
-The over-long vector of each table whose checksum holds is read, and
-`tests/refusals_test.py` asserts that.
+Core refuses a string over its character limit. The over-long vector of
+each table whose checksum holds is read, and `tests/refusals_test.py`
+asserts that and says why.
 
 ## Other projects
 
@@ -154,9 +154,9 @@ behind  0 revisions; that commit is the tip of the path
 Verdict: **identical**. Each invalid string and each invalid `prefix` with
 `words` comes with the message bitcoinjs expects, and `fromWords` has its
 padding refusals. `tests/refusals_test.py` asserts the refusal of each,
-and that a valid string is refused under the other constant. This package
-has no length limit, so it reads the `an84` strings and writes the `foobar`
-words that bitcoinjs refuses for their length; the other string over the
+and that a valid string is refused under the other constant. It reads
+the `an84` strings and writes the `foobar` words that bitcoinjs refuses for
+their length, as `tests/refusals_test.py` says; the other string over the
 limit is refused for its checksum.
 
 ### `tests/_data/ss58_encode_vectors.json`

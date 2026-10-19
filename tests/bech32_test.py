@@ -50,6 +50,7 @@ from base58_bech32.bech32 import (
     convertbits,
 )
 from base58_bech32.exceptions import Base58Bech32TypeError, Base58Bech32ValueError
+from tests import FOLDING
 
 
 def test_the_tap_table_holds_the_taps_it_replaces() -> None:
@@ -329,9 +330,7 @@ def test_a_character_lowering_onto_the_alphabet_is_refused() -> None:
 @pytest.mark.parametrize(
     "char",
     [
-        "\u212a",  # KELVIN SIGN, lowers to "k"
-        "\u0130",  # LATIN CAPITAL LETTER I WITH DOT ABOVE, lowers to two
-        "\u017f",  # LATIN SMALL LETTER LONG S, uppercases to "S"
+        *FOLDING,
         "\u1e9e",  # LATIN CAPITAL LETTER SHARP S, casefolds to "ss"
         "\x7f",  # DEL, one above the range
         "\x80",  # one above ASCII
@@ -359,21 +358,12 @@ def test_a_data_part_character_out_of_range_is_refused_first(
         bech32_decode("".join(chars))
 
 
-# the characters that case-fold onto ascii: U+212A lowers onto "k", U+0130
-# lowers to "i" and a combining dot, and U+017F uppercases onto "S"
-_FOLDING = [
-    pytest.param("\N{KELVIN SIGN}", id="kelvin-sign"),
-    pytest.param("\N{LATIN CAPITAL LETTER I WITH DOT ABOVE}", id="capital-i-with-dot"),
-    pytest.param("\N{LATIN SMALL LETTER LONG S}", id="long-s"),
-]
-
-
-@pytest.mark.parametrize("char", _FOLDING)
+@pytest.mark.parametrize("char", FOLDING)
 @pytest.mark.parametrize("address", [_UPPER, _UPPER.lower()], ids=["upper", "lower"])
 def test_a_character_folding_onto_ascii_is_refused_in_the_hrp(
     char: str, address: str
 ) -> None:
-    """Each of `_FOLDING`, in the HRP, under either `m`.
+    """Each of `FOLDING`, in the HRP, under either `m`.
 
     The data and the checksum are
     `test_a_data_part_character_out_of_range_is_refused_first`'s. Whatever
@@ -388,7 +378,7 @@ def test_a_character_folding_onto_ascii_is_refused_in_the_hrp(
             bech32_decode("".join(chars), m=m)
 
 
-@pytest.mark.parametrize("char", _FOLDING)
+@pytest.mark.parametrize("char", FOLDING)
 @pytest.mark.parametrize("hrp", ["{}", "b{}", "{}c"])
 def test_a_character_folding_onto_ascii_is_refused_in_the_encoders_hrp(
     char: str, hrp: str

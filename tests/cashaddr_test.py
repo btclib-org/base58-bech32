@@ -22,7 +22,7 @@ from base58_bech32.cashaddr import (
     cashaddr_encode,
 )
 from base58_bech32.exceptions import Base58Bech32TypeError, Base58Bech32ValueError
-from tests import load, vector_id
+from tests import FOLDING, load, vector_id
 
 VECTORS = load("_data", "cashaddr_vectors.json")
 
@@ -182,17 +182,10 @@ def test_the_uppercase_form_for_qr_codes_is_read_back() -> None:
             assert cashaddr_decode(upper) == (prefix, kind, digest)
 
 
-# the characters that case-fold onto ascii: U+212A lowers onto "k", U+0130
-# lowers to "i" and a combining dot, and U+017F uppercases onto "S"
-_FOLDING = [
-    pytest.param("\N{KELVIN SIGN}", id="kelvin-sign"),
-    pytest.param("\N{LATIN CAPITAL LETTER I WITH DOT ABOVE}", id="capital-i-with-dot"),
-    pytest.param("\N{LATIN SMALL LETTER LONG S}", id="long-s"),
-]
 _PREFIX_END = _ADDRESS.index(":")
 
 
-@pytest.mark.parametrize("char", _FOLDING)
+@pytest.mark.parametrize("char", FOLDING)
 @pytest.mark.parametrize(
     "position",
     [
@@ -207,7 +200,7 @@ _PREFIX_END = _ADDRESS.index(":")
 def test_a_character_folding_onto_ascii_is_refused_in_each_region(
     char: str, position: int, address: str
 ) -> None:
-    """Each of `_FOLDING`, in the prefix, the payload and the checksum.
+    """Each of `FOLDING`, in the prefix, the payload and the checksum.
 
     `_split` holds every character to ascii before it lowers the string,
     so none of them is read as the letter it folds onto.
@@ -218,7 +211,7 @@ def test_a_character_folding_onto_ascii_is_refused_in_each_region(
         cashaddr_decode("".join(chars))
 
 
-@pytest.mark.parametrize("char", _FOLDING)
+@pytest.mark.parametrize("char", FOLDING)
 @pytest.mark.parametrize("prefix", ["{}", "b{}", "{}c"])
 def test_a_character_folding_onto_ascii_is_refused_in_a_given_prefix(
     char: str, prefix: str
