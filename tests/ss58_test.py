@@ -13,7 +13,6 @@ tests/_data/README.md pins both.
 from __future__ import annotations
 
 import hashlib
-import hmac
 
 import pytest
 from hypothesis import given
@@ -209,23 +208,3 @@ def test_round_trip(prefix: int, payload: bytes) -> None:
     assert len(address) <= 51
     assert ss58_decode(address) == (prefix, payload)
     assert ss58_decode(address.decode("ascii")) == (prefix, payload)
-
-
-def test_the_checksum_is_compared_with_compare_digest(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """`ss58_decode` compares checksums with `hmac.compare_digest`."""
-    calls: list[tuple[bytes, bytes]] = []
-    compare_digest = hmac.compare_digest
-
-    def spy(a: bytes, b: bytes) -> bool:
-        calls.append((a, b))
-        return compare_digest(a, b)
-
-    monkeypatch.setattr(hmac, "compare_digest", spy)
-    address = ss58_encode(0, bytes(32))
-    assert ss58_decode(address) == (0, bytes(32))
-    assert len(calls) == 1
-    with pytest.raises(Base58Bech32ValueError, match="^invalid SS58 checksum$"):
-        ss58_decode(address[:-1] + b"2")
-    assert len(calls) == 2

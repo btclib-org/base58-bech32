@@ -32,7 +32,6 @@ https://github.com/polkadot-js/common, at commit
 from __future__ import annotations
 
 import hashlib
-import hmac
 
 from base58_bech32._utils import (
     Octets,
@@ -132,6 +131,6 @@ def ss58_decode(address: String) -> tuple[int, bytes]:
         raise Base58Bech32ValueError(f"reserved SS58 prefix: {prefix}")
 
     body, checksum = data[:-_CHECKSUM_SIZE], data[-_CHECKSUM_SIZE:]
-    if not hmac.compare_digest(checksum, _checksum(body)):
+    if checksum != _checksum(body):
         raise Base58Bech32ValueError("invalid SS58 checksum")
     return prefix, body[prefix_size:]

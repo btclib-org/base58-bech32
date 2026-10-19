@@ -33,7 +33,6 @@ from __future__ import annotations
 
 import functools
 import hashlib
-import hmac
 from collections.abc import Iterable
 
 from base58_bech32._utils import (
@@ -76,8 +75,7 @@ _CHUNK_BASE = _BASE**_CHUNK
 # the decoder reads a string of at most this many characters one digit at
 # a time, and a longer one in chunks: the chunks' slicing and extra
 # multiplication cost more than they save on a short string and pay on a
-# long one. Where the two cross differs by interpreter, and this is about
-# the earliest measured
+# long one. Where the two cross differs by interpreter
 _PLAIN_MAX = 64
 
 #: The longest string `b58decode_check` decodes: a BIP32 extended key,
@@ -297,7 +295,7 @@ def b58decode_check(
 
     result, checksum = result[:-4], result[-4:]
     expected = hashlib.sha256(hashlib.sha256(result).digest()).digest()[:4]
-    if not hmac.compare_digest(checksum, expected):
+    if checksum != expected:
         err_msg = "invalid checksum"
         if not secret:
             err_msg += f": 0x{checksum.hex()} instead of 0x{expected.hex()}"
