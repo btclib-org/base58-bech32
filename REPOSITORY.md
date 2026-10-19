@@ -219,17 +219,13 @@ JSON
 
 `main-self-merge` requires a pull request, so a direct push to `main` is
 refused, and a merge needs an approval from somebody other than its
-author. The maintainer can merge without one, through the bypass. The
-bypass is one actor, the maintainer, and it is **temporary**: the
-standard allows no bypass in a tree whose `README.md` carries the OpenSSF
-Best Practices badge, as this one does (section 11 of
+author. It has no bypass actor either, as the standard asks of a tree
+whose `README.md` carries the OpenSSF Best Practices badge, as this one
+does (section 11 of
 [btclib-org/.github's `README.md`](https://github.com/btclib-org/.github#branch-protection-and-rulesets)).
-The maintainer set it on 2026-10-18, by [the decision recorded in btclib
-ISS 2712](https://github.com/btclib-org/btclib/issues/2712#issuecomment-6247443374),
-until the first release. btclib-org/.github's
+btclib-org/.github's
 [`GOVERNANCE.md`](https://github.com/btclib-org/.github/blob/main/GOVERNANCE.md#how-a-decision-is-made),
-*How a decision is made*, says when a bypass is added back once this one
-is removed, and `CONTRIBUTING.md`'s *Landing it* has the commands.
+*How a decision is made*, says when a bypass is added back.
 
 ```shell
 gh api -X POST repos/btclib-org/base58-bech32/rulesets --input - <<'JSON'
@@ -246,58 +242,19 @@ gh api -X POST repos/btclib-org/base58-bech32/rulesets --input - <<'JSON'
 JSON
 ```
 
-This ruleset was created with the bypass already in it, as its single
-history version shows; the `POST` above is the standard's form. Read on
-2026-10-18T07:36Z:
+The ruleset, `25333526`, was created with a bypass for the maintainer
+until the first release, by [the decision recorded in btclib
+ISS 2712](https://github.com/btclib-org/btclib/issues/2712#issuecomment-6247443374).
+The maintainer removed the bypass on 2026-10-19, once v2026.10.18 was
+out. Read on 2026-10-19T00:19Z:
 
 ```shell
-gh api repos/btclib-org/base58-bech32/rulesets/25333526/history --jq length
-# 1
-```
-
-The bypass is actor `3296421`, `fametrano`'s account id
-(`gh api users/fametrano --jq .id`), in `pull_request` mode. A `PUT` of
-the whole ruleset, `25333526`, with that entry in `bypass_actors` adds it:
-
-```shell
-gh api -X PUT repos/btclib-org/base58-bech32/rulesets/25333526 \
-  --input - <<'JSON'
-{"name": "main-self-merge", "target": "branch", "enforcement": "active",
- "conditions": {"ref_name": {"include": ["refs/heads/main"], "exclude": []}},
- "bypass_actors": [{"actor_id": 3296421, "actor_type": "User",
-                    "bypass_mode": "pull_request"}],
- "rules": [{"type": "pull_request", "parameters": {
-   "allowed_merge_methods": ["squash"],
-   "dismiss_stale_reviews_on_push": true,
-   "dismissal_restriction": {"allowed_actors": [], "enabled": false},
-   "require_code_owner_review": false,
-   "require_extra_approval_for_unattributed_changes": true,
-   "require_last_push_approval": false,
-   "required_approving_review_count": 1,
-   "required_review_thread_resolution": true,
-   "required_reviewers": []}}]}
-JSON
-```
-
-The same `PUT` with `"bypass_actors": []` removes it:
-
-```shell
-gh api -X PUT repos/btclib-org/base58-bech32/rulesets/25333526 \
-  --input - <<'JSON'
-{"name": "main-self-merge", "target": "branch", "enforcement": "active",
- "conditions": {"ref_name": {"include": ["refs/heads/main"], "exclude": []}},
- "bypass_actors": [],
- "rules": [{"type": "pull_request", "parameters": {
-   "allowed_merge_methods": ["squash"],
-   "dismiss_stale_reviews_on_push": true,
-   "dismissal_restriction": {"allowed_actors": [], "enabled": false},
-   "require_code_owner_review": false,
-   "require_extra_approval_for_unattributed_changes": true,
-   "require_last_push_approval": false,
-   "required_approving_review_count": 1,
-   "required_review_thread_resolution": true,
-   "required_reviewers": []}}]}
-JSON
+gh api repos/btclib-org/base58-bech32/rulesets/25333526 --jq .bypass_actors
+# []
+gh api repos/btclib-org/base58-bech32/rulesets/25333526/history \
+  --jq '.[] | [.version_id, .updated_at]'
+# [53732977,"2026-10-19T02:18:01.031+02:00"]
+# [53670924,"2026-10-18T08:12:34.269+02:00"]
 ```
 
 Classic protection's own copy of the signature rule is off:
@@ -349,22 +306,17 @@ done
 #  "methods":[],"name":"main-integrity",
 #  "rules":["required_linear_history","non_fast_forward","deletion"],
 #  "target":"branch"}
-# {"bypass":[[3296421,"pull_request"]],"enforcement":"active",
-#  "include":["refs/heads/main"],"methods":[["squash"]],
-#  "name":"main-self-merge","rules":["pull_request"],"target":"branch"}
+# {"bypass":[],"enforcement":"active","include":["refs/heads/main"],
+#  "methods":[["squash"]],"name":"main-self-merge","rules":["pull_request"],
+#  "target":"branch"}
 # {"bypass":[],"enforcement":"active","include":["refs/tags/v*"],
 #  "methods":[],"name":"tag-integrity","rules":["required_signatures"],
 #  "target":"tag"}
 ```
 
-Read on 2026-10-18T06:19Z, the loop printed the three rulesets above
+Read on 2026-10-19T00:19Z, the loop printed the three rulesets above
 (ids 25333525, 25333526 and 25333527 for `main-integrity`,
-`main-self-merge` and `tag-integrity`). `main-self-merge` differs from
-the standard in its `bypass`, which is **temporary** (see above); the
-other two match it. *Pending*: the bypass is removed after the first
-release, which [ISS 4](https://github.com/btclib-org/base58-bech32/issues/4)
-tracks with the removal `PUT` and this read-back in its *Done when*; this
-loop then prints `"bypass":[]` for `main-self-merge`.
+`main-self-merge` and `tag-integrity`), and all three match the standard.
 
 A `v*` tag push that brings an unsigned commit is refused. A tag on a
 commit already on `main` is accepted whether it is signed, unsigned or
