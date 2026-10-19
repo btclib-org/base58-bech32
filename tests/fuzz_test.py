@@ -34,6 +34,7 @@ from __future__ import annotations
 import contextlib
 import string
 from collections.abc import Callable
+from functools import partial
 from typing import Any
 
 import pytest
@@ -55,6 +56,9 @@ DECODERS: dict[str, Callable[[str | bytes], Any]] = {
     "base58.b58decode": base58.b58decode,
     "base58.b58decode_check": base58.b58decode_check,
     "bech32.bech32_decode": bech32.bech32_decode,
+    "bech32.bech32_decode_bytes": partial(
+        bech32.bech32_decode_bytes, m=bech32.BECH32_1_CONST
+    ),
     "ss58.ss58_decode": ss58.ss58_decode,
     "cashaddr.cashaddr_decode": cashaddr.cashaddr_decode,
 }

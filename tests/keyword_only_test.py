@@ -44,7 +44,9 @@ KEYWORD_ONLY: dict[str, list[str]] = {
     "base58_bech32.base58:b58encode": ["alphabet"],
     "base58_bech32.base58:b58encode_check": ["in_size", "alphabet"],
     "base58_bech32.bech32:bech32_decode": ["m", "limit"],
+    "base58_bech32.bech32:bech32_decode_bytes": ["m", "limit"],
     "base58_bech32.bech32:bech32_encode": ["m", "limit"],
+    "base58_bech32.bech32:bech32_encode_bytes": ["m", "limit"],
     "base58_bech32.cashaddr:cashaddr_decode": ["prefix"],
 }
 

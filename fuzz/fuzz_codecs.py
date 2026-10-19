@@ -68,6 +68,10 @@ def fuzz_target(data: bytes) -> None:
         with contextlib.suppress(Base58Bech32Exception):
             hrp, values, m = bech32.bech32_decode(text)
             _round_trip(bech32.bech32_encode(hrp, values, m=m), text)
+        for m in (bech32.BECH32_1_CONST, bech32.BECH32_M_CONST):
+            with contextlib.suppress(Base58Bech32Exception):
+                hrp, payload = bech32.bech32_decode_bytes(text, m=m)
+                _round_trip(bech32.bech32_encode_bytes(hrp, payload, m=m), text)
         with contextlib.suppress(Base58Bech32Exception):
             _round_trip(ss58.ss58_encode(*ss58.ss58_decode(text)), text)
         with contextlib.suppress(Base58Bech32Exception):

@@ -56,9 +56,11 @@ from functools import reduce
 from operator import xor
 
 from base58_bech32._utils import (
+    Octets,
     String,
     _message_text,
     assert_type,
+    bytes_from_octets,
     is_integer,
     str_from_string,
 )
@@ -68,7 +70,9 @@ __all__ = [
     "BECH32_1_CONST",
     "BECH32_M_CONST",
     "bech32_decode",
+    "bech32_decode_bytes",
     "bech32_encode",
+    "bech32_encode_bytes",
     "convertbits",
 ]
 
@@ -367,3 +371,48 @@ def _convertbits(
         raise Base58Bech32ValueError(err_msg)
 
     return ret
+
+
+def _assert_constant(m: int) -> None:
+    """Refuse an `m` that is not one of the two constants, None included."""
+    if not is_integer(m):
+        raise Base58Bech32TypeError(f"invalid m type: {type(m).__name__}")
+    _assert_valid_m(m)
+
+
+def bech32_encode_bytes(
+    hrp: str, payload: Octets, *, m: int, limit: int | None = 1023
+) -> bytes:
+    """Compute a bech32 string given HRP and a payload of bytes.
+
+    The payload, a bytes-like object or a hex string, is regrouped into
+    5-bit values, zero bits filling out the last one where needed, and
+    written by `bech32_encode`, which checks the HRP. A Nostr key (NIP-19)
+    is such a payload. A Lightning invoice is not: its 5-bit fields need
+    not fill whole bytes, so it stays with `bech32_encode`.
+
+    `m` is `BECH32_1_CONST` or `BECH32_M_CONST`, and None is refused: the
+    first 5-bit value of a payload of bytes is no witness version to read
+    it off. A segwit address is a witness version and a program, which
+    this pair does not express: it is written with `bech32_encode` and
+    `convertbits`. `limit` is as `bech32_decode` takes it.
+    """
+    _assert_constant(m)
+    values = _convertbits(bytes_from_octets(payload), 8, 5, True)
+    return bech32_encode(hrp, values, m=m, limit=limit)
+
+
+def bech32_decode_bytes(
+    bech: String, *, m: int, limit: int | None = 1023
+) -> tuple[str, bytes]:
+    """Return (hrp, payload) from a bech32 string, verifying its checksum.
+
+    The inverse of `bech32_encode_bytes`, with the same `m` and `limit`.
+    The string is read by `bech32_decode` and its 5-bit values are
+    regrouped into bytes: padding of 5 bits or more, or padding that is
+    not zero, is refused, as `convertbits(values, 5, 8, False)` refuses
+    it.
+    """
+    _assert_constant(m)
+    hrp, values, _ = bech32_decode(bech, m=m, limit=limit)
+    return hrp, bytes(_convertbits(values, 5, 8, False))
