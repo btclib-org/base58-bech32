@@ -20,6 +20,7 @@ from hypothesis import given
 from hypothesis import strategies as st
 
 from base58_bech32.base58 import (
+    _PLAIN_MAX,
     BITCOIN_ALPHABET,
     MAX_LENGTH,
     RIPPLE_ALPHABET,
@@ -360,3 +361,33 @@ def test_round_trip(payload: bytes) -> None:
     assert b58decode_check(encoded, out_size=len(payload)) == payload
     assert b58decode_check(encoded.decode("ascii")) == payload
     assert b58decode(b58encode(payload)) == payload
+
+
+def test_a_refused_alphabet_is_refused_whatever_was_cached() -> None:
+    """A refused alphabet stays refused, and an accepted one accepted."""
+    bad = BITCOIN_ALPHABET[:-1] + b"1"
+    err_msg = "invalid alphabet: repeated characters"
+    _tables.cache_clear()
+    # a good alphabet cached, then a bad one
+    assert b58encode(b"\1") == b"2"
+    with pytest.raises(Base58Bech32ValueError, match=err_msg):
+        b58encode(b"\1", alphabet=bad)
+    # a bad one refused twice, then the good one again
+    with pytest.raises(Base58Bech32ValueError, match=err_msg):
+        b58decode("2", alphabet=bad)
+    assert b58decode("2") == b"\1"
+    # a bad alphabet refused first, then accepted when it is the good one
+    _tables.cache_clear()
+    with pytest.raises(Base58Bech32ValueError, match=err_msg):
+        b58encode_check(b"\1", alphabet=bad)
+    assert b58decode_check(b58encode_check(b"\1")) == b"\1"
+
+
+def test_a_string_decodes_the_same_on_both_sides_of_the_plain_loop() -> None:
+    """The loop that reads a digit at a time and the chunked one agree."""
+    for length in (_PLAIN_MAX - 1, _PLAIN_MAX, _PLAIN_MAX + 1, 2 * _PLAIN_MAX + 3):
+        s = (BITCOIN_ALPHABET[1:] * 3)[:length]
+        expected = 0
+        for char in s:
+            expected = expected * 58 + BITCOIN_ALPHABET.index(char)
+        assert _b58decode_to_int(s, _DIGIT_OF) == expected
