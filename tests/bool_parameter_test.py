@@ -9,10 +9,7 @@ coordinator's message -- arrives as whatever it was written as (issue
 btclib-org/btclib#868). Most wrong values are true: `"no"`, a non-zero
 number, an object. But `0`, `None` and `""` read as false, so a flag
 read for its truth can be misread as on or as off. Every flag here
-therefore refuses anything but a `bool` with a `Base58Bech32TypeError`:
-`convertbits`'s `pad`, which decides what is computed, and
-`b58decode_check`'s `secret`, which decides whether a refusal quotes the
-checksums.
+therefore refuses anything but a `bool` with a `Base58Bech32TypeError`.
 
 `_bool_parameters` reads every public function of the package and every
 `bool`-annotated parameter of one, so a flag added anywhere is in the
@@ -28,7 +25,6 @@ from typing import Any
 
 import pytest
 
-from base58_bech32.base58 import b58decode_check
 from base58_bech32.bech32 import convertbits
 from base58_bech32.exceptions import Base58Bech32TypeError
 
@@ -57,12 +53,6 @@ _FLAGS = (
         "pad",
         convertbits,
         {"data": [0], "from_bits": 8, "to_bits": 5},
-    ),
-    _Case(
-        "base58_bech32.base58.b58decode_check",
-        "secret",
-        b58decode_check,
-        {"v": "3vQB7B6MrGQZaxCuFg4oh"},
     ),
 )
 
@@ -149,10 +139,16 @@ def test_the_walk_reaches_what_it_claims() -> None:
     A walk that found nothing would pass the test above.
     """
     found = _bool_parameters()
-    # a positional flag, and a keyword-only one
+    # a positional flag
     assert ("base58_bech32.bech32.convertbits", "pad") in found
-    assert ("base58_bech32.base58.b58decode_check", "secret") in found
 
     # a private function, and a parameter of another type
     assert ("base58_bech32.bech32._convertbits", "pad") not in found
     assert ("base58_bech32.base58.b58decode_check", "out_size") not in found
+
+    # each kind of parameter, the tree's flags being of one kind:
+    # positional-only, positional, keyword-only, and an optional flag
+    source = "def f(a: bool, /, b: bool, *, c: bool, d: bool | None, e: int): ..."
+    function = ast.parse(source).body[0]
+    assert isinstance(function, ast.FunctionDef)
+    assert _flags_of(function) == {"a", "b", "c", "d"}

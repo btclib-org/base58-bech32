@@ -60,7 +60,6 @@ vulnerabilities*:
 
 - side channels: nothing here is constant-time
 - memory disclosure: secret material in a Python object is not zeroized
-- the checksums `b58decode_check` quotes when its `secret` is false
 - the operating system and the interpreter
 
 ## Trust boundaries
@@ -118,9 +117,9 @@ to, and what counters each.
   SS58 address can be. Plain `b58decode` has no cap, as the `base58`
   package has none.
 - **Exposure of sensitive information (CWE-209).** No decoder's refusal
-  quotes the string it was handed, and the one refusal that quotes a
-  hash of the payload, `b58decode_check`'s checksum mismatch, quotes
-  nothing when its `secret` is true (`tests/refusals_test.py`).
+  quotes the string it was handed (`tests/refusals_test.py`), nor a
+  checksum, which is computed from the payload: each codec's tests
+  match the whole message of its checksum refusal.
   The rule is section 7's *A refusal carries no secret* in the
   [btclib-org standard](https://github.com/btclib-org/.github#a-refusal-carries-no-secret).
   Its helper, `assert_secret_free` in `tests/secret_free/__init__.py`, is
