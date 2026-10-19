@@ -225,8 +225,8 @@ does (section 11 of
 [btclib-org/.github's `README.md`](https://github.com/btclib-org/.github#branch-protection-and-rulesets)).
 btclib-org/.github's
 [`GOVERNANCE.md`](https://github.com/btclib-org/.github/blob/main/GOVERNANCE.md#how-a-decision-is-made),
-*How a decision is made*, says when a bypass is added back, and the
-commands are below.
+*How a decision is made*, says when a bypass is added back; the
+commands to add and remove it follow the read-back below.
 
 ```shell
 gh api -X POST repos/btclib-org/base58-bech32/rulesets --input - <<'JSON'
@@ -251,13 +251,10 @@ gh api repos/btclib-org/base58-bech32/rulesets/25333526 --jq .bypass_actors
 # []
 ```
 
-**In an emergency**, where
-[`GOVERNANCE.md`](https://github.com/btclib-org/.github/blob/main/GOVERNANCE.md#how-a-decision-is-made)
-allows it, the maintainer adds the bypass back with a `PUT` and removes
-it after the merge. A `PUT` replaces the whole ruleset, so each body
-carries every parameter the ruleset holds, which the read above
-(without `--jq`) shows. The `POST` above omits some of them. The bypass
-is actor `3296421`, `fametrano`'s account id
+The bypass is added back and removed with a `PUT`. A `PUT` replaces the
+whole ruleset, so each body carries every parameter the ruleset holds,
+which the read above (without `--jq`) shows. The `POST` above omits some
+of them. The bypass is actor `3296421`, `fametrano`'s account id
 (`gh api users/fametrano --jq .id`), in `pull_request` mode. To add it:
 
 ```shell
