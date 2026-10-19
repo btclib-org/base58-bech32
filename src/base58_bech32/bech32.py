@@ -283,8 +283,8 @@ def bech32_encode(
 
     Every value is one 5-bit digit, and each is checked rather than left
     to the translation table: a digit from 32 to 255 would write a NUL
-    byte and say nothing, and any other would leave as a built-in error
-    rather than the package's.
+    byte and say nothing, a bool would be written as its 0 or 1, and any
+    other would leave as a built-in error rather than the package's.
 
     The string is lowercase. BIP173 says to use uppercase in a QR code,
     where it fits the smaller alphanumeric mode, and `bech32_decode` reads
