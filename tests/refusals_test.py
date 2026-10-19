@@ -177,10 +177,10 @@ def test_a_mistyped_wif_quotes_neither_checksum() -> None:
 
 # What the peers refuse, and the refusal this package gives each string.
 # The sources and their pins are in tests/_data/README.md. The peers refuse
-# a bech32 string over their length limit. This package has none, by
-# decision (the docstring of `base58_bech32.bech32`), so it reads the
-# strings with a valid checksum and writes the words that only a limit
-# refuses. That is not a defect: each such vector is asserted as read, in
+# a bech32 string over their length limit, and this package's default limit
+# is longer (`bech32_decode`'s docstring), so it reads the strings with a
+# valid checksum and writes the words that only a shorter limit refuses.
+# That is not a defect: each such vector is asserted as read, in
 # `test_the_strings_peers_refuse_for_their_length_are_read` and
 # `test_the_words_bitcoinjs_refuses_for_their_length_are_written`.
 
@@ -438,7 +438,7 @@ def test_bitcoinjs_valid_strings_are_refused_under_the_other_constant(
 ) -> None:
     """A valid string of one constant is refused under the other.
 
-    Some carry a `limit` bitcoinjs is given, which this package has none of.
+    Some carry a `limit` bitcoinjs is given, each within this package's default.
     """
     other = BECH32_M_CONST if section == "bech32" else BECH32_1_CONST
     name = "BECH32_1_CONST" if section == "bech32" else "BECH32_M_CONST"
