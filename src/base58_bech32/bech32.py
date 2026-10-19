@@ -319,8 +319,8 @@ def convertbits(
     generator, and is read to its end before the first value is checked:
     an unbounded iterator never returns.
 
-    Both widths are positive integers at most 64 and every value is an integer
-    of at most `from_bits` bits, anything else being refused: a wider value
+    Both widths are integers from 1 to 64 and every value is an integer of
+    at most `from_bits` bits, anything else being refused: a wider value
     would come out as the conversion of a different sequence, `[256]`
     from 8 to 5 bits as `[0]` does, and a zero `to_bits` would never
     leave the regrouping loop.
