@@ -84,9 +84,10 @@ def test_bech32() -> None:
     ]
 
     for test in valid_checksum:
-        decoded = bech32_decode(test, m=BECH32_1_CONST)
-        assert decoded == bech32_decode(test.encode("ascii"), m=BECH32_1_CONST)
-        assert bech32_encode(*decoded, m=BECH32_1_CONST).decode() == test.lower()
+        hrp, data, m = bech32_decode(test, m=BECH32_1_CONST)
+        assert m == BECH32_1_CONST
+        assert (hrp, data, m) == bech32_decode(test.encode("ascii"), m=m)
+        assert bech32_encode(hrp, data, m=m).decode() == test.lower()
         pos = test.rfind("1")
         test = test[: pos + 1] + chr(ord(test[pos + 1]) ^ 1) + test[pos + 2 :]  # noqa: PLW2901
         with pytest.raises(Base58Bech32ValueError):  # assorted error messages
@@ -155,7 +156,7 @@ def test_hrp_range_matches_bip173() -> None:
         data = [0]
         checksum = _create_checksum(hrp, data, BECH32_1_CONST)
         s = f"{hrp}1" + "".join(_ALPHABET[d] for d in data + checksum)
-        assert bech32_decode(s, m=BECH32_1_CONST) == (hrp, data)
+        assert bech32_decode(s, m=BECH32_1_CONST) == (hrp, data, BECH32_1_CONST)
         assert bech32_encode(hrp, data, m=BECH32_1_CONST) == s.encode("ascii")
 
 
@@ -216,9 +217,10 @@ def test_bech32m() -> None:
         "an84characterslonghumanreadablepartthatcontainsthetheexcludedcharactersbioandnumber11d6pts4",
     ]
     for test in valid_checksum:
-        decoded = bech32_decode(test, m=BECH32_M_CONST)
-        assert decoded == bech32_decode(test.encode("ascii"), m=BECH32_M_CONST)
-        assert bech32_encode(*decoded, m=BECH32_M_CONST).decode() == test.lower()
+        hrp, data, m = bech32_decode(test, m=BECH32_M_CONST)
+        assert m == BECH32_M_CONST
+        assert (hrp, data, m) == bech32_decode(test.encode("ascii"), m=m)
+        assert bech32_encode(hrp, data, m=m).decode() == test.lower()
         pos = test.rfind("1")
         test = test[: pos + 1] + chr(ord(test[pos + 1]) ^ 1) + test[pos + 2 :]  # noqa: PLW2901
         with pytest.raises(Base58Bech32ValueError):
@@ -258,7 +260,8 @@ DATA = st.lists(st.integers(min_value=0, max_value=31), min_size=1, max_size=80)
 @given(hrp=HRP, data=DATA)
 def test_round_trip(hrp: str, data: list[int]) -> None:
     """A bech32 string decodes to the hrp and data it was built from."""
-    assert bech32_decode(bech32_encode(hrp, data)) == (hrp, data)
+    m = BECH32_1_CONST if data[0] == 0 else BECH32_M_CONST
+    assert bech32_decode(bech32_encode(hrp, data)) == (hrp, data, m)
 
 
 @given(hrp=HRP, data=DATA, position=st.integers(min_value=0), value=st.integers(0, 31))
@@ -288,7 +291,7 @@ def test_a_value_that_is_no_5_bit_digit_is_refused() -> None:
     `TypeError`.
     """
     valid = [0, 1, 30, 31]
-    assert bech32_decode(bech32_encode("bc", valid)) == ("bc", valid)
+    assert bech32_decode(bech32_encode("bc", valid))[:2] == ("bc", valid)
 
     for out_of_range in (-1, -32, 32, 2**32):
         with pytest.raises(Base58Bech32ValueError, match="invalid 5-bit value: "):
@@ -475,13 +478,50 @@ def test_the_witness_program_round_trip() -> None:
     assert bytes(convertbits(values, 5, 8, False)) == program
 
 
-def test_without_m_the_first_value_is_needed() -> None:
-    """`m` read off the first value refuses data that has none."""
+def test_without_m_the_encoder_needs_the_first_value() -> None:
+    """The encoder reads `m` off the first value; the decoder needs none."""
     with pytest.raises(Base58Bech32ValueError, match="^empty data in bech32 address$"):
         bech32_encode("bc", [])
-    with pytest.raises(Base58Bech32ValueError, match="^empty data in bech32 address$"):
-        bech32_decode("a1lqfn3a")
-    assert bech32_decode("a1lqfn3a", m=BECH32_M_CONST) == ("a", [])
+    assert bech32_decode("a1lqfn3a") == ("a", [], BECH32_M_CONST)
+    assert bech32_decode("a12uel5l") == ("a", [], BECH32_1_CONST)
+
+
+# BIP350's invalid addresses: a version 1 program under the bech32
+# constant, and a version 0 program under the bech32m one
+_V1_BECH32 = "bc1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqh2y7hd"
+_V0_BECH32M = "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kemeawh"
+
+
+def test_without_m_the_constant_that_verified_is_returned() -> None:
+    """Either constant verifies, and the caller reads which one did."""
+    hrp, data, m = bech32_decode(_V1_BECH32)
+    assert (hrp, data[0], m) == ("bc", 1, BECH32_1_CONST)
+    hrp, data, m = bech32_decode(_V0_BECH32M)
+    assert (hrp, data[0], m) == ("bc", 0, BECH32_M_CONST)
+
+
+def test_bip350s_rule_is_the_callers() -> None:
+    """BIP350's rule, applied by a caller passing `m`.
+
+    A string checksummed with the constant its witness version forbids is
+    refused under the one it asks for. The refusal names the constant
+    that verifies, and nothing else.
+    """
+    with pytest.raises(
+        Base58Bech32ValueError, match="^invalid checksum: BECH32_1_CONST verifies$"
+    ):
+        bech32_decode(_V1_BECH32, m=BECH32_M_CONST)
+    with pytest.raises(
+        Base58Bech32ValueError, match="^invalid checksum: BECH32_M_CONST verifies$"
+    ):
+        bech32_decode(_V0_BECH32M, m=BECH32_1_CONST)
+
+
+@pytest.mark.parametrize("m", [None, BECH32_1_CONST, BECH32_M_CONST])
+def test_a_checksum_neither_constant_verifies(m: int | None) -> None:
+    """A corrupted string is refused alike, whatever `m` asks for."""
+    with pytest.raises(Base58Bech32ValueError, match="^invalid checksum$"):
+        bech32_decode("a12uel5m", m=m)
 
 
 def test_data_is_a_list() -> None:
@@ -517,5 +557,6 @@ def test_m_is_one_of_the_two_constants(m: int) -> None:
 def test_both_constants_and_none_are_accepted() -> None:
     """The three values `m` takes."""
     for m in (BECH32_1_CONST, BECH32_M_CONST):
-        assert bech32_decode(bech32_encode("a", [1], m=m), m=m) == ("a", [1])
-    assert bech32_decode(bech32_encode("a", [1])) == ("a", [1])
+        assert bech32_decode(bech32_encode("a", [1], m=m), m=m) == ("a", [1], m)
+        assert bech32_decode(bech32_encode("a", [1], m=m)) == ("a", [1], m)
+    assert bech32_decode(bech32_encode("a", [1])) == ("a", [1], BECH32_M_CONST)

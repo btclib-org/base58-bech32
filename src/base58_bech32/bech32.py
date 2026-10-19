@@ -28,9 +28,8 @@ A bech32 string is a human-readable part (HRP), the separator "1", and
 checksum. BIP173 defines bech32 and BIP350 bech32m, which differ only in
 the constant the checksum ends on: the `m` that `bech32_encode` and
 `bech32_decode` take. Nothing here knows what the values mean: a segwit
-address, a Lightning invoice and a Nostr key are all bech32. Without
-`m`, the first value is read as a witness version, as BIP350 says; a
-Lightning invoice or a Nostr key passes `m=BECH32_1_CONST`.
+address, a Lightning invoice and a Nostr key are all bech32. The
+exception is `bech32_encode` without `m`, whose docstring says how.
 
 - BIP173: https://github.com/bitcoin/bips/blob/master/bip-0173.mediawiki
 - BIP350: https://github.com/bitcoin/bips/blob/master/bip-0350.mediawiki
@@ -147,11 +146,6 @@ def _m_from_wit_ver(data: list[int]) -> int:
     return BECH32_1_CONST if wit_ver == 0 else BECH32_M_CONST
 
 
-def _verify_checksum(hrp: str, data: list[int], m: int) -> bool:
-    """Verify a checksum given HRP and converted data characters."""
-    return _polymod(_hrp_expand(hrp) + data) == m
-
-
 def _decode(bech: String) -> tuple[str, list[int], list[int]]:
     """Determine a bech32 string HRP, data and checksum."""
     text = str_from_string(bech, "bech32 string")
@@ -190,14 +184,16 @@ def _decode(bech: String) -> tuple[str, list[int], list[int]]:
     return hrp, indices[:-6], indices[-6:]
 
 
-def bech32_decode(bech: String, *, m: int | None = None) -> tuple[str, list[int]]:
-    """Return (hrp, data) from a bech32 string, verifying its checksum.
+def bech32_decode(bech: String, *, m: int | None = None) -> tuple[str, list[int], int]:
+    """Return (hrp, data, m) from a bech32 string, verifying its checksum.
 
-    `m` picks bech32, `BECH32_1_CONST`, or bech32m, `BECH32_M_CONST`, any
-    other value being refused; None reads it off the first data value,
-    the witness version choosing the constant as BIP350 says. The string
-    is given as a str or as its ascii bytes, and the HRP comes back
-    lowercase.
+    The `m` returned is the constant the checksum verifies with:
+    `BECH32_1_CONST` for bech32, `BECH32_M_CONST` for bech32m. With `m`
+    None either constant verifies; a constant passed as `m` must be the
+    one that verifies; any other value is refused. A caller holding a
+    segwit address checks the returned `m` against the witness version,
+    as BIP350 says. The string is given as a str or as its ascii bytes,
+    and the HRP comes back lowercase.
 
     BIP173 caps the string at 90 characters and the HRP at 83. This
     function caps neither, by decision: BOLT11's Lightning invoices are
@@ -206,16 +202,24 @@ def bech32_decode(bech: String, *, m: int | None = None) -> tuple[str, list[int]
     """
     _assert_valid_m(m)
     hrp, data, checksum = _decode(bech)
-    m = _m_from_wit_ver(data) if m is None else m
-    if _verify_checksum(hrp, data + checksum, m):
-        return hrp, data
-    raise Base58Bech32ValueError("invalid checksum")
+    # the residue depends on the payload: a refusal names the constant it
+    # matches and never prints it
+    residue = _polymod(_hrp_expand(hrp) + data + checksum)
+    if residue not in (BECH32_1_CONST, BECH32_M_CONST):
+        raise Base58Bech32ValueError("invalid checksum")
+    if m is not None and residue != m:
+        name = "BECH32_1_CONST" if residue == BECH32_1_CONST else "BECH32_M_CONST"
+        raise Base58Bech32ValueError(f"invalid checksum: {name} verifies")
+    return hrp, data, residue
 
 
 def bech32_encode(hrp: str, data: list[int], *, m: int | None = None) -> bytes:
     """Compute a bech32 string given HRP and 5-bit data values.
 
-    `m` is as `bech32_decode` takes it, and `data` is a list. The HRP is
+    `m` is `BECH32_1_CONST` or `BECH32_M_CONST`, any other value being
+    refused; None reads it off the first value as a witness version, as
+    BIP350 says, so a Lightning invoice or a Nostr key passes
+    `m=BECH32_1_CONST`. `data` is a list. The HRP is
     checked against the rule `bech32_decode` applies to it: non-empty,
     every character in BIP173's [33-126] range, and lowercase -- every
     data character is lowercase, so an uppercase HRP would write a string

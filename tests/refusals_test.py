@@ -22,7 +22,13 @@ from typing import Any
 import pytest
 
 from base58_bech32.base58 import b58decode, b58decode_check, b58encode, b58encode_check
-from base58_bech32.bech32 import bech32_decode, bech32_encode, convertbits
+from base58_bech32.bech32 import (
+    BECH32_1_CONST,
+    BECH32_M_CONST,
+    bech32_decode,
+    bech32_encode,
+    convertbits,
+)
 from base58_bech32.cashaddr import cashaddr_decode, cashaddr_encode
 from base58_bech32.exceptions import Base58Bech32TypeError, Base58Bech32ValueError
 from base58_bech32.ss58 import ss58_decode, ss58_encode
@@ -111,6 +117,13 @@ _DECODERS: list[tuple[str, Callable[[], Any]]] = [
         "bech32_decode",
         lambda: bech32_decode(
             _corrupted(bech32_encode("a", convertbits(_SECRET, 8, 5)))
+        ),
+    ),
+    (
+        "bech32_decode, the other constant",
+        lambda: bech32_decode(
+            bech32_encode("a", convertbits(_SECRET, 8, 5), m=BECH32_M_CONST),
+            m=BECH32_1_CONST,
         ),
     ),
     (

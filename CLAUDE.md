@@ -29,9 +29,9 @@ codecs `base58` and `bech32`, which import neither the other, then
 
 The package stops at the encoding. What a payload means -- a witness
 program, a public key hash, an account -- is the caller's, and for
-bitcoin btclib's `b58` and `b32`. The one exception is bech32's default
-`m=None`, which reads the first value as a witness version, as BIP350
-says; a Lightning invoice or a Nostr key passes `m=BECH32_1_CONST`.
+bitcoin btclib's `b58` and `b32`. The one exception is `bech32_encode`'s
+default `m=None`, which reads the first value as a witness version; its
+docstring says what other formats pass.
 
 ## The primary checkout is the maintainer's
 
