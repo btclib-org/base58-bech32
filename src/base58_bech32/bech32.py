@@ -387,7 +387,9 @@ def bech32_encode_bytes(
 
     The payload, a bytes-like object or a hex string, is regrouped into
     5-bit values, the last one padded with zero bits, and written by
-    `bech32_encode`, which checks the HRP.
+    `bech32_encode`, which checks the HRP. A Nostr key (NIP-19) is such a
+    payload. A Lightning invoice is not: its 5-bit fields need not fill
+    whole bytes, so it stays with `bech32_encode`.
 
     `m` is `BECH32_1_CONST` or `BECH32_M_CONST`, and None is refused: the
     first 5-bit value of a payload of bytes is no witness version to read
