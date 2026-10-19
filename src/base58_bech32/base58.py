@@ -241,7 +241,8 @@ def b58decode(v: String, *, alphabet: bytes = BITCOIN_ALPHABET) -> bytes:
 
     Whitespace and NUL are refused, unless the alphabet holds them.
     Bitcoin Core's `DecodeBase58` skips leading and trailing whitespace,
-    and the `base58` package strips trailing whitespace.
+    as its test `src/test/base58_tests.cpp` at bitcoin/bitcoin 924f4c4ac7
+    checks. The `base58` package strips trailing whitespace.
     """
     _assert_valid_alphabet(alphabet)
     return _b58decode(_ascii_bytes(v), alphabet)
