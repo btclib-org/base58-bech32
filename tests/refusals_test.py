@@ -22,7 +22,13 @@ from typing import Any
 import pytest
 
 from base58_bech32.base58 import b58decode, b58decode_check, b58encode, b58encode_check
-from base58_bech32.bech32 import bech32_decode, bech32_encode, convertbits
+from base58_bech32.bech32 import (
+    BECH32_1_CONST,
+    BECH32_M_CONST,
+    bech32_decode,
+    bech32_encode,
+    convertbits,
+)
 from base58_bech32.cashaddr import cashaddr_decode, cashaddr_encode
 from base58_bech32.exceptions import Base58Bech32TypeError, Base58Bech32ValueError
 from base58_bech32.ss58 import ss58_decode, ss58_encode
@@ -105,15 +111,19 @@ def _ss58_of(data: bytes) -> bytes:
 
 
 _DECODERS: list[tuple[str, Callable[[], Any]]] = [
-    (
-        "b58decode_check, secret",
-        lambda: b58decode_check(_corrupted(b58encode_check(_SECRET)), secret=True),
-    ),
+    ("b58decode_check", lambda: b58decode_check(_corrupted(b58encode_check(_SECRET)))),
     ("b58decode, invalid character", lambda: b58decode(b58encode(_SECRET) + b"0")),
     (
         "bech32_decode",
         lambda: bech32_decode(
             _corrupted(bech32_encode("a", convertbits(_SECRET, 8, 5)))
+        ),
+    ),
+    (
+        "bech32_decode, the other constant",
+        lambda: bech32_decode(
+            bech32_encode("a", convertbits(_SECRET, 8, 5), m=BECH32_M_CONST),
+            m=BECH32_1_CONST,
         ),
     ),
     (
@@ -152,10 +162,13 @@ def test_a_decoders_refusal_quotes_nothing_of_its_input(
     assert len(str(excinfo.value)) < 44
 
 
-def test_a_checksum_is_quoted_unless_the_payload_is_secret() -> None:
-    """The one refusal that quotes a hash of the payload, and its switch."""
-    corrupted = _corrupted(b58encode_check(_SECRET))
-    with pytest.raises(Base58Bech32ValueError, match="instead of 0x"):
-        b58decode_check(corrupted)
-    with pytest.raises(Base58Bech32ValueError, match="^invalid checksum$"):
-        b58decode_check(corrupted, secret=True)
+def test_a_mistyped_wif_quotes_neither_checksum() -> None:
+    """Neither the expected checksum, a hash of the key, nor the written one."""
+    payload = b"\x80" + _SECRET + b"\x01"
+    mistyped = _corrupted(b58encode_check(payload))
+    expected = hashlib.sha256(hashlib.sha256(payload).digest()).digest()[:4]
+    written = b58decode(mistyped)[-4:]
+    assert written != expected
+    with pytest.raises(Base58Bech32ValueError, match="^invalid checksum$") as excinfo:
+        b58decode_check(mistyped)
+    assert_secret_free(excinfo.value, [payload, expected, written])

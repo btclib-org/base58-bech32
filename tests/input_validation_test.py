@@ -214,7 +214,7 @@ def test_the_walk_reaches_what_it_claims() -> None:
     """
     assert _DRIVABLE["base58_bech32.base58.b58encode"] == ["Octets"]
     assert _DRIVABLE["base58_bech32.cashaddr.cashaddr_decode"] == ["String"]
-    # `out_size`, `alphabet` and `secret` are keywords and are not driven
+    # `out_size` and `alphabet` are keywords and are not driven
     assert _DRIVABLE["base58_bech32.base58.b58decode_check"] == ["String"]
 
     # a private name, whatever its parameters

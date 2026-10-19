@@ -95,7 +95,7 @@ def test_a_refusal_raised_inside_the_package_is_a_value_error() -> None:
     decoders; an `except ValueError` written by a caller who never heard
     of this package's classes catches both.
     """
-    with pytest.raises(ValueError, match="invalid checksum: ") as base58_refusal:
+    with pytest.raises(ValueError, match="invalid checksum") as base58_refusal:
         b58decode_check("3vQB7B6MrGQZaxCuFg4oH")
     assert isinstance(base58_refusal.value, Base58Bech32ValueError)
 

@@ -40,7 +40,7 @@ if TYPE_CHECKING:
 # names of those parameters in declaration order
 KEYWORD_ONLY: dict[str, list[str]] = {
     "base58_bech32.base58:b58decode": ["alphabet"],
-    "base58_bech32.base58:b58decode_check": ["out_size", "alphabet", "secret"],
+    "base58_bech32.base58:b58decode_check": ["out_size", "alphabet"],
     "base58_bech32.base58:b58encode": ["alphabet"],
     "base58_bech32.base58:b58encode_check": ["in_size", "alphabet"],
     "base58_bech32.bech32:bech32_decode": ["m"],

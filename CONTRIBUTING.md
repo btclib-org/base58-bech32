@@ -328,9 +328,7 @@ message — arrives as whatever it was written as. Most wrong values are
 true: `"false"`, `"no"`, a non-zero number, an object. But `0`, `None`
 and `""` read as `False`, so a flag read for its truth can be misread as
 on or as off. That is why this tree's flags refuse a non-bool with a
-`Base58Bech32TypeError`: `convertbits`'s `pad`, which decides what is
-computed, and `b58decode_check`'s `secret`, which decides whether a
-refusal quotes the checksums.
+`Base58Bech32TypeError`.
 
 **Every flag is in the census.** `tests/bool_parameter_test.py` drives
 each until it refuses `"no"`, `0`, `1`, `None`, `""` and `1.0`, and a
@@ -572,7 +570,7 @@ from base58_bech32 import base58, bech32, cashaddr, ss58
 print(version('base58-bech32'), requires('base58-bech32'))
 assert base58_bech32.__version__ == version('base58-bech32')
 assert base58.b58decode_check('3vQB7B6MrGQZaxCuFg4oh') == b'hello world'
-assert bech32.bech32_decode('a12uel5l', m=1) == ('a', [])
+assert bech32.bech32_decode('a12uel5l', m=1) == ('a', [], 1)
 address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'
 assert ss58.ss58_decode(address)[0] == 42
 address = 'pref:pr6m7j9njldwwzlg9v7v53unlr4jkmx6ey65nvtks5'

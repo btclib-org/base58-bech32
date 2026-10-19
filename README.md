@@ -100,7 +100,9 @@ from base58_bech32 import base58, bech32, cashaddr, ss58
 wif = base58.b58encode_check(bytes.fromhex("80" + "11" * 32 + "01"))
 assert base58.b58decode_check(wif, out_size=34)[0] == 0x80
 
-hrp, values = bech32.bech32_decode("bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4")
+hrp, values, m = bech32.bech32_decode("bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4")
+# BIP350: bech32 for witness version 0, bech32m for every later one
+assert m == (bech32.BECH32_1_CONST if values[0] == 0 else bech32.BECH32_M_CONST)
 program = bytes(bech32.convertbits(values[1:], 5, 8, False))
 assert (hrp, values[0], program.hex()[:8]) == ("bc", 0, "751e76e8")
 

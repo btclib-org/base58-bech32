@@ -94,6 +94,3 @@ package is used to teach and to prototype as much as to build:
     interpreter meanwhile.
 - **Nothing here is constant-time.** The package is pure Python, and an
     alphabet is indexed by the encoded string's own characters.
-- **`b58decode_check` quotes both checksums when they differ**, unless
-    its `secret` argument is true. The expected checksum is a hash of the
-    payload, so a caller decoding a WIF passes `secret=True`.
