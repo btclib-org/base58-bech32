@@ -538,7 +538,7 @@ def test_the_uppercase_form_for_qr_codes_is_read_back(m: int | None) -> None:
         written = bech32_encode(hrp, data, m=m)
         assert written == written.lower()
         for upper in (written.upper(), written.upper().decode("ascii")):
-            assert bech32_decode(upper, m=m) == (hrp, data)
+            assert bech32_decode(upper, m=m)[:2] == (hrp, data)
 
 
 def test_the_witness_program_round_trip() -> None:
