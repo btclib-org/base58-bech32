@@ -42,8 +42,8 @@ with the following modifications:
 * type annotated Python3
 * raising exceptions instead of returning (None, None)
 * the length limit is a keyword, `limit`, of the decoder and the
-  encoder, 1023 by default rather than BIP173's 90; `bech32_decode` says
-  why, and what the checksum guarantees at each length
+  encoder, whose default is not BIP173's 90; `bech32_decode` says why, and
+  what the checksum guarantees at each length
 * the checksum's inner loop is a 32-entry table of tap combinations
 * detailed error messages
 * an encoder that answers ascii bytes, as the standard library's `base64`

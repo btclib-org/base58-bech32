@@ -84,7 +84,8 @@ Where the two differ:
   `bech32_decode` accepts either constant.
 - **`bech32_decode` returns `(hrp, data, m)`**, `m` being the constant the
   checksum verifies with.
-- **A string is capped at 1023 characters.** BIP173 caps a string at 90
+- **A string's length is capped by `limit`.** BIP173 caps a string at 90
   characters and its HRP at 83, and `bech32_decode` refuses an HRP over
-  83 and caps no string. Here the HRP is not bounded, and the string is
-  capped by `limit`, which `bech32_decode`'s docstring describes.
+  83 and caps no string. Here the HRP is not bounded on its own, and the
+  string is capped by `limit`, whose default `bech32_decode`'s docstring
+  gives.
