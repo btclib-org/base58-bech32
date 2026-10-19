@@ -5,6 +5,8 @@
 # them, so those bytes are the ones on disk on every platform.
 tests/_data/base58_encode_decode.json -text
 tests/_data/base58_package_vectors.json -text
+tests/_data/bech32_core_invalid_vectors.json -text
 tests/_data/cashaddr_vectors.json -text
+tests/_data/fixtures.json -text
 tests/_data/ss58_decode_vectors.json -text
 tests/_data/ss58_encode_vectors.json -text

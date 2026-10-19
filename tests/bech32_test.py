@@ -50,6 +50,7 @@ from base58_bech32.bech32 import (
     convertbits,
 )
 from base58_bech32.exceptions import Base58Bech32TypeError, Base58Bech32ValueError
+from tests import FOLDING
 
 
 def test_the_tap_table_holds_the_taps_it_replaces() -> None:
@@ -329,9 +330,7 @@ def test_a_character_lowering_onto_the_alphabet_is_refused() -> None:
 @pytest.mark.parametrize(
     "char",
     [
-        "\u212a",  # KELVIN SIGN, lowers to "k"
-        "\u0130",  # LATIN CAPITAL LETTER I WITH DOT ABOVE, lowers to two
-        "\u017f",  # LATIN SMALL LETTER LONG S, uppercases to "S"
+        *FOLDING,
         "\u1e9e",  # LATIN CAPITAL LETTER SHARP S, casefolds to "ss"
         "\x7f",  # DEL, one above the range
         "\x80",  # one above ASCII
@@ -357,6 +356,36 @@ def test_a_data_part_character_out_of_range_is_refused_first(
         Base58Bech32ValueError, match="data part character out of range"
     ):
         bech32_decode("".join(chars))
+
+
+@pytest.mark.parametrize("char", FOLDING)
+@pytest.mark.parametrize("address", [_UPPER, _UPPER.lower()], ids=["upper", "lower"])
+def test_a_character_folding_onto_ascii_is_refused_in_the_hrp(
+    char: str, address: str
+) -> None:
+    """Each of `FOLDING`, in the HRP, under either `m`.
+
+    The data and the checksum are
+    `test_a_data_part_character_out_of_range_is_refused_first`'s. Whatever
+    the string's case, the refusal is the package's and never an acceptance.
+    """
+    chars = list(address)
+    chars[0] = char
+    for m in (None, BECH32_1_CONST):
+        with pytest.raises(
+            Base58Bech32ValueError, match="^HRP character out of range$"
+        ):
+            bech32_decode("".join(chars), m=m)
+
+
+@pytest.mark.parametrize("char", FOLDING)
+@pytest.mark.parametrize("hrp", ["{}", "b{}", "{}c"])
+def test_a_character_folding_onto_ascii_is_refused_in_the_encoders_hrp(
+    char: str, hrp: str
+) -> None:
+    """`bech32_encode` refuses the HRP, as `bech32_decode` refuses its own."""
+    with pytest.raises(Base58Bech32ValueError, match="^HRP character out of range"):
+        bech32_encode(hrp.format(char), [0])
 
 
 @given(
@@ -467,7 +496,7 @@ def test_the_uppercase_form_for_qr_codes_is_read_back(m: int | None) -> None:
         written = bech32_encode(hrp, data, m=m)
         assert written == written.lower()
         for upper in (written.upper(), written.upper().decode("ascii")):
-            assert bech32_decode(upper, m=m) == (hrp, data)
+            assert bech32_decode(upper, m=m)[:2] == (hrp, data)
 
 
 def test_the_witness_program_round_trip() -> None:

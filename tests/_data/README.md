@@ -90,6 +90,30 @@ reads them is `b58encode`/`b58decode` and not the checked pair -- one row
 is 256 bytes, 348 base58 characters, which `b58decode_check` would refuse
 on `MAX_LENGTH`. btclib carries the same file, at the same pin.
 
+### `tests/_data/bech32_core_invalid_vectors.json`
+
+```text
+repo    bitcoin/bitcoin
+path    src/test/bech32_tests.cpp
+commit  7fcaccd9d0b7b9ec80b8224239aeb3c13b90593d  2026-08-28
+blob    3b66606530942aa78c2c7211d10cba5356a0d9a6
+ours    bd7ecc12e792e88109a065814c9e396d518483a6
+pulled  2026-10-18
+behind  0 revisions; that commit is the tip of the path
+```
+
+Verdict: **transcribed**. The `CASES` and `ERRORS` of
+`bech32_testvectors_invalid` and `bech32m_testvectors_invalid`, paired as
+`[string, Core's error, where it locates it]`. A byte with its high bit set
+is written as the code point of that value. The positions `LocateErrors`
+gives are taken and not asserted, this package not computing them. Not taken:
+the valid vectors, which `tests/bech32_test.py` carries from the
+specifications.
+
+Core refuses a string over its character limit. The over-long vector of
+each table whose checksum holds is read, and `tests/refusals_test.py`
+asserts that and says why.
+
 ## Other projects
 
 ### `tests/_data/base58_package_vectors.json`
@@ -115,6 +139,25 @@ and the random benchmarks, which `tests/base58_test.py` runs as its own
 loop and hypothesis test. Not taken either, being what this package does
 not do: `autofix`, and the Base45 alphabet, whose refusal
 `tests/migration_test.py` measures.
+
+### `tests/_data/fixtures.json`
+
+```text
+repo    bitcoinjs/bech32
+path    src/test/fixtures.json
+commit  8307501d91ac0cd7d93d55a0aefbe415148cdbbe  2021-02-15
+blob    5925eb74db28404aceba011553f7035bf6b7e9fa
+pulled  2026-10-18
+behind  0 revisions; that commit is the tip of the path
+```
+
+Verdict: **identical**. Each invalid string and each invalid `prefix` with
+`words` comes with the message bitcoinjs expects, and `fromWords` has its
+padding refusals. `tests/refusals_test.py` asserts the refusal of each,
+and that a valid string is refused under the other constant. It reads
+the `an84` strings and writes the `foobar` words that bitcoinjs refuses for
+their length, as `tests/refusals_test.py` says; the other string over the
+limit is refused for its checksum.
 
 ### `tests/_data/ss58_encode_vectors.json`
 
@@ -189,6 +232,16 @@ lowercased.
   them.
 - **The Bitcoin wiki's WIF pair and Ripple's zero account**, inline in
   `tests/base58_test.py`.
+- **The refusals of btcd and libbase58, and polkadot-js's `check.spec.ts`
+  and `checksum.spec.ts`**, inline, being a handful of strings each: all in
+  `tests/refusals_test.py` but `checksum.spec.ts`'s addresses, which are in
+  `tests/ss58_test.py`. Read at btcd
+  `c615bd70971ac4976de7e7d7f797a23fb0fe9998` (`address/base58/base58_test.go`
+  and `address/bech32/bech32_test.go`), at libbase58
+  `b1dd03fa8d1be4be076bb6152325c6b5cf64f678` (`tests/decode-*.sh`) and at
+  polkadot-js/common `9281daa14c2c2a41708c3489de8770a064525577`, all read on
+  2026-10-18. polkadot-js's prefix and ECDSA addresses of `decode.spec.ts` are
+  in `ss58_decode_vectors.json` already.
 
 ## What is not pinned, and why
 
@@ -208,6 +261,7 @@ the tree answers whenever the number is wanted:
 git ls-files 'tests/_data/*' | grep -cv 'README.md'
 ```
 
-- identical byte for byte: `base58_encode_decode.json`.
+- identical byte for byte: `base58_encode_decode.json` and `fixtures.json`.
 - transcribed: `base58_package_vectors.json`, `ss58_encode_vectors.json`,
-  `ss58_decode_vectors.json` and `cashaddr_vectors.json`.
+  `ss58_decode_vectors.json`, `cashaddr_vectors.json` and
+  `bech32_core_invalid_vectors.json`.
