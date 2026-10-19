@@ -27,9 +27,9 @@ A bech32 string is a human-readable part (HRP), the separator "1", and
 5-bit values written with a 32-character alphabet, the last six of them a
 checksum. BIP173 defines bech32 and BIP350 bech32m, which differ only in
 the constant the checksum ends on: the `m` that `bech32_encode` and
-`bech32_decode` take. Nothing here knows what the values mean, except
-`bech32_encode` without `m` (its docstring says how): a segwit address,
-a Lightning invoice and a Nostr key are all bech32.
+`bech32_decode` take. Nothing here knows what the values mean: a segwit
+address, a Lightning invoice and a Nostr key are all bech32. The
+exception is `bech32_encode` without `m`, whose docstring says how.
 
 - BIP173: https://github.com/bitcoin/bips/blob/master/bip-0173.mediawiki
 - BIP350: https://github.com/bitcoin/bips/blob/master/bip-0350.mediawiki
