@@ -421,7 +421,8 @@ result.
      --body-file <path> --subject <title>
    ```
 
-   In an emergency, once the bypass is added back, `--admin` is added.
+   In an emergency, once the bypass is added back (`REPOSITORY.md`
+   gives the command), `--admin` is added.
 
    That the commit is composed by GitHub and signed with its web-flow
    key rather than yours costs nothing. The signature check on `main`

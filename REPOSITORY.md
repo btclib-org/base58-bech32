@@ -225,7 +225,8 @@ does (section 11 of
 [btclib-org/.github's `README.md`](https://github.com/btclib-org/.github#branch-protection-and-rulesets)).
 btclib-org/.github's
 [`GOVERNANCE.md`](https://github.com/btclib-org/.github/blob/main/GOVERNANCE.md#how-a-decision-is-made),
-*How a decision is made*, says when a bypass is added back.
+*How a decision is made*, says when a bypass is added back, and the
+commands are below.
 
 ```shell
 gh api -X POST repos/btclib-org/base58-bech32/rulesets --input - <<'JSON'
@@ -242,19 +243,62 @@ gh api -X POST repos/btclib-org/base58-bech32/rulesets --input - <<'JSON'
 JSON
 ```
 
-The ruleset, `25333526`, was created with a bypass for the maintainer
-until the first release, by [the decision recorded in btclib
-ISS 2712](https://github.com/btclib-org/btclib/issues/2712#issuecomment-6247443374).
-The maintainer removed the bypass on 2026-10-19, once v2026.10.18 was
-out. Read on 2026-10-19T00:19Z:
+The ruleset has the id `25333526`. It has no bypass actor, read on
+2026-10-19T01:02Z:
 
 ```shell
 gh api repos/btclib-org/base58-bech32/rulesets/25333526 --jq .bypass_actors
 # []
-gh api repos/btclib-org/base58-bech32/rulesets/25333526/history \
-  --jq '.[] | [.version_id, .updated_at]'
-# [53732977,"2026-10-19T02:18:01.031+02:00"]
-# [53670924,"2026-10-18T08:12:34.269+02:00"]
+```
+
+**In an emergency**, where
+[`GOVERNANCE.md`](https://github.com/btclib-org/.github/blob/main/GOVERNANCE.md#how-a-decision-is-made)
+allows it, the maintainer adds the bypass back with a `PUT` and removes
+it after the merge. A `PUT` replaces the whole ruleset, so each body
+carries every parameter the ruleset holds, which the read above
+(without `--jq`) shows. The `POST` above omits some of them. The bypass
+is actor `3296421`, `fametrano`'s account id
+(`gh api users/fametrano --jq .id`), in `pull_request` mode. To add it:
+
+```shell
+gh api -X PUT repos/btclib-org/base58-bech32/rulesets/25333526 \
+  --input - <<'JSON'
+{"name": "main-self-merge", "target": "branch", "enforcement": "active",
+ "conditions": {"ref_name": {"include": ["refs/heads/main"], "exclude": []}},
+ "bypass_actors": [{"actor_id": 3296421, "actor_type": "User",
+                    "bypass_mode": "pull_request"}],
+ "rules": [{"type": "pull_request", "parameters": {
+   "allowed_merge_methods": ["squash"],
+   "dismiss_stale_reviews_on_push": true,
+   "dismissal_restriction": {"allowed_actors": [], "enabled": false},
+   "require_code_owner_review": false,
+   "require_extra_approval_for_unattributed_changes": true,
+   "require_last_push_approval": false,
+   "required_approving_review_count": 1,
+   "required_review_thread_resolution": true,
+   "required_reviewers": []}}]}
+JSON
+```
+
+The same `PUT` with `"bypass_actors": []` removes it:
+
+```shell
+gh api -X PUT repos/btclib-org/base58-bech32/rulesets/25333526 \
+  --input - <<'JSON'
+{"name": "main-self-merge", "target": "branch", "enforcement": "active",
+ "conditions": {"ref_name": {"include": ["refs/heads/main"], "exclude": []}},
+ "bypass_actors": [],
+ "rules": [{"type": "pull_request", "parameters": {
+   "allowed_merge_methods": ["squash"],
+   "dismiss_stale_reviews_on_push": true,
+   "dismissal_restriction": {"allowed_actors": [], "enabled": false},
+   "require_code_owner_review": false,
+   "require_extra_approval_for_unattributed_changes": true,
+   "require_last_push_approval": false,
+   "required_approving_review_count": 1,
+   "required_review_thread_resolution": true,
+   "required_reviewers": []}}]}
+JSON
 ```
 
 Classic protection's own copy of the signature rule is off:
