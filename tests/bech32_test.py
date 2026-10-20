@@ -499,14 +499,18 @@ def test_the_uppercase_form_for_qr_codes_is_read_back(m: int | None) -> None:
     """`bech32_decode` reads the `.upper()` of what `bech32_encode` wrote.
 
     BIP173 says uppercase is the form for a QR code, and the encoder
-    answers lowercase.
+    answers lowercase. The constant returned is `m`, and with `m` None the
+    one the encoder read off the first value: bech32 for 0, else bech32m.
     """
     values = convertbits(bytes(range(20)), 8, 5)
     for hrp, data in (("bc", [0, *values]), ("lnbc", values), ("a~!", [1, *values])):
         written = bech32_encode(hrp, data, m=m)
         assert written == written.lower()
+        expected = (
+            m if m is not None else (BECH32_1_CONST if data[0] == 0 else BECH32_M_CONST)
+        )
         for upper in (written.upper(), written.upper().decode("ascii")):
-            assert bech32_decode(upper, m=m)[:2] == (hrp, data)
+            assert bech32_decode(upper, m=m) == (hrp, data, expected)
 
 
 def test_the_witness_program_round_trip() -> None:
