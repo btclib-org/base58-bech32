@@ -13,6 +13,7 @@ tests/_data/README.md pins both.
 from __future__ import annotations
 
 import hashlib
+import hmac
 
 import pytest
 from hypothesis import given
@@ -225,3 +226,23 @@ def test_polkadot_js_two_byte_prefixes_are_read(address: str, prefix: int) -> No
     assert decoded_prefix == prefix
     assert len(payload) == 32
     assert ss58_encode(prefix, payload) == address.encode("ascii")
+
+
+def test_the_checksum_is_compared_with_compare_digest(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """`ss58_decode` compares checksums with `hmac.compare_digest`."""
+    calls: list[tuple[bytes, bytes]] = []
+    compare_digest = hmac.compare_digest
+
+    def spy(a: bytes, b: bytes) -> bool:
+        calls.append((a, b))
+        return compare_digest(a, b)
+
+    monkeypatch.setattr(hmac, "compare_digest", spy)
+    address = ss58_encode(0, bytes(32))
+    assert ss58_decode(address) == (0, bytes(32))
+    assert len(calls) == 1
+    with pytest.raises(Base58Bech32ValueError, match="^invalid SS58 checksum$"):
+        ss58_decode(address[:-1] + b"2")
+    assert len(calls) == 2
