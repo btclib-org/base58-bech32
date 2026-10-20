@@ -319,8 +319,8 @@ def convertbits(
     generator, and is read to its end before the first value is checked:
     an unbounded iterator never returns.
 
-    Both widths are positive integers and every value is an integer of at
-    most `from_bits` bits, anything else being refused: a wider value
+    Both widths are integers from 1 to 64 and every value is an integer of
+    at most `from_bits` bits, anything else being refused: a wider value
     would come out as the conversion of a different sequence, `[256]`
     from 8 to 5 bits as `[0]` does, and a zero `to_bits` would never
     leave the regrouping loop.
@@ -331,6 +331,8 @@ def convertbits(
             raise Base58Bech32TypeError(f"invalid {what} type: {type(width).__name__}")
         if width < 1:
             raise Base58Bech32ValueError(f"invalid {what}: {_message_text(width)} < 1")
+        if width > 64:
+            raise Base58Bech32ValueError(f"invalid {what}: {_message_text(width)} > 64")
     assert_type(data, Iterable, "data")
 
     values = list(data)

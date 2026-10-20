@@ -430,12 +430,14 @@ def test_a_value_wider_than_from_bits_is_refused() -> None:
         (8, -2, "invalid to_bits: -2 < 1"),
         (0, 5, "invalid from_bits: 0 < 1"),
         (-1, 5, "invalid from_bits: -1 < 1"),
+        (8, 65, "invalid to_bits: 65 > 64"),
+        (65, 5, "invalid from_bits: 65 > 64"),
     ],
 )
-def test_a_conversion_width_is_positive(
+def test_a_conversion_width_is_in_range(
     from_bits: int, to_bits: int, err_msg: str
 ) -> None:
-    """A width below 1 is refused before the conversion starts.
+    """A width below 1 or above 64 is refused before the conversion starts.
 
     A zero `to_bits` is the one of these that would otherwise never
     return, the regrouping loop subtracting nothing from its counter.
@@ -449,6 +451,12 @@ def test_a_conversion_width_of_one_is_accepted() -> None:
     assert convertbits([1], 8, 1) == [0, 0, 0, 0, 0, 0, 0, 1]
     assert convertbits([1], 1, 8) == [128]
     assert convertbits([1], 1, 1) == [1]
+
+
+def test_a_conversion_width_of_64_is_accepted() -> None:
+    """A width of 64 is valid on either side, the refusal stopping at 65."""
+    assert convertbits([1], 64, 64) == [1]
+    assert convertbits([1], 5, 64) == [2**59]
 
 
 def test_a_conversion_takes_integers_only() -> None:
@@ -818,3 +826,15 @@ def test_the_bytes_pair_caps_a_string_at_1023_characters_by_default() -> None:
     with pytest.raises(Base58Bech32ValueError, match=err_msg):
         bech32_decode_bytes(encoded, m=BECH32_1_CONST)
     assert bech32_decode_bytes(encoded, m=BECH32_1_CONST, limit=None) == ("a", payload)
+
+
+def test_convertbits_excessive_width() -> None:
+    """A width above 64 is refused with Base58Bech32ValueError."""
+    with pytest.raises(Base58Bech32ValueError, match="invalid from_bits: .* > 64"):
+        convertbits([0], 2**64, 5)
+
+    with pytest.raises(Base58Bech32ValueError, match="invalid to_bits: .* > 64"):
+        convertbits([0], 5, 2**64)
+
+    with pytest.raises(Base58Bech32ValueError, match="invalid from_bits: .* > 64"):
+        convertbits([], 2**64, 5)
