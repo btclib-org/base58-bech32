@@ -33,6 +33,7 @@ modifications:
 """
 
 import itertools
+from enum import IntEnum
 
 import pytest
 from hypothesis import given
@@ -40,11 +41,15 @@ from hypothesis import strategies as st
 
 from base58_bech32.bech32 import (
     _ALPHABET,
+    _CHAR_OF,
+    _DIGIT_OF,
     _GENERATOR,
+    _NOT_A_DIGIT,
     _TAPS,
     BECH32_1_CONST,
     BECH32_M_CONST,
     _create_checksum,
+    _hrp_in_range,
     bech32_decode,
     bech32_decode_bytes,
     bech32_encode,
@@ -161,6 +166,79 @@ def test_hrp_range_matches_bip173() -> None:
         s = f"{hrp}1" + "".join(_ALPHABET[d] for d in data + checksum)
         assert bech32_decode(s, m=BECH32_1_CONST) == (hrp, data, BECH32_1_CONST)
         assert bech32_encode(hrp, data, m=BECH32_1_CONST) == s.encode("ascii")
+
+
+def test_hrp_range_predicate_is_the_per_character_test() -> None:
+    """The three C passes are `32 < ord(x) < 127`, character by character.
+
+    Held over every code point below U+3000, and a string is accepted
+    only when each of its characters is.
+    """
+    for code in range(0x3000):
+        char = chr(code)
+        assert _hrp_in_range(char) == (32 < code < 127), code
+        assert _hrp_in_range("a" + char + "b") == (32 < code < 127), code
+    assert _hrp_in_range("")
+
+
+def test_the_translation_tables_are_the_alphabet() -> None:
+    """`_DIGIT_OF` reads the alphabet and `_CHAR_OF` writes it back."""
+    for digit, char in enumerate(_ALPHABET):
+        assert _DIGIT_OF[ord(char)] == digit
+        assert _CHAR_OF[digit] == ord(char)
+    assert len(_DIGIT_OF) == len(_CHAR_OF) == 256
+    assert {i for i, d in enumerate(_DIGIT_OF) if d != _NOT_A_DIGIT} == {
+        ord(c) for c in _ALPHABET
+    }
+
+
+@pytest.mark.parametrize(
+    "address, err_msg",
+    [
+        # "b", "i", "o" and "1" are no alphabet character
+        ("a1qqqqqqb", "invalid character in checksum"),
+        ("a1bqqqqqqqqqq", "invalid data character"),
+        # the checksum is looked at before the data part
+        ("a1bqqqqqqqqqb", "invalid character in checksum"),
+        ("a1bqqqqqqqqqqq", "invalid data character"),
+        # the first six characters of the data part are not the checksum
+        ("a1qqbqqqqqqq", "invalid data character"),
+        ("a1qqqqqqqqqqi", "invalid character in checksum"),
+        # the range check comes before both
+        ("a1b\x7fqqqqqq", "data part character out of range"),
+    ],
+)
+def test_the_lookup_refusals_and_their_order(address: str, err_msg: str) -> None:
+    """A checksum character is refused before a data character is."""
+    with pytest.raises(Base58Bech32ValueError, match=f"^{err_msg}$"):
+        bech32_decode(address, m=BECH32_1_CONST)
+
+
+def test_a_value_that_is_a_subclass_of_int_is_accepted() -> None:
+    """The fast path declines an `IntEnum`, and the loop accepts it."""
+
+    class Digit(IntEnum):
+        THREE = 3
+
+    expected = bech32_encode("bc", [3, 3], m=BECH32_1_CONST)
+    assert bech32_encode("bc", [Digit.THREE, 3], m=BECH32_1_CONST) == expected
+    assert convertbits([Digit.THREE], 5, 5) == [3]
+
+
+def test_the_first_offending_value_is_the_one_named() -> None:
+    """Past the fast path, values are judged in order, as one at a time."""
+    with pytest.raises(Base58Bech32ValueError, match="invalid 5-bit value: 40"):
+        bech32_encode("bc", [1, 40, "x"], m=BECH32_1_CONST)  # type: ignore[list-item]
+    with pytest.raises(Base58Bech32TypeError, match="invalid 5-bit value type: str"):
+        bech32_encode("bc", [1, "x", 40], m=BECH32_1_CONST)  # type: ignore[list-item]
+    with pytest.raises(Base58Bech32ValueError, match="invalid value: 32"):
+        convertbits([1, 32, "x"], 5, 8)  # type: ignore[list-item]
+    with pytest.raises(Base58Bech32TypeError, match="invalid value type: str"):
+        convertbits([1, "x", 32], 5, 8)  # type: ignore[list-item]
+    with pytest.raises(Base58Bech32ValueError, match="invalid value: -1"):
+        convertbits([1, -1], 5, 8)
+    # the bound is exclusive: 31 is five bits, 32 is not
+    assert convertbits([31], 5, 8) == [248]
 
 
 def test_encode_validates_hrp() -> None:
@@ -285,14 +363,7 @@ def test_a_changed_character_fails_the_checksum(
 
 
 def test_a_value_that_is_no_5_bit_digit_is_refused() -> None:
-    """A negative digit would wrap around the alphabet into another string.
-
-    `_ALPHABET[d]` is a plain string index, so Python reads -1 as the
-    last character and -32 as the first: unchecked, the encoder would
-    answer a correctly checksummed string spelling a payload nobody asked
-    for. A digit above 31 would raise `IndexError`, and a float
-    `TypeError`.
-    """
+    """A digit outside 0..31 is refused, and so is a non-integer value."""
     valid = [0, 1, 30, 31]
     assert bech32_decode(bech32_encode("bc", valid))[:2] == ("bc", valid)
 
