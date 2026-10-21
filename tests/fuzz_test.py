@@ -6,8 +6,8 @@
 
 The rest of the suite is fixed vectors: exactly what conformance needs,
 and blind to the malformed strings that never make it into a
-specification's test section. This file is the converse. Apart from its
-last test, it does not assert that a decoder accepts the right things --
+specification's test section. This file is the converse. Apart from the
+tests at its end, it does not assert that a decoder accepts the right things --
 the vectors do that -- but that it *fails the way the package says it
 fails*, whatever it is
 handed: an IndexError off a short slice or a KeyError off an alphabet
@@ -21,12 +21,25 @@ strings below are also drawn from each format's own alphabet, and from
 valid strings with one character changed, which is what reaches the
 checksum and the length checks behind the alphabet lookup.
 
-The last test draws its input the way Bitcoin Core's `bech32_roundtrip`
-fuzz target does, in `src/test/fuzz/bech32.cpp`: an HRP of the characters
-from 33 to 126 less the uppercase letters, and any bytes regrouped from
-8 bits to 5. Core stops at the 90 characters of BIP173's limit; the sizes
-here are the rest of the file's, for the reason `tests/refusals_test.py`
-gives.
+The first of the tests at its end draws its input the way Bitcoin Core's
+`bech32_roundtrip` fuzz target does, in `src/test/fuzz/bech32.cpp`: an HRP
+of the characters from 33 to 126 less the uppercase letters, and any bytes
+regrouped from 8 bits to 5. Core stops at the 90 characters of BIP173's
+limit; the sizes here are the rest of the file's, for the reason
+`tests/refusals_test.py` gives.
+
+The tests after that one draw a limit of one less than a valid string's
+length, the length, or one more, and assert that the first is refused and
+the other two accepted. `base_encode_decode.cpp` at bitcoin/bitcoin
+4fe28722a5 draws `max_ret_len` from -1 to one past its input's length, and
+asserts that a decode with a limit below the decoded length fails. What
+corresponds is that a limit below the length refuses. What does not:
+Core's `max_ret_len` bounds the decoded bytes, while `max_length` and
+`limit` here bound the characters of the string; Core asserts no
+acceptance; and a limit below zero is an invalid argument here, where
+Core's -1 refuses every input but an empty or blank one.
+`b58decode_check` and `ss58_decode` take no limit, only a fixed maximum
+length, and are not drawn here.
 """
 
 from __future__ import annotations
@@ -165,3 +178,77 @@ def test_any_bytes_regrouped_round_trip_under_both_constants(
         Base58Bech32ValueError, match=f"^invalid checksum: {name} verifies$"
     ):
         bech32.bech32_decode(text, m=other)
+
+
+def _limit_message(text: bytes, limit: int) -> str:
+    return f"^too many bech32 characters: {len(text)}, limit is {limit}$"
+
+
+@given(
+    hrp=_HRP,
+    data=st.binary(max_size=128),
+    m=st.sampled_from([BECH32_1_CONST, BECH32_M_CONST]),
+    offset=st.integers(min_value=-1, max_value=1),
+)
+def test_bech32_decode_limit_is_exact_around_the_string_length(
+    hrp: str, data: bytes, m: int, offset: int
+) -> None:
+    """A string is refused one character above the limit and read at it."""
+    values = bech32.convertbits(data, 8, 5)
+    text = bech32.bech32_encode(hrp, values, m=m, limit=None)
+    limit = len(text) + offset
+    if offset < 0:
+        with pytest.raises(Base58Bech32ValueError, match=_limit_message(text, limit)):
+            bech32.bech32_decode(text, m=m, limit=limit)
+        with pytest.raises(Base58Bech32ValueError, match=_limit_message(text, limit)):
+            bech32.bech32_decode_bytes(text, m=m, limit=limit)
+    else:
+        assert bech32.bech32_decode(text, m=m, limit=limit) == (hrp, values, m)
+        assert bech32.bech32_decode_bytes(text, m=m, limit=limit) == (hrp, data)
+
+
+@given(
+    hrp=_HRP,
+    data=st.binary(max_size=128),
+    m=st.sampled_from([BECH32_1_CONST, BECH32_M_CONST]),
+    offset=st.integers(min_value=-1, max_value=1),
+)
+def test_bech32_encode_limit_is_exact_around_the_string_length(
+    hrp: str, data: bytes, m: int, offset: int
+) -> None:
+    """A string is refused one character above the limit and written at it."""
+    values = bech32.convertbits(data, 8, 5)
+    text = bech32.bech32_encode(hrp, values, m=m, limit=None)
+    limit = len(text) + offset
+    if offset < 0:
+        with pytest.raises(Base58Bech32ValueError, match=_limit_message(text, limit)):
+            bech32.bech32_encode(hrp, values, m=m, limit=limit)
+        with pytest.raises(Base58Bech32ValueError, match=_limit_message(text, limit)):
+            bech32.bech32_encode_bytes(hrp, data, m=m, limit=limit)
+    else:
+        assert bech32.bech32_encode(hrp, values, m=m, limit=limit) == text
+        assert bech32.bech32_encode_bytes(hrp, data, m=m, limit=limit) == text
+
+
+@given(
+    data=st.binary(min_size=1, max_size=128),
+    offset=st.integers(min_value=-1, max_value=1),
+)
+def test_b58decode_max_length_is_exact_around_the_string_length(
+    data: bytes, offset: int
+) -> None:
+    """A string is refused one character above `max_length` and read at it.
+
+    The string is never empty, so `max_length` is never below zero, which
+    is an invalid argument rather than a refusal.
+    """
+    text = base58.b58encode(data)
+    max_length = len(text) + offset
+    if offset < 0:
+        with pytest.raises(
+            Base58Bech32ValueError,
+            match=f"^too many base58 characters: {len(text)}, max is {max_length}$",
+        ):
+            base58.b58decode(text, max_length=max_length)
+    else:
+        assert base58.b58decode(text, max_length=max_length) == data
