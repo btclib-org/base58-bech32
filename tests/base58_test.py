@@ -12,6 +12,7 @@ tests/_data/README.md.
 from __future__ import annotations
 
 import array
+import hmac
 import itertools
 from collections.abc import Callable
 
@@ -429,3 +430,23 @@ def test_a_string_decodes_the_same_on_both_sides_of_the_plain_loop() -> None:
         for char in s:
             expected = expected * 58 + BITCOIN_ALPHABET.index(char)
         assert _b58decode_to_int(s, _DIGIT_OF) == expected
+
+
+def test_the_checksum_is_compared_with_compare_digest(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """`b58decode_check` compares checksums with `hmac.compare_digest`."""
+    calls: list[tuple[bytes, bytes]] = []
+    compare_digest = hmac.compare_digest
+
+    def spy(a: bytes, b: bytes) -> bool:
+        calls.append((a, b))
+        return compare_digest(a, b)
+
+    monkeypatch.setattr(hmac, "compare_digest", spy)
+    good = b58encode_check(b"\1" * 21)
+    assert b58decode_check(good) == b"\1" * 21
+    assert len(calls) == 1
+    with pytest.raises(Base58Bech32ValueError, match="invalid checksum"):
+        b58decode_check(good[:-1] + b"2")
+    assert len(calls) == 2

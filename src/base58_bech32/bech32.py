@@ -92,20 +92,28 @@ _TAPS = [
     for top in range(32)
 ]
 
-# a digit for every character, built once. -1 rather than None keeps a
-# lookup a plain int and doubles as the validity check, since a digit is
-# never negative; lowercase-only because `_decode` lowers the string
-# before reaching the lookup
-_INDEX_OF = {c: i for i, c in enumerate(_ALPHABET)}
+# the two translation tables of `bytes.translate`, built once. _DIGIT_OF
+# maps an alphabet character to its digit and every other byte to
+# _NOT_A_DIGIT, which is no digit and so doubles as the validity check;
+# lowercase-only because `_decode` lowers the string before reaching it.
+# _CHAR_OF is the inverse, defined on the digits 0..31 only
+_NOT_A_DIGIT = 255
+_DIGIT_OF = bytes(
+    _ALPHABET.index(chr(b)) if chr(b) in _ALPHABET else _NOT_A_DIGIT for b in range(256)
+)
+_CHAR_OF = _ALPHABET.encode("ascii").ljust(256, b"\0")
 
 
 def _hrp_in_range(text: str) -> bool:
     """Whether every character of `text` is in BIP173's HRP range [33-126].
 
-    33 and 126 are the boundary themselves ("!" and "~"); a weakened `<=`
-    at either end would accept 32 (" ") or 127 (DEL).
+    Printable ascii is [32-126], so the range is the printable ascii
+    characters but the space: three passes in C instead of one Python
+    test per character. `tests/bech32_test.py` holds it
+    equal to `all(32 < ord(x) < 127 for x in text)` over every code point
+    below U+3000.
     """
-    return all(32 < ord(x) < 127 for x in text)
+    return text.isascii() and text.isprintable() and " " not in text
 
 
 def _polymod(values: Iterable[int]) -> int:
@@ -197,13 +205,14 @@ def _decode(bech: String, limit: int | None) -> tuple[str, list[int], list[int]]
     text = text.lower()
     hrp = text[:pos]
 
-    indices = [_INDEX_OF.get(x, -1) for x in text[pos + 1 :]]
-    if -1 in indices[-6:]:
+    # ascii by the range check above
+    indices = text[pos + 1 :].encode("ascii").translate(_DIGIT_OF)
+    if _NOT_A_DIGIT in indices[-6:]:
         raise Base58Bech32ValueError("invalid character in checksum")
-    if -1 in indices:
+    if _NOT_A_DIGIT in indices:
         raise Base58Bech32ValueError("invalid data character")
 
-    return hrp, indices[:-6], indices[-6:]
+    return hrp, list(indices[:-6]), list(indices[-6:])
 
 
 def bech32_decode(
@@ -273,8 +282,9 @@ def bech32_encode(
     a string `bech32_decode` refuses as mixed case.
 
     Every value is one 5-bit digit, and each is checked rather than left
-    to the alphabet lookup: Python indexes a string from the end, so a
-    negative digit would write a different string and say nothing.
+    to the translation table: a digit from 32 to 255 would write a NUL
+    byte and say nothing, a bool would be written as its 0 or 1, and any
+    other would leave as a built-in error rather than the package's.
 
     The string is lowercase. BIP173 says to use uppercase in a QR code,
     where it fits the smaller alphanumeric mode, and `bech32_decode` reads
@@ -291,17 +301,22 @@ def bech32_encode(
     if hrp != hrp.lower():
         raise Base58Bech32ValueError(f"HRP is not lowercase: {hrp}")
 
-    for d in data:
-        if not is_integer(d):
-            raise Base58Bech32TypeError(f"invalid 5-bit value type: {type(d).__name__}")
-        if not 0 <= d < 32:
-            raise Base58Bech32ValueError(f"invalid 5-bit value: {_message_text(d)}")
+    # the fast path accepts an int of 0..31 and nothing else; any other
+    # value, an IntEnum included, goes through the per-value loop, which
+    # names the offender or accepts it
+    if not all(type(d) is int and 0 <= d < 32 for d in data):
+        for d in data:
+            if not is_integer(d):
+                raise Base58Bech32TypeError(
+                    f"invalid 5-bit value type: {type(d).__name__}"
+                )
+            if not 0 <= d < 32:
+                raise Base58Bech32ValueError(f"invalid 5-bit value: {_message_text(d)}")
     # the HRP, the separator, the data and the six checksum characters
     _assert_within_limit(len(hrp) + 1 + len(data) + 6, limit)
     m = _m_from_wit_ver(data) if m is None else m
     combined = data + _create_checksum(hrp, data, m)
-    s = f"{hrp}1" + "".join(_ALPHABET[d] for d in combined)
-    return s.encode("ascii")
+    return f"{hrp}1".encode("ascii") + bytes(combined).translate(_CHAR_OF)
 
 
 def convertbits(
@@ -319,8 +334,8 @@ def convertbits(
     generator, and is read to its end before the first value is checked:
     an unbounded iterator never returns.
 
-    Both widths are positive integers and every value is an integer of at
-    most `from_bits` bits, anything else being refused: a wider value
+    Both widths are integers from 1 to 64 and every value is an integer of
+    at most `from_bits` bits, anything else being refused: a wider value
     would come out as the conversion of a different sequence, `[256]`
     from 8 to 5 bits as `[0]` does, and a zero `to_bits` would never
     leave the regrouping loop.
@@ -331,14 +346,22 @@ def convertbits(
             raise Base58Bech32TypeError(f"invalid {what} type: {type(width).__name__}")
         if width < 1:
             raise Base58Bech32ValueError(f"invalid {what}: {_message_text(width)} < 1")
+        if width > 64:
+            raise Base58Bech32ValueError(f"invalid {what}: {_message_text(width)} > 64")
     assert_type(data, Iterable, "data")
 
     values = list(data)
-    for value in values:
-        if not is_integer(value):
-            raise Base58Bech32TypeError(f"invalid value type: {type(value).__name__}")
-        if value < 0 or (value >> from_bits):
-            raise Base58Bech32ValueError(f"invalid value: {_message_text(value)}")
+    # as in `bech32_encode`: the fast path takes an int of `from_bits`
+    # bits, and the loop judges anything else
+    top = 1 << from_bits
+    if not all(type(value) is int and 0 <= value < top for value in values):
+        for value in values:
+            if not is_integer(value):
+                raise Base58Bech32TypeError(
+                    f"invalid value type: {type(value).__name__}"
+                )
+            if value < 0 or (value >> from_bits):
+                raise Base58Bech32ValueError(f"invalid value: {_message_text(value)}")
     return _convertbits(values, from_bits, to_bits, pad)
 
 

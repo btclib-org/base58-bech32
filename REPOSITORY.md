@@ -219,17 +219,14 @@ JSON
 
 `main-self-merge` requires a pull request, so a direct push to `main` is
 refused, and a merge needs an approval from somebody other than its
-author. The maintainer can merge without one, through the bypass. The
-bypass is one actor, the maintainer, and it is **temporary**: the
-standard allows no bypass in a tree whose `README.md` carries the OpenSSF
-Best Practices badge, as this one does (section 11 of
+author. It has no bypass actor either: the standard asks that of a tree
+whose `README.md` carries the OpenSSF Best Practices badge, and this one
+does (section 11 of
 [btclib-org/.github's `README.md`](https://github.com/btclib-org/.github#branch-protection-and-rulesets)).
-The maintainer set it on 2026-10-18, by [the decision recorded in btclib
-ISS 2712](https://github.com/btclib-org/btclib/issues/2712#issuecomment-6247443374),
-until the first release. btclib-org/.github's
+btclib-org/.github's
 [`GOVERNANCE.md`](https://github.com/btclib-org/.github/blob/main/GOVERNANCE.md#how-a-decision-is-made),
-*How a decision is made*, says when a bypass is added back once this one
-is removed, and `CONTRIBUTING.md`'s *Landing it* has the commands.
+*How a decision is made*, says when a bypass is added back; the
+commands to add and remove it follow the read-back below.
 
 ```shell
 gh api -X POST repos/btclib-org/base58-bech32/rulesets --input - <<'JSON'
@@ -246,18 +243,20 @@ gh api -X POST repos/btclib-org/base58-bech32/rulesets --input - <<'JSON'
 JSON
 ```
 
-This ruleset was created with the bypass already in it, as its single
-history version shows; the `POST` above is the standard's form. Read on
-2026-10-18T07:36Z:
+The ruleset has the id `25333526`. It has no bypass actor, read on
+2026-10-19T01:02Z:
 
 ```shell
-gh api repos/btclib-org/base58-bech32/rulesets/25333526/history --jq length
-# 1
+gh api repos/btclib-org/base58-bech32/rulesets/25333526 --jq .bypass_actors
+# []
 ```
 
-The bypass is actor `3296421`, `fametrano`'s account id
-(`gh api users/fametrano --jq .id`), in `pull_request` mode. A `PUT` of
-the whole ruleset, `25333526`, with that entry in `bypass_actors` adds it:
+The bypass is added back and removed with a `PUT`. A `PUT` replaces the
+whole ruleset, so each body carries every parameter the ruleset holds,
+which the read above (without `--jq`) shows. The `POST` above omits some
+of them. When added back, the bypass is actor `3296421`, `fametrano`'s
+account id (`gh api users/fametrano --jq .id`), in `pull_request` mode.
+To add it:
 
 ```shell
 gh api -X PUT repos/btclib-org/base58-bech32/rulesets/25333526 \
@@ -349,22 +348,17 @@ done
 #  "methods":[],"name":"main-integrity",
 #  "rules":["required_linear_history","non_fast_forward","deletion"],
 #  "target":"branch"}
-# {"bypass":[[3296421,"pull_request"]],"enforcement":"active",
-#  "include":["refs/heads/main"],"methods":[["squash"]],
-#  "name":"main-self-merge","rules":["pull_request"],"target":"branch"}
+# {"bypass":[],"enforcement":"active","include":["refs/heads/main"],
+#  "methods":[["squash"]],"name":"main-self-merge","rules":["pull_request"],
+#  "target":"branch"}
 # {"bypass":[],"enforcement":"active","include":["refs/tags/v*"],
 #  "methods":[],"name":"tag-integrity","rules":["required_signatures"],
 #  "target":"tag"}
 ```
 
-Read on 2026-10-18T06:19Z, the loop printed the three rulesets above
+Read on 2026-10-19T00:19Z, the loop printed the three rulesets above
 (ids 25333525, 25333526 and 25333527 for `main-integrity`,
-`main-self-merge` and `tag-integrity`). `main-self-merge` differs from
-the standard in its `bypass`, which is **temporary** (see above); the
-other two match it. *Pending*: the bypass is removed after the first
-release, which [ISS 4](https://github.com/btclib-org/base58-bech32/issues/4)
-tracks with the removal `PUT` and this read-back in its *Done when*; this
-loop then prints `"bypass":[]` for `main-self-merge`.
+`main-self-merge` and `tag-integrity`), and all three match the standard.
 
 A `v*` tag push that brings an unsigned commit is refused. A tag on a
 commit already on `main` is accepted whether it is signed, unsigned or

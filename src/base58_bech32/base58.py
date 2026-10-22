@@ -34,6 +34,7 @@ from __future__ import annotations
 
 import functools
 import hashlib
+import hmac
 from collections.abc import Iterable
 
 from base58_bech32._utils import (
@@ -312,7 +313,7 @@ def b58decode_check(
 
     result, checksum = result[:-4], result[-4:]
     expected = hashlib.sha256(hashlib.sha256(result).digest()).digest()[:4]
-    if checksum != expected:
+    if not hmac.compare_digest(checksum, expected):
         raise Base58Bech32ValueError("invalid checksum")
 
     # a bool would accept a one-octet payload and call it a checked size
