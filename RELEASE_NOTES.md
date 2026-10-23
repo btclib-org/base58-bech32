@@ -9,6 +9,29 @@ number says when a release was cut, and promises nothing about
 compatibility, so a breaking change is announced in this file — read it
 before upgrading, rather than a digit.
 
+## v2026.10.23
+
+These changes break a caller of `v2026.10.18`.
+
+- `bech32_decode` returns `(hrp, data, m)`, where it returned `(hrp, data)`:
+  a caller unpacking two values unpacks three. With `m=None` it accepts a
+  checksum under either constant and `m` is the one that verified, so a
+  caller reading a segwit address compares `m` with the witness version
+  itself, as `bech32_decode`'s docstring says. With an explicit `m` that
+  does not verify, where the other constant does, the refusal reads
+  `invalid checksum: <NAME> verifies` instead of `invalid checksum`. A
+  string with no data values decodes, where `m=None` raised "empty data in
+  bech32 address".
+- `b58decode_check` has no `secret` parameter, and a checksum mismatch is
+  refused as `invalid checksum`, quoting neither checksum. A caller passing
+  `secret` gets a `TypeError`, and one matching `invalid checksum: 0x...`
+  matches `invalid checksum`.
+- `bech32_decode` and `bech32_encode` refuse a string longer than 1023
+  characters unless the caller passes another `limit`, or `limit=None`.
+  A caller reading segwit addresses can pass `limit=90`, BIP173's limit.
+- `convertbits` refuses a width above 64 with `Base58Bech32ValueError`,
+  where v2026.10.18 converted it. Act on it if you pass one.
+
 ## v2026.10.18
 
 The first release of `base58-bech32`: Base58, Base58Check, bech32, bech32m,

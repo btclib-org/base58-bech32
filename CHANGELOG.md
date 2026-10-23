@@ -19,6 +19,81 @@ behind them.
 
 [std]: https://github.com/btclib-org/.github
 
+## v2026.10.23
+
+### `bech32_decode` returns the constant that verified
+
+It returns `(hrp, data, m)`, and with `m=None` accepts either constant; a
+refusal under one constant says when the other verifies (closes #10)
+(closes #11).
+
+### `b58decode_check` refuses a mismatch without quoting a checksum
+
+The message is "invalid checksum" and the `secret` parameter is removed
+(closes #28).
+
+### Length limits on bech32 and `b58decode`
+
+`bech32_decode` and `bech32_encode` take `limit`, 1023 by default, and
+`b58decode` takes `max_length` (closes #8) (closes #9).
+
+### `bech32_encode_bytes` and `bech32_decode_bytes`
+
+They encode and decode a payload of bytes without `convertbits`
+(closes #19).
+
+### `convertbits` refuses a width above 64
+
+Either width, `from_bits` or `to_bits`, above 64 raises
+`Base58Bech32ValueError` (closes #38).
+
+### Alphabet validation shares the cache; decoding and checks are faster
+
+Alphabet validation shares the tables' cache, short Base58 strings
+decode digit by digit, and bech32 and CashAddr check in one pass
+(closes #20) (closes #21) (closes #22) (closes #23) (closes #24) (closes #25).
+
+### Checksums are compared with `hmac.compare_digest`
+
+`b58decode_check` and `ss58_decode` do (closes #12).
+
+### The docstrings and the migration page say what the decoders accept
+
+Whitespace, a finite iterable and the QR form are documented (closes #16)
+(closes #17) (closes #18), and `bytes_from_octets` says which whitespace
+`bytes.fromhex` skips (#7).
+
+### The tests cover the peers' refusals and folded characters
+
+The peers' negative vectors, characters that fold onto ASCII and the QR
+triple are asserted (closes #13) (closes #14) (closes #37) (issue #15).
+
+### The shared `secret_free` helper checks grouped secrets
+
+The refusal's text is searched for a secret printed in groups
+(issue btclib-org/.github#1697).
+
+### `REPOSITORY.md` records `main-self-merge` without its bypass
+
+The maintainer removed it after the first release (closes #4).
+
+### The locked and pinned tools move
+
+`aiohttp`, `certifi`, `virtualenv` and GitPython in `uv.lock`, the hook
+revisions and the dev-tooling group (closes #41) (#46, #47, #53,
+issue btclib-org/.github#1824, issue btclib-org/.github#1835).
+
+### `claude-review.yml` declines zizmor's dangerous-triggers
+
+The ignore is on the `issue_comment` trigger, with its reason above it
+(issue btclib-org/.github#1813).
+
+### `AGENTS.md` replaces `CLAUDE.md`
+
+`AGENTS.md` holds the guidance for any coding agent, `CLAUDE.md` is
+removed and `CONTRIBUTING.md` gains the worktree steps; `test.yml` treats
+`AGENTS.md` as prose (issue btclib-org/.github#1808).
+
 ## v2026.10.18
 
 ### The repository opens with btclib's codecs and new ones
