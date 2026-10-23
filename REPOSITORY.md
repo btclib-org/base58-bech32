@@ -518,23 +518,72 @@ The two trusted publishers `RELEASING.md`'s *One-time setup* names, on
 PyPI and on TestPyPI, were added as pending publishers on 2026-10-17
 under the project name `base58-bech32`, environment `pypi` and
 `testpypi` respectively and workflow `release.yml` for both, adding them
-being an account action and the maintainer's. That rests on the
-maintainer's statement rather than on a call: none here reads a
-publisher back. What a call does read is whether each index holds the
-project, which it answers `404` for until a first upload creates it:
+being an account action and the maintainer's. No call here reads a
+publisher back. What a call reads is whether each index holds the
+project, and what was uploaded to it, read on 2026-10-23T07:40Z:
 
 ```shell
-curl -s -o /dev/null -w '%{http_code}\n' \
-  https://pypi.org/pypi/base58-bech32/json
-# 404
-curl -s -o /dev/null -w '%{http_code}\n' \
-  https://test.pypi.org/pypi/base58-bech32/json
-# 404
+for u in https://pypi.org/pypi/base58-bech32/json \
+         https://test.pypi.org/pypi/base58-bech32/json; do
+  curl -s -o /dev/null -w '%{http_code}\n' "$u"
+  curl -s "$u" | jq -c '{version: .info.version,
+    releases: (.releases | keys),
+    files: [.urls[] | .filename]}'
+done
+# 200
+# {"version":"2026.10.23","releases":["2026.10.18","2026.10.23"],
+#  "files":["base58_bech32-2026.10.23-py3-none-any.whl",
+#   "base58_bech32-2026.10.23.tar.gz"]}
+# 200
+# {"version":"2026.10.23.dev801",
+#  "releases":["2026.10.18.dev201","2026.10.18.dev301",
+#   "2026.10.23.dev501","2026.10.23.dev601","2026.10.23.dev701",
+#   "2026.10.23.dev801"],
+#  "files":["base58_bech32-2026.10.23.dev801-py3-none-any.whl",
+#   "base58_bech32-2026.10.23.dev801.tar.gz"]}
 ```
 
-Both still answered `404` on 2026-10-18T06:19Z. *Pending*: both answer
-`200` once the first release is uploaded, and each pending publisher
-becomes an ordinary one then.
+Then the project pages answer `200` on both indexes, and the release
+run's jobs ended as the next block prints:
+
+```shell
+for u in https://pypi.org/project/base58-bech32/ \
+         https://test.pypi.org/project/base58-bech32/; do
+  curl -s -o /dev/null -w '%{http_code}\n' "$u"
+done
+# 200
+# 200
+gh run view 39913894488 --repo btclib-org/base58-bech32 --json jobs \
+  --jq '.jobs[] | select(.name == "Publish to PyPI"
+        or .name == "Publish to TestPyPI"
+        or (.name | startswith("documented"))) | [.name, .conclusion]'
+# ["documented / Check read the docs built the tag","success"]
+# ["Publish to PyPI","success"]
+# ["Publish to TestPyPI","skipped"]
+```
+
+Each pending publisher became an ordinary one with its first upload. The
+`pypi` upload of 2026.10.23 is the `Publish to PyPI` job of that run. Its
+step passes `pypa/gh-action-pypi-publish` no password, so it uploads with
+the OIDC token `release.yml` gives the job, which is trusted publishing.
+The last command finds no `password` in the workflow:
+
+```shell
+git grep -n -B1 'uses: pypa/gh-action-pypi-publish' \
+  -- .github/workflows/release.yml \
+  | sed -e 's#.github/workflows/##' \
+        -e 's/@\([0-9a-f]\{7\}\)[0-9a-f]*/@\1…/'
+# release.yml-187-      - name: Publish to TestPyPI
+# release.yml:188:        uses: pypa/gh-action-pypi-publish@dc37677… # v1.14.2
+# --
+# release.yml-230-      - name: Publish to PyPI
+# release.yml:231:        uses: pypa/gh-action-pypi-publish@dc37677… # v1.14.2
+git grep -n 'password' -- .github/workflows/release.yml
+# (nothing, exit 1)
+```
+
+The `.dev` versions on TestPyPI are rehearsal uploads; the release
+run's `Publish to TestPyPI` job was skipped.
 
 **The repository's `.homepage` names this tree's own documentation
 site**, set under *Creating the repository* and read back here rather
@@ -583,28 +632,40 @@ its homepage is the repository rather than the site it serves.
 
 `stable` follows the highest semantic-version tag, so each release
 changes this answer with nothing here having decided differently. Read
-at 2026-10-17T23:15:08Z:
+at 2026-10-23T07:40Z:
 
 ```shell
 curl -s "$p/versions/?active=true" \
   | jq -c '.results[] | select(.slug == "latest" or .slug == "stable")
            | [.slug, .type, .ref]'
 # ["latest","branch",null]
+# ["stable","tag","v2026.10.23"]
+curl -s "$p/versions/?active=true" | jq -c '[.results[].slug]'
+# ["latest","stable","v2026.10.18","v2026.10.23"]
 git tag --list 'v*' --sort=version:refname | tail -1
-# (nothing: no tag yet)
+# v2026.10.23
+for v in latest stable v2026.10.18 v2026.10.23; do
+  curl -sL -o /dev/null -w '%{http_code} %{url_effective}\n' \
+    https://base58-bech32.readthedocs.io/en/$v/
+done
+# 200 https://base58-bech32.readthedocs.io/en/latest/
+# 200 https://base58-bech32.readthedocs.io/en/stable/
+# 200 https://base58-bech32.readthedocs.io/en/v2026.10.18/
+# 200 https://base58-bech32.readthedocs.io/en/v2026.10.23/
 ```
 
-Read again at 2026-10-18T06:31Z, it printed the same; `latest` is built
-and `stable` is absent.
-*Pending*: `stable` appears, naming the tag, after the first release.
-
-An automation rule, "Activate each v* release tag", is to activate each
-new `v*` tag: it matches tags against the custom pattern `^v` and
-activates the version. *Pending*: the maintainer adds it before the
-first release. No call reads it back: the API does not expose it,
+An automation rule, "Activate each v* release tag", activates each new
+`v*` tag: it matches tags against the custom pattern `^v` and activates
+the version. The maintainer added it in the Read the Docs interface;
+its name and pattern rest on that statement. No call reads it back:
+the API does not expose it,
 `automation-rules/` answering `404` where an endpoint needing a token,
-such as `redirects/`, answers `401`. It rests on the maintainer's
-statement rather than on a call.
+such as `redirects/`, answers `401`. What shows it at work is the
+release: the `documented / Check read the docs built the tag` job of run
+39913894488 succeeded (the job list under *Publishing* prints it), and
+`/en/v2026.10.23/` answers `200` above, so the tag was activated and
+built. That is evidence of the rule's effect, not
+a read of the rule.
 
 **Neither the `default_branch` call nor the versions call fails on a
 slug nothing holds.** The first reads the `404` body,
@@ -800,7 +861,12 @@ gh api repos/btclib-org/base58-bech32/actions/secrets --jq .total_count
 # 0
 gh api repos/btclib-org/base58-bech32/dependabot/secrets --jq .total_count
 # 0
+gh api repos/btclib-org/base58-bech32/actions/organization-secrets \
+  --jq '[.total_count, [.secrets[].name]]'
+# [1,["CLAUDE_CODE_OAUTH_TOKEN"]]
 ```
+
+The third call reads the organization secrets the repository can see.
 
 **A switch this repository does not set.** `claude-review.yml` calls
 `btclib-org/.github`'s `reusable-claude-review.yml`, whose jobs guard on
