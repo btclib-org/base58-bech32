@@ -80,7 +80,7 @@ still read.
 ## Secure design principles
 
 Saltzer and Schroeder's principles, over the package's layers described
-in [README.md](./README.md#what-is-here).
+in [ARCHITECTURE.md](./ARCHITECTURE.md).
 
 - **Economy of mechanism.** Reusing lower-level codec operations reduces
   duplicate code paths that could diverge on malformed inputs.
