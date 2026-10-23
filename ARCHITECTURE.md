@@ -1,8 +1,9 @@
 # Architecture
 
 The package is layered bottom-up. `exceptions` is the base: it imports
-nothing, and `_utils` and the four codecs raise its errors. `_utils` holds the
-private argument checks and coercions, and imports `exceptions` only.
+nothing, and `_utils`, `base58`, `bech32`, `ss58` and `cashaddr` raise its
+errors. `_utils` holds the private argument checks and coercions, and
+imports `exceptions` only.
 
 `base58` and `bech32` are the two codecs. Each imports `_utils` and
 `exceptions`, and neither imports the other. `ss58` builds on `base58`

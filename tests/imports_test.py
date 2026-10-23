@@ -273,7 +273,8 @@ def _package_imports(source: str) -> set[str]:
 
     Reads import statements: a string passed to `import_module` is not
     read. `from base58_bech32 import bech32` names `bech32`, a relative
-    import is read as the absolute one it stands for, and `import
+    import is read as the absolute one it stands for in a top-level
+    module, and is not resolved in a nested one, and `import
     base58_bech32` names the root, which no module may import: it loads
     any module through `__getattr__`.
     """
