@@ -16,7 +16,7 @@ name = "base58-bech32"
 # from this file. A cycle in progress is the month alone; the release's
 # own pull request replaces it by hand with the date the release is cut,
 # YYYY.M.D, whose month need not be the cycle's
-version = "2026.10.18"
+version = "2026.10.23"
 description = "Base58, Base58Check, bech32, bech32m, SS58 and CashAddr codecs, on the standard library alone"
 readme = "README.md"
 # PEP 639: a SPDX expression and the files it refers to. COPYRIGHT is not
