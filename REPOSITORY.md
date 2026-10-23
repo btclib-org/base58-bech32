@@ -563,10 +563,10 @@ gh run view 39913894488 --repo btclib-org/base58-bech32 --json jobs \
 ```
 
 Each pending publisher became an ordinary one with its first upload. The
-`pypi` upload is the `Publish to PyPI` job of that run. Its step passes
-`pypa/gh-action-pypi-publish` no password, so it uploads with the OIDC
-token `release.yml` gives the job, which is trusted publishing. The
-last command finds no `password` in the workflow:
+`pypi` upload of 2026.10.23 is the `Publish to PyPI` job of that run. Its
+step passes `pypa/gh-action-pypi-publish` no password, so it uploads with
+the OIDC token `release.yml` gives the job, which is trusted publishing.
+The last command finds no `password` in the workflow:
 
 ```shell
 git grep -n -B1 'uses: pypa/gh-action-pypi-publish' \
