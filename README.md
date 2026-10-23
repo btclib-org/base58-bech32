@@ -72,6 +72,10 @@ but the standard library.
 - [CashAddr](https://github.com/bitcoincashorg/bitcoincash.org/blob/master/spec/cashaddr.md),
   the address format of Bitcoin Cash (`cashaddr`)
 
+At the base are `exceptions` and `_utils`. The independent `base58` and
+`bech32` codecs build on them; `ss58` reuses `base58`, and `cashaddr`
+reuses `bech32`'s alphabet and bit regrouping.
+
 Every refusal is a `ValueError` or a `TypeError`, under one base,
 `Base58Bech32Exception` (`exceptions`). No decoder's refusal quotes the
 string it was handed: what reaches a decoder can be a private key.

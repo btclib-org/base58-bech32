@@ -79,13 +79,11 @@ still read.
 
 ## Secure design principles
 
-Saltzer and Schroeder's principles, over the layering `CLAUDE.md`'s
-*Architecture* describes.
+Saltzer and Schroeder's principles, over the package's layers described
+in [README.md](./README.md#what-is-here).
 
-- **Economy of mechanism.** One module per format, over the coercions of
-  `_utils` and the exceptions. `ss58` reuses `base58`'s private
-  functions, and `cashaddr` reuses `bech32`'s alphabet and its private
-  `_convertbits`, rather than each carrying its own copy.
+- **Economy of mechanism.** Reusing lower-level codec operations reduces
+  duplicate code paths that could diverge on malformed inputs.
 - **Fail-safe defaults.** A decoder verifies the checksum on every call,
   with no switch to skip it, and every flag refuses a non-bool, `0`,
   `None` and `""` included (`tests/bool_parameter_test.py`).
