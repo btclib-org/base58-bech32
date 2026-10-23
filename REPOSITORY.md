@@ -520,7 +520,7 @@ under the project name `base58-bech32`, environment `pypi` and
 `testpypi` respectively and workflow `release.yml` for both, adding them
 being an account action and the maintainer's. No call here reads a
 publisher back. What a call reads is whether each index holds the
-project, and what was uploaded to it, read on 2026-10-19T10:19Z:
+project, and what was uploaded to it, read on 2026-10-23T07:40Z:
 
 ```shell
 for u in https://pypi.org/pypi/base58-bech32/json \
@@ -531,14 +531,16 @@ for u in https://pypi.org/pypi/base58-bech32/json \
     files: [.urls[] | .filename]}'
 done
 # 200
-# {"version":"2026.10.18","releases":["2026.10.18"],
-#  "files":["base58_bech32-2026.10.18-py3-none-any.whl",
-#   "base58_bech32-2026.10.18.tar.gz"]}
+# {"version":"2026.10.23","releases":["2026.10.18","2026.10.23"],
+#  "files":["base58_bech32-2026.10.23-py3-none-any.whl",
+#   "base58_bech32-2026.10.23.tar.gz"]}
 # 200
-# {"version":"2026.10.18.dev301",
-#  "releases":["2026.10.18.dev201","2026.10.18.dev301"],
-#  "files":["base58_bech32-2026.10.18.dev301-py3-none-any.whl",
-#   "base58_bech32-2026.10.18.dev301.tar.gz"]}
+# {"version":"2026.10.23.dev801",
+#  "releases":["2026.10.18.dev201","2026.10.18.dev301",
+#   "2026.10.23.dev501","2026.10.23.dev601","2026.10.23.dev701",
+#   "2026.10.23.dev801"],
+#  "files":["base58_bech32-2026.10.23.dev801-py3-none-any.whl",
+#   "base58_bech32-2026.10.23.dev801.tar.gz"]}
 ```
 
 Then the project pages answer `200` on both indexes, and the release
@@ -551,7 +553,7 @@ for u in https://pypi.org/project/base58-bech32/ \
 done
 # 200
 # 200
-gh run view 39125580342 --repo btclib-org/base58-bech32 --json jobs \
+gh run view 39913894488 --repo btclib-org/base58-bech32 --json jobs \
   --jq '.jobs[] | select(.name == "Publish to PyPI"
         or .name == "Publish to TestPyPI"
         or (.name | startswith("documented"))) | [.name, .conclusion]'
@@ -580,7 +582,7 @@ git grep -n 'password' -- .github/workflows/release.yml
 # (nothing, exit 1)
 ```
 
-The two `.dev` versions on TestPyPI are rehearsal uploads; the release
+The `.dev` versions on TestPyPI are rehearsal uploads; the release
 run's `Publish to TestPyPI` job was skipped.
 
 **The repository's `.homepage` names this tree's own documentation
@@ -630,25 +632,26 @@ its homepage is the repository rather than the site it serves.
 
 `stable` follows the highest semantic-version tag, so each release
 changes this answer with nothing here having decided differently. Read
-at 2026-10-18T12:11Z:
+at 2026-10-23T07:40Z:
 
 ```shell
 curl -s "$p/versions/?active=true" \
   | jq -c '.results[] | select(.slug == "latest" or .slug == "stable")
            | [.slug, .type, .ref]'
 # ["latest","branch",null]
-# ["stable","tag","v2026.10.18"]
+# ["stable","tag","v2026.10.23"]
 curl -s "$p/versions/?active=true" | jq -c '[.results[].slug]'
-# ["latest","stable","v2026.10.18"]
+# ["latest","stable","v2026.10.18","v2026.10.23"]
 git tag --list 'v*' --sort=version:refname | tail -1
-# v2026.10.18
-for v in latest stable v2026.10.18; do
+# v2026.10.23
+for v in latest stable v2026.10.18 v2026.10.23; do
   curl -sL -o /dev/null -w '%{http_code} %{url_effective}\n' \
     https://base58-bech32.readthedocs.io/en/$v/
 done
 # 200 https://base58-bech32.readthedocs.io/en/latest/
 # 200 https://base58-bech32.readthedocs.io/en/stable/
 # 200 https://base58-bech32.readthedocs.io/en/v2026.10.18/
+# 200 https://base58-bech32.readthedocs.io/en/v2026.10.23/
 ```
 
 An automation rule, "Activate each v* release tag", activates each new
@@ -659,8 +662,8 @@ the API does not expose it,
 `automation-rules/` answering `404` where an endpoint needing a token,
 such as `redirects/`, answers `401`. What shows it at work is the
 release: the `documented / Check read the docs built the tag` job of run
-39125580342 succeeded (the job list under *Publishing* prints it), and
-`/en/v2026.10.18/` answers `200` above, so the tag was activated and
+39913894488 succeeded (the job list under *Publishing* prints it), and
+`/en/v2026.10.23/` answers `200` above, so the tag was activated and
 built. That is evidence of the rule's effect, not
 a read of the rule.
 
