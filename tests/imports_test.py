@@ -251,3 +251,82 @@ def test_no_module_imports_outside_the_stdlib() -> None:
     }
     assert "cashaddr.py" in found
     assert {file: names for file, names in found.items() if names} == {}
+
+
+# what each module of the package may import from the package, bottom-up
+# as ARCHITECTURE.md lists them: a module imports only from the layers
+# below it, and the two codecs and the two modules built on them stay
+# apart
+_LAYERS: dict[str, frozenset[str]] = {
+    "exceptions": frozenset(),
+    "_utils": frozenset({"exceptions"}),
+    "base58": frozenset({"_utils", "exceptions"}),
+    "bech32": frozenset({"_utils", "exceptions"}),
+    "ss58": frozenset({"_utils", "base58", "exceptions"}),
+    "cashaddr": frozenset({"_utils", "bech32", "exceptions"}),
+    "__init__": frozenset(),
+}
+
+
+def _package_imports(source: str) -> set[str]:
+    """Return the modules of this package that one module's imports name.
+
+    `from base58_bech32 import bech32` names `bech32` and not the root,
+    and a relative import is read as the absolute one it stands for.
+    """
+    names: set[str] = set()
+    for node in ast.walk(ast.parse(source)):
+        if isinstance(node, ast.Import):
+            targets = [alias.name for alias in node.names]
+        elif isinstance(node, ast.ImportFrom):
+            module = "base58_bech32" if node.level else node.module or ""
+            if node.level and node.module:
+                module = f"{module}.{node.module}"
+            targets = [module]
+            if module == "base58_bech32":
+                targets = [f"{module}.{alias.name}" for alias in node.names]
+        else:
+            continue
+        names.update(
+            target.split(".")[1]
+            for target in targets
+            if _is_ours(target) and target != "base58_bech32"
+        )
+    return names
+
+
+def test_the_package_import_scan_finds_each_form() -> None:
+    """The scan names the submodule behind every way of importing it."""
+    source = (
+        "import base58_bech32.base58\n"
+        "from base58_bech32 import bech32\n"
+        "from base58_bech32._utils import x\n"
+        "from . import exceptions\n"
+        "from .ss58 import y\n"
+        "import hashlib\n"
+    )
+    assert _package_imports(source) == {
+        "base58",
+        "bech32",
+        "_utils",
+        "exceptions",
+        "ss58",
+    }
+
+
+def test_the_layers_cover_every_module() -> None:
+    """The table names each file of the package, and no other."""
+    root = Path(base58_bech32.__path__[0])
+    assert {path.stem for path in root.glob("*.py")} == set(_LAYERS)
+
+
+def test_every_module_imports_only_from_the_layers_below() -> None:
+    """Read each file's imports against ARCHITECTURE.md's layers."""
+    root = Path(base58_bech32.__path__[0])
+    excess = {
+        path.stem: sorted(
+            _package_imports(path.read_text(encoding="utf-8")) - _LAYERS[path.stem]
+        )
+        for path in sorted(root.glob("*.py"))
+    }
+    assert {module: names for module, names in excess.items() if names} == {}
