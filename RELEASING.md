@@ -682,12 +682,12 @@ result.
    carry it. The signing runs inside `btclib-org/.github`'s
    `reusable-build.yml`, which `release.yml`'s `build` job calls, so
    that is the workflow the certificate names. `--owner` names the
-   organization, and the check of `sourceRepositoryIdentifier` names this
-   repository by its id, which a rename keeps: `--repo` compares the
-   current name, and refuses every release signed before a rename. The
-   exit code is `0` only where a verified attestation names this
-   repository. `--source-ref` names the tag, which is what stops a
-   rehearsal dispatched from a branch from verifying as this release.
+   organization. The exit code is `0` only where a verified attestation
+   names this repository by its id, and *Supported versions* in
+   [SECURITY.md](./SECURITY.md#supported-versions) says why the id is
+   compared and not the name. `--source-ref` names the tag, which is what
+   stops a rehearsal dispatched from a branch from verifying as this
+   release.
    For a signer that is a reusable
    workflow, `gh attestation verify --help` requires `--signer-workflow` or
    `--signer-repo`. `--owner` alone does not pin the signer: without
