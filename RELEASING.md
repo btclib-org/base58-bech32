@@ -656,13 +656,19 @@ result.
    gh release download "v${version:?}" --repo btclib-org/base58-bech32 &&
    wheel=base58_bech32-${version:?}-py3-none-any.whl &&
    repo=btclib-org/base58-bech32 &&
+   id=$(gh api "repos/$repo" --jq .id) &&
+   cert='.[].verificationResult.signature.certificate' &&
    workflows=btclib-org/.github/.github/workflows &&
    signer=$workflows/reusable-build.yml &&
-   gh attestation verify "$wheel" --repo "$repo" \
-     --signer-workflow "$signer" --source-ref "refs/tags/v${version:?}" &&
-   gh attestation verify "$wheel" --repo "$repo" \
+   gh attestation verify "$wheel" --owner btclib-org \
      --signer-workflow "$signer" --source-ref "refs/tags/v${version:?}" \
-     --bundle "v${version:?}.intoto.jsonl"
+     --format json --jq "${cert:?}.sourceRepositoryIdentifier" |
+     grep -qx "${id:?}" &&
+   gh attestation verify "$wheel" --owner btclib-org \
+     --signer-workflow "$signer" --source-ref "refs/tags/v${version:?}" \
+     --bundle "v${version:?}.intoto.jsonl" \
+     --format json --jq "${cert:?}.sourceRepositoryIdentifier" |
+     grep -qx "${id:?}"
    ```
 
    the first asks the attestations API for the signed statement, the
@@ -673,14 +679,19 @@ result.
    bundle.
 
    `--signer-workflow` names the workflow that signed, and both forms
-   need it. The signing runs inside `btclib-org/.github`'s
+   carry it. The signing runs inside `btclib-org/.github`'s
    `reusable-build.yml`, which `release.yml`'s `build` job calls, so
-   that is the workflow the certificate names, while `--repo` still names
-   this repository. `--source-ref` names the tag, which is what stops a
-   rehearsal dispatched from a branch from verifying as this release.
+   that is the workflow the certificate names. `--owner` names the
+   organization. The exit code is `0` only where a verified attestation
+   names this repository by its id, and *Supported versions* in
+   [SECURITY.md](./SECURITY.md#supported-versions) says why the id is
+   compared and not the name. `--source-ref` names the tag, which is what
+   stops a rehearsal dispatched from a branch from verifying as this
+   release.
    For a signer that is a reusable
    workflow, `gh attestation verify --help` requires `--signer-workflow` or
-   `--signer-repo`, and without one either form refuses the release.
+   `--signer-repo`. `--owner` alone does not pin the signer: without
+   either flag, both forms verify the release.
    Neither form is offline on its own — the
    Sigstore trusted root comes over the network unless
    `gh attestation trusted-root > trusted_root.jsonl` fetched it earlier
@@ -742,14 +753,18 @@ cd /tmp/base58-bech32-rebuild &&
 python=$(grep -Ev '^[[:space:]]*(#|$)' .python-version) &&
 export SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct) &&
 repo=btclib-org/base58-bech32 &&
+id=$(gh api "repos/$repo" --jq .id) &&
+cert='.[].verificationResult.signature.certificate' &&
 workflows=btclib-org/.github/.github/workflows &&
 signer=$workflows/reusable-build.yml &&
 tag="v${version:?}" &&
 wheels=$(mktemp -d) &&
 gh release download "v${version:?}" --repo "$repo" --dir "$wheels" \
   --pattern '*.whl' &&
-gh attestation verify "$wheels"/*.whl \
-  --repo "$repo" --signer-workflow "$signer" --source-ref "refs/tags/$tag" &&
+gh attestation verify "$wheels"/*.whl --owner btclib-org \
+  --signer-workflow "$signer" --source-ref "refs/tags/$tag" \
+  --format json --jq "${cert:?}.sourceRepositoryIdentifier" |
+  grep -qx "${id:?}" &&
 uv_version=$(unzip -p "$wheels"/*.whl '*.dist-info/WHEEL' |
   sed -n 's/^Generator: uv //p') &&
 [[ $uv_version =~ ^[0-9]+([.][0-9]+)*$ ]] &&
@@ -763,11 +778,20 @@ git -C "$served" sparse-checkout set .github/scripts &&
 uv run --no-project --python "$python" \
   "$served"/.github/scripts/generate_sbom.py dist/ sbom/ &&
 gh attestation verify "dist/base58_bech32-${version:?}.tar.gz" \
-  --repo "$repo" --signer-workflow "$signer" --source-ref "refs/tags/$tag" &&
+  --owner btclib-org \
+  --signer-workflow "$signer" --source-ref "refs/tags/$tag" \
+  --format json --jq "${cert:?}.sourceRepositoryIdentifier" |
+  grep -qx "${id:?}" &&
 gh attestation verify "dist/base58_bech32-${version:?}-py3-none-any.whl" \
-  --repo "$repo" --signer-workflow "$signer" --source-ref "refs/tags/$tag" &&
+  --owner btclib-org \
+  --signer-workflow "$signer" --source-ref "refs/tags/$tag" \
+  --format json --jq "${cert:?}.sourceRepositoryIdentifier" |
+  grep -qx "${id:?}" &&
 gh attestation verify "sbom/base58_bech32-${version:?}.cdx.json" \
-  --repo "$repo" --signer-workflow "$signer" --source-ref "refs/tags/$tag"
+  --owner btclib-org \
+  --signer-workflow "$signer" --source-ref "refs/tags/$tag" \
+  --format json --jq "${cert:?}.sourceRepositoryIdentifier" |
+  grep -qx "${id:?}"
 ```
 
 `python` is the interpreter the tag's own `.python-version` pins, its
