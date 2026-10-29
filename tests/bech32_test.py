@@ -32,7 +32,10 @@ modifications:
 - checked for raised exceptions instead of assertIsNone
 """
 
+import functools
 import itertools
+import operator
+import random
 from enum import IntEnum
 
 import pytest
@@ -50,6 +53,7 @@ from base58_bech32.bech32 import (
     BECH32_M_CONST,
     _create_checksum,
     _hrp_in_range,
+    _polymod,
     bech32_decode,
     bech32_decode_bytes,
     bech32_encode,
@@ -784,6 +788,182 @@ def test_an_hrp_change_to_the_high_bits_can_cancel_within_the_limit() -> None:
     corrupted = "".join(encoded)
     expected = ("!", [0] * 1015, BECH32_1_CONST)
     assert bech32_decode(corrupted, m=BECH32_1_CONST) == expected
+
+
+# What `bech32_decode`'s docstring says the checksum detects, for every
+# pattern of changes. A change to one value moves `_polymod`'s residue by
+# an amount that depends on its position and its XOR only, never on the
+# string, and the moves of several changes add by XOR: a pattern passes
+# the checksum of the constant the string was written with exactly where
+# its moves cancel. The residue is six elements of GF(32), whose modulus
+# is x^5 + x^3 + 1 (`src/bech32.cpp` at bitcoin/bitcoin 363d9e9d38),
+# packed five bits each
+_GF32_MOD = 0b101001
+
+
+def _gf32_mul(a: int, b: int) -> int:
+    product = 0
+    for i in range(5):
+        if b >> i & 1:
+            product ^= a << i
+    for i in range(9, 4, -1):
+        if product >> i & 1:
+            product ^= _GF32_MOD << (i - 5)
+    return product
+
+
+_GF32_MUL = [[_gf32_mul(a, b) for b in range(32)] for a in range(32)]
+_GF32_INV = [0] + [_GF32_MUL[a].index(1) for a in range(1, 32)]
+
+
+def _scale(residue: int, k: int) -> int:
+    """Multiply each of the residue's six elements by `k`."""
+    row = _GF32_MUL[k]
+    return sum(row[residue >> shift & 31] << shift for shift in range(0, 30, 5))
+
+
+def _class(residue: int) -> int:
+    """Scale the residue so that its top non-zero element is 1.
+
+    Two residues have the same class exactly where one is a non-zero
+    multiple of the other. Zero is its own class, `_GF32_INV[0]` being 0.
+    """
+    elements = (residue >> shift & 31 for shift in range(25, -1, -5))
+    top = next((element for element in elements if element), 0)
+    return _scale(residue, _GF32_INV[top])
+
+
+@functools.cache
+def _moves() -> list[list[int]]:
+    """Tabulate the move of XOR by `d` of the value `t` before the last.
+
+    Entry `[t][d]`, for `t` up to 1023, built from `_polymod` one bit of
+    `d` at a time.
+    """
+    moves = []
+    for t in range(1024):
+        zero = _polymod([0] * (t + 1))
+        bits = [_polymod([1 << b] + [0] * t) ^ zero for b in range(5)]
+        moves.append(
+            [
+                functools.reduce(
+                    operator.xor, (bits[b] for b in range(5) if d >> b & 1), 0
+                )
+                for d in range(32)
+            ]
+        )
+    return moves
+
+
+def test_the_moves_add_scale_and_repeat() -> None:
+    """The premises of the two exhaustive tests below.
+
+    `_TAPS` is linear, which is what makes the moves of several changes add
+    by XOR. XOR by `d` moves the residue by `d` times what XOR by 1 does at
+    the same place, so a pattern that cancels still cancels with every XOR
+    scaled by one factor. The moves repeat every 1023 values, the code's
+    length, so it still cancels shifted along the string.
+    """
+    assert all(
+        _TAPS[a ^ b] == _TAPS[a] ^ _TAPS[b] for a in range(32) for b in range(32)
+    )
+    moves = _moves()
+    for row in moves:
+        assert row == [_scale(row[1], d) for d in range(32)]
+    assert moves[1023] == moves[0]
+
+
+def _four_changes_always_move(count: int) -> bool:
+    """Whether no pattern of 1 to 4 changes in the last `count` values cancels.
+
+    A pattern of up to four changes is two of at most two, which cancel
+    only where their moves are equal. Each pattern of one or two changes is
+    taken once, the XOR of its change nearest the end being 1: none may move
+    by zero, and no two may move by multiples of one another, which is
+    their classes being distinct.
+    """
+    moves = _moves()[:count]
+    classes = [_class(row[1]) for row in moves]
+    for first, second in itertools.combinations(moves, 2):
+        classes.extend(_class(first[1] ^ move) for move in second[1:])
+    return 0 not in classes and len(set(classes)) == len(classes)
+
+
+def test_every_change_of_up_to_4_characters_within_90_is_detected() -> None:
+    """BIP173's bound, for every pattern.
+
+    The 89 characters besides the separator are the last 89 values the
+    checksum reads, the low 5 bits of each HRP character included. With 90
+    such characters four changes can cancel, which shows the check can fail.
+    """
+    assert _four_changes_always_move(89)
+    assert not _four_changes_always_move(90)
+
+
+def test_every_change_of_up_to_3_characters_within_1023_is_detected() -> None:
+    """Bitcoin Core's bound, for every pattern.
+
+    A pattern that cancels still cancels shifted until its change nearest
+    the end is at the last value, and scaled until that change is XOR by
+    1. Three changes cancel only where one moves the residue by a multiple
+    of what the other two do. So it is enough that no pattern of XOR by 1
+    at the last value and one more change within 1023 values moves the
+    residue by zero, or by a multiple of what a single change does.
+    """
+    moves = _moves()
+    singles = {_class(row[1]) for row in moves[:1023]}
+    for row in moves[1:1023]:
+        for move in row[1:]:
+            pattern = _class(moves[0][1] ^ move)
+            assert pattern != 0
+            assert pattern not in singles
+
+
+@pytest.mark.parametrize(
+    "length, changes", [(90, 2), (90, 3), (90, 4), (1023, 2), (1023, 3)]
+)
+def test_a_sample_of_those_changes_fails_the_checksum(
+    length: int, changes: int
+) -> None:
+    """The exhaustive tests above, through `bech32_decode`, on a seeded sample.
+
+    `m` is given, the bounds holding for one constant at a time: a string
+    the other constant verifies is refused too, and with `m` None it would
+    be accepted.
+    """
+    data = [0] * (length - 8)  # "a", "1" and six checksum characters
+    encoded = bech32_encode("a", data, m=BECH32_1_CONST).decode("ascii")
+    rng = random.Random(f"{length}-{changes}")
+    for _ in range(200):
+        chars = list(encoded)
+        for i in rng.sample(range(2, length), changes):
+            chars[i] = _ALPHABET[_ALPHABET.index(chars[i]) ^ rng.randrange(1, 32)]
+        with pytest.raises(Base58Bech32ValueError, match="^invalid checksum"):
+            bech32_decode("".join(chars), m=BECH32_1_CONST)
+
+
+# One change more than each bound, passing the checksum, on the strings the
+# sample above changes. Bitcoin Core's own pair is proposed in
+# bitcoin/bitcoin#36690
+_ONE_CHANGE_MORE = [
+    (90, {21: "z", 22: "m", 53: "m", 54: "0", 87: "w"}),
+    (1023, {288: "a", 535: "h", 689: "f", 1022: "u"}),
+]
+
+
+@pytest.mark.parametrize("length, changes", _ONE_CHANGE_MORE)
+def test_one_change_more_can_pass_the_checksum(
+    length: int, changes: dict[int, str]
+) -> None:
+    """The bounds are tight: one change more than each can cancel."""
+    data = [0] * (length - 8)
+    chars = list(bech32_encode("a", data, m=BECH32_1_CONST).decode("ascii"))
+    for i, char in changes.items():
+        assert chars[i] != char
+        chars[i] = char
+    hrp, values, m = bech32_decode("".join(chars), m=BECH32_1_CONST, limit=length)
+    assert (hrp, m) == ("a", BECH32_1_CONST)
+    assert values != data
 
 
 # NIP-19's examples (nostr-protocol/nips, 19.md): a public key and its npub
