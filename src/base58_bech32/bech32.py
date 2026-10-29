@@ -233,8 +233,9 @@ def bech32_decode(
     The default is not 90, BIP173's limit, because BOLT11's Lightning
     invoices are longer.
 
-    The limit bounds what the checksum guarantees for errors that change
-    only the low 5 bits of an HRP character, as BIP173 assumes:
+    The limit bounds what the checksum guarantees, for the constant passed
+    as `m`, against errors that change only the low 5 bits of an HRP
+    character, as BIP173 assumes:
 
     * within 89 characters besides the separator, any error affecting at
       most 4 characters is detected (BIP173), which `limit=90` keeps;
@@ -245,9 +246,15 @@ def bech32_decode(
       1023 apart, changed by the same XOR of their values, leave the
       checksum valid.
 
-    Without that assumption the checksum runs over more values than the
-    string has characters: each HRP character's high bits come first, as
-    a value of their own. A change to those bits, such as a digit for a
+    With `m` None either constant verifies, and of these only the
+    single-change guarantee holds: three changed characters within 90, and
+    two within 1023, can turn a bech32 string into a bech32m one, which
+    decodes with `BECH32_M_CONST` returned. A caller that knows its
+    constant passes it.
+
+    Without BIP173's assumption the checksum runs over more values than
+    the string has characters: each HRP character's high bits come first,
+    as a value of their own. A change to those bits, such as a digit for a
     letter, can cancel a change 1023 checksummed values later, which is
     1023 minus the HRP's length characters later in the string, so two
     errors can pass within the default limit.

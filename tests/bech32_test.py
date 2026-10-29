@@ -966,6 +966,55 @@ def test_one_change_more_can_pass_the_checksum(
     assert values != data
 
 
+def test_with_m_none_one_change_never_passes_as_the_other_constant() -> None:
+    """The single-change guarantee holds with `m` None, at every length.
+
+    No change to one value moves the residue by the XOR of the two
+    constants, and the moves repeat every 1023 values.
+    """
+    other = BECH32_1_CONST ^ BECH32_M_CONST
+    assert all(row[d] != other for row in _moves()[:1023] for d in range(1, 32))
+
+
+# ISS btclib-org/base58-bech32#79's string: the 90 characters
+# `bech32_encode("a", [0] * 82, m=BECH32_1_CONST)` writes, three of them
+# changed so that BECH32_M_CONST verifies
+_OTHER_CONSTANT = (
+    "a1qqqqqpqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq"
+    "3qqqqqqmqqqqqqq87k0gd"
+)
+
+
+# changes that make BECH32_M_CONST verify the strings the sample above
+# changes: the issue's three within 90, and two within 1023
+@pytest.mark.parametrize(
+    "length, changes",
+    [(90, {7: "p", 69: "3", 76: "m"}), (1023, {830: "n", 989: "n"})],
+)
+def test_with_m_none_a_few_changes_can_pass_as_the_other_constant(
+    length: int, changes: dict[int, str]
+) -> None:
+    """With `m` None either constant verifies.
+
+    Of `bech32_decode`'s bounds only the single-change guarantee then
+    holds. `m` given refuses the string as the other constant's.
+    """
+    data = [0] * (length - 8)
+    chars = list(bech32_encode("a", data, m=BECH32_1_CONST).decode("ascii"))
+    for i, char in changes.items():
+        assert chars[i] != char
+        chars[i] = char
+    corrupted = "".join(chars)
+    if length == 90:
+        assert corrupted == _OTHER_CONSTANT
+    hrp, values, m = bech32_decode(corrupted, limit=length)
+    assert (hrp, m) == ("a", BECH32_M_CONST)
+    assert values != data
+    err_msg = "^invalid checksum: BECH32_M_CONST verifies$"
+    with pytest.raises(Base58Bech32ValueError, match=err_msg):
+        bech32_decode(corrupted, m=BECH32_1_CONST, limit=length)
+
+
 # NIP-19's examples (nostr-protocol/nips, 19.md): a public key and its npub
 _NPUBS = [
     (
