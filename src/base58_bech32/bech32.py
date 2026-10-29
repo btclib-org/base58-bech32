@@ -246,11 +246,10 @@ def bech32_decode(
       1023 apart, changed by the same XOR of their values, leave the
       checksum valid.
 
-    With `m` None either constant verifies, and of these only the
-    single-change guarantee holds: three changed characters within 90, and
-    two within 1023, can turn a bech32 string into a bech32m one, which
-    decodes with `BECH32_M_CONST` returned. A caller that knows its
-    constant passes it.
+    With `m` None, of these only the single-change guarantee holds: three
+    changed characters within 90, and two within 1023, can turn a bech32
+    string into a bech32m one, which decodes with `BECH32_M_CONST`
+    returned. A caller that knows its constant passes it.
 
     Without BIP173's assumption the checksum runs over more values than
     the string has characters: each HRP character's high bits come first,
