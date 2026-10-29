@@ -878,8 +878,9 @@ def _four_changes_always_move(count: int) -> bool:
 
     A pattern of up to four changes is two of at most two, which cancel
     only where their moves are equal. Each pattern of one or two changes is
-    taken once, its first XOR being 1: none may move by zero, and no two may
-    move by multiples of one another, which is their classes being distinct.
+    taken once, the XOR of its change nearest the end being 1: none may move
+    by zero, and no two may move by multiples of one another, which is
+    their classes being distinct.
     """
     moves = _moves()[:count]
     classes = [_class(row[1]) for row in moves]
@@ -902,12 +903,12 @@ def test_every_change_of_up_to_4_characters_within_90_is_detected() -> None:
 def test_every_change_of_up_to_3_characters_within_1023_is_detected() -> None:
     """Bitcoin Core's bound, for every pattern.
 
-    A pattern that cancels still cancels shifted until its first change is
-    at the last value, and scaled until that change is XOR by 1. Three
-    changes cancel only where one moves the residue by a multiple of what
-    the other two do. So it is enough that no pattern of XOR by 1 at the
-    last value and one more change within 1023 values moves the residue by
-    zero, or by a multiple of what a single change does.
+    A pattern that cancels still cancels shifted until its change nearest
+    the end is at the last value, and scaled until that change is XOR by
+    1. Three changes cancel only where one moves the residue by a multiple
+    of what the other two do. So it is enough that no pattern of XOR by 1
+    at the last value and one more change within 1023 values moves the
+    residue by zero, or by a multiple of what a single change does.
     """
     moves = _moves()
     singles = {_class(row[1]) for row in moves[:1023]}
@@ -942,11 +943,7 @@ def test_a_sample_of_those_changes_fails_the_checksum(
 
 
 # One change more than each bound, passing the checksum, on the strings the
-# sample above changes. Each was found by a search: a random pattern of
-# three changes after the separator (two at 1023) is looked up, by the
-# class of its move, among the patterns of two changes (at 1023, those
-# whose first change is the last character), and a hit at disjoint
-# positions is scaled to cancel. Bitcoin Core's own pair is proposed in
+# sample above changes. Bitcoin Core's own pair is proposed in
 # bitcoin/bitcoin#36690
 _ONE_CHANGE_MORE = [
     (90, {21: "z", 22: "m", 53: "m", 54: "0", 87: "w"}),
