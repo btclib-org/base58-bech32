@@ -56,7 +56,8 @@ gh api -X PATCH repos/btclib-org/base58-bech32 -f default_branch=main
 Then the switches section 11 turns off or on at the repository level, in
 one call — the projects board and the wiki off, the tracker on, squash as
 the only merge method with auto-merge, the head branch deleted on merge,
-and the squash commit's title and body:
+and the squash commit's title and body — together with the `.homepage`,
+section 3's page on btclib.org:
 
 ```shell
 gh api -X PATCH repos/btclib-org/base58-bech32 \
@@ -66,7 +67,7 @@ gh api -X PATCH repos/btclib-org/base58-bech32 \
   -F delete_branch_on_merge=true \
   -f squash_merge_commit_title=COMMIT_OR_PR_TITLE \
   -f squash_merge_commit_message=COMMIT_MESSAGES \
-  -f homepage=https://base58-bech32.readthedocs.io/
+  -f homepage=https://btclib.org/base58-bech32/
 ```
 
 Read back:
@@ -585,13 +586,13 @@ git grep -n 'password' -- .github/workflows/release.yml
 The `.dev` versions on TestPyPI are rehearsal uploads; the release
 run's `Publish to TestPyPI` job was skipped.
 
-**The repository's `.homepage` names this tree's own documentation
-site**, set under *Creating the repository* and read back here rather
-than from `pyproject.toml`'s own copy of it:
+**The repository's `.homepage` is its page on btclib.org**, as
+section 3 has it, set under *Creating the repository* and read back
+here rather than from `pyproject.toml`'s own copy of it. Read at 2026-11-02:
 
 ```shell
 gh api repos/btclib-org/base58-bech32 --jq '.homepage'
-# https://base58-bech32.readthedocs.io/
+# https://btclib.org/base58-bech32/
 ```
 
 ## Read the Docs, which is base58-bech32.readthedocs.io
@@ -601,8 +602,7 @@ from `btclib-org/base58-bech32` under the slug `base58-bech32`, which
 is what `release.yml`'s `documented` job and `pyproject.toml`'s
 `documentation` url name. The slug is what serves the site, and it is not
 the project's name: renaming the slug makes the old one stop answering
-rather than redirect. The `.homepage` *Publishing* reads back is that
-site:
+rather than redirect. The site answers:
 
 ```shell
 curl -sL -o /dev/null -w '%{http_code} %{url_effective}\n' \
