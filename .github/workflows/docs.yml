@@ -8,9 +8,10 @@ name: docs
 # rst reads as a reference to a link target, or a title underline left
 # too short by a rename.
 #
-# The checkout, the build with -n -W and the unresolved-link check on the built
-# pages are btclib-org/.github's: reusable-docs.yml, called at a tagged commit
-# (section 10 of btclib-org/.github's README.md)
+# The checkout, the build with -n -W, and the unresolved-link and
+# included-link checks on the built pages are btclib-org/.github's:
+# reusable-docs.yml, called at a tagged commit (section 10 of
+# btclib-org/.github's README.md)
 
 on:
   push:
