@@ -1113,6 +1113,19 @@ def test_a_blob_that_is_not_upstream_s_at_the_commit_is_a_mismatch(
     assert _UPSTREAM_BLOB in mismatch
 
 
+def test_upstream_s_blob_is_the_one_its_name_holds_past_a_sibling(
+    checker: ModuleType,
+    fake_gh: FakeGh,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Upstream's tree lists siblings too, and only the file's entry counts."""
+    path = _vendored(tmp_path, monkeypatch, fake_gh)
+    tree = fake_gh.trees["r", f"{_COMMIT}:up"]
+    fake_gh.trees["r", f"{_COMMIT}:up"] = {"e.json": _UPSTREAM_BLOB} | tree
+    assert checker.find_mismatches(path)[0] == []
+
+
 def test_a_path_absent_at_the_commit_is_a_mismatch(
     checker: ModuleType,
     fake_gh: FakeGh,
