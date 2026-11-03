@@ -451,9 +451,9 @@ uv run --locked --no-default-groups --group docs \
     sphinx-build -n -W -b html docs/source docs/build/html
 ```
 
-The documentation gate ends with the reads of the pages it wrote that the
-`docs.yml` block under *Reproducing what CI runs* gives,
-`check_included_links.py` among them.
+The documentation gate also runs the checks of the built pages that
+*Reproducing what CI runs* gives under `docs.yml`, `check_included_links.py`
+among them.
 
 `--cov` is in `addopts`, so the bare `pytest` above is the coverage gate
 and `fail_under` is what it answers against — 100%, and coverage takes
@@ -674,9 +674,11 @@ git clone --quiet --filter=blob:none --sparse \
 git -C "$served" sparse-checkout set .github/scripts
 git -C "$served" checkout --quiet \
     "$(sed -n 's/.*reusable-docs\.yml@\([0-9a-f]*\).*/\1/p' .github/workflows/docs.yml)"
+found=0
 uv run --no-project --python 3.15 \
-    "$served"/.github/scripts/check_included_links.py docs/build/html
+    "$served"/.github/scripts/check_included_links.py docs/build/html || found=$?
 rm -rf "$served"
+test "$found" -eq 0
 ```
 
 `codeql.yml` has no line here: its jobs run `github/codeql-action` and no
