@@ -550,8 +550,10 @@ def test_a_conversion_takes_integers_only() -> None:
         convertbits([1], 8, 5, 0)  # type: ignore[arg-type]
 
     # any iterable of integers, a one-shot generator included: it is read
-    # once, into the list the values are checked in
-    assert convertbits((x for x in b"ab"), 8, 5) == [12, 5, 17, 0]
+    # once, into the list the values are checked in. The skip keeps the
+    # generator, which is the input under test, from becoming iter()
+    one_shot = (x for x in b"ab")  # sourcery skip: simplify-generator
+    assert convertbits(one_shot, 8, 5) == [12, 5, 17, 0]
 
 
 @pytest.mark.parametrize(

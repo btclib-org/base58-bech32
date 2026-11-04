@@ -137,6 +137,11 @@ cells a merge would wait for, against the ceiling *Plan-gated settings*
 has, and `zizmor` in `lint.yml` already audits the workflows on every
 pull request.
 
+`sourcery.yml` is a candidate the rule does not name yet: [section 10 of
+the organization's
+standard](https://github.com/btclib-org/.github#the-set-and-its-cadence)
+says when a tree's protection gains its `sourcery / Sourcery` context.
+
 Every required check is an Actions check, bound to the app that produces
 it — `checks` with an `app_id` rather than the bare `contexts` list, 15368
 for Actions — so nothing else can satisfy one.

@@ -253,7 +253,7 @@ def test_no_module_imports_outside_the_stdlib() -> None:
         for path in sorted(root.rglob("*.py"))
     }
     assert "cashaddr.py" in found
-    assert {file: names for file, names in found.items() if names} == {}
+    assert not {file: names for file, names in found.items() if names}
 
 
 # what each module may import from the package, as ARCHITECTURE.md describes
@@ -341,4 +341,4 @@ def test_every_module_imports_only_from_the_layers_below() -> None:
         )
         for path in sorted(root.rglob("*.py"))
     }
-    assert {module: names for module, names in excess.items() if names} == {}
+    assert not {module: names for module, names in excess.items() if names}
