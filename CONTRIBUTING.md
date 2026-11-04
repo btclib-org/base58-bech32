@@ -730,9 +730,9 @@ organization, and `REPOSITORY.md`'s *Plan-gated settings* is where that
 lives.
 `verified-signatures.yml` reports after each push to `main` whether every
 commit pushed is `verified`; [the standard's *Signatures*][s-sigs] has the rule.
-`sourcery.yml` runs on every pull request and is not a required check, so
-it gates nothing; [the standard's *The set, and its
-cadence*](https://github.com/btclib-org/.github#the-set-and-its-cadence)
+`sourcery.yml` runs on every pull request. Whether `main` requires it is
+`REPOSITORY.md`'s *Required checks on main*; [the standard's *The set, and
+its cadence*](https://github.com/btclib-org/.github#the-set-and-its-cadence)
 says when a tree requires it.
 
 ### The secrets baseline
