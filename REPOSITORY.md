@@ -138,11 +138,11 @@ cells a merge would wait for, against the ceiling *Plan-gated settings*
 has, and `zizmor` in `lint.yml` already audits the workflows on every
 pull request.
 
-`sourcery / Sourcery` is required because this tree's clean-up has
-landed (btclib-org/base58-bech32#99), its caller is section 10's and its
-check is green: [section 10 of the organization's
+`sourcery / Sourcery` is required because this tree meets the condition
+[section 10 of the organization's
 standard](https://github.com/btclib-org/.github#the-set-and-its-cadence)
-says when a tree requires it.
+sets for it: Sourcery finds nothing in the tree, and its caller,
+`.sourcery.yaml` and `bare-sourcery-skip` are as sections 10 and 4 ask.
 
 Every required check is an Actions check, bound to the app that produces
 it — `checks` with an `app_id` rather than the bare `contexts` list, 15368
@@ -210,9 +210,9 @@ gh api repos/btclib-org/base58-bech32/branches/main/protection \
 ```
 
 Read on 2026-10-18T06:19Z, after `main` was pushed, it printed the answer
-above without `sourcery / Sourcery`, which joined the rule once this
-tree's clean-up landed: a `PATCH` of `required_status_checks` carrying
-the `checks` of the `PUT` above.
+above without `sourcery / Sourcery`. A `PATCH` of
+`required_status_checks` carrying the `checks` of the `PUT` above adds
+it.
 
 Three rulesets sit beside it, additive — rules aggregate across rulesets
 and classic protection, taking the most restrictive combination.
