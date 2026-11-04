@@ -687,11 +687,11 @@ and a database rather than a `uv run`.
 
 ### What gates a merge, and what only reports
 
-`lint.yml`, `test.yml` and `docs.yml` produce the required checks, and
-`REPOSITORY.md` reads the rule back from the endpoint rather than
-restating it. So a diff does not reach a review without having passed
-them or passing them beside it on the same sha, which is the reliance
-`REVIEWING.md` provides for.
+`lint.yml`, `test.yml`, `docs.yml` and `sourcery.yml` produce the
+required checks, and `REPOSITORY.md` reads the rule back from the
+endpoint rather than restating it. So a diff does not reach a review
+without having passed them or passing them beside it on the same sha,
+which is the reliance `REVIEWING.md` provides for.
 
 | workflow | when | what it varies |
 | --- | --- | --- |
@@ -730,10 +730,6 @@ organization, and `REPOSITORY.md`'s *Plan-gated settings* is where that
 lives.
 `verified-signatures.yml` reports after each push to `main` whether every
 commit pushed is `verified`; [the standard's *Signatures*][s-sigs] has the rule.
-`sourcery.yml` runs on every pull request. Whether `main` requires it is
-`REPOSITORY.md`'s *Required checks on main*; [the standard's *The set, and
-its cadence*](https://github.com/btclib-org/.github#the-set-and-its-cadence)
-says when a tree requires it.
 
 ### The secrets baseline
 

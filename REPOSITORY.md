@@ -117,6 +117,7 @@ nothing.
 | `lint / Lint and type-check` | `lint.yml`, calling `reusable-lint.yml` |
 | `lint / Dependency review` | `lint.yml`, calling `reusable-lint.yml` |
 | `lint / Sign-off` | `lint.yml`, calling `reusable-lint.yml` |
+| `sourcery / Sourcery` | `sourcery.yml`, calling `reusable-sourcery.yml` |
 
 A merge waits for all of these checks, except an administrator's:
 `enforce_admins` is off (*Branch protection*).
@@ -137,10 +138,11 @@ cells a merge would wait for, against the ceiling *Plan-gated settings*
 has, and `zizmor` in `lint.yml` already audits the workflows on every
 pull request.
 
-`sourcery.yml` is a candidate the rule does not name yet: [section 10 of
-the organization's
+`sourcery / Sourcery` is required because this tree's clean-up has
+landed (btclib-org/base58-bech32#99), its caller is section 10's and its
+check is green: [section 10 of the organization's
 standard](https://github.com/btclib-org/.github#the-set-and-its-cadence)
-says when a tree's protection gains its `sourcery / Sourcery` context.
+says when a tree requires it.
 
 Every required check is an Actions check, bound to the app that produces
 it — `checks` with an `app_id` rather than the bare `contexts` list, 15368
@@ -164,7 +166,8 @@ gh api -X PUT repos/btclib-org/base58-bech32/branches/main/protection \
    {"context": "docs / Build the documentation", "app_id": 15368},
    {"context": "lint / Lint and type-check", "app_id": 15368},
    {"context": "lint / Dependency review", "app_id": 15368},
-   {"context": "lint / Sign-off", "app_id": 15368}]},
+   {"context": "lint / Sign-off", "app_id": 15368},
+   {"context": "sourcery / Sourcery", "app_id": 15368}]},
  "enforce_admins": false,
  "required_pull_request_reviews": {"dismiss_stale_reviews": true,
    "require_code_owner_reviews": false,
@@ -197,7 +200,8 @@ gh api repos/btclib-org/base58-bech32/branches/main/protection \
 #   ["docs / Build the documentation",15368],
 #   ["lint / Lint and type-check",15368],
 #   ["lint / Dependency review",15368],
-#   ["lint / Sign-off",15368]],
+#   ["lint / Sign-off",15368],
+#   ["sourcery / Sourcery",15368]],
 #  "conversation":true,"deletions":false,"enforce_admins":false,
 #  "force_pushes":false,"linear":true,
 #  "reviews":{"dismiss_stale_reviews":true,
@@ -206,7 +210,9 @@ gh api repos/btclib-org/base58-bech32/branches/main/protection \
 ```
 
 Read on 2026-10-18T06:19Z, after `main` was pushed, it printed the answer
-above.
+above without `sourcery / Sourcery`, which joined the rule once this
+tree's clean-up landed: a `PATCH` of `required_status_checks` carrying
+the `checks` of the `PUT` above.
 
 Three rulesets sit beside it, additive — rules aggregate across rulesets
 and classic protection, taking the most restrictive combination.
