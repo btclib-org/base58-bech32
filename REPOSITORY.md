@@ -209,10 +209,8 @@ gh api repos/btclib-org/base58-bech32/branches/main/protection \
 #  "strict":false}
 ```
 
-Read on 2026-10-18T06:19Z, after `main` was pushed, it printed the answer
-above without `sourcery / Sourcery`. A `PATCH` of
-`required_status_checks` carrying the `checks` of the `PUT` above adds
-it.
+Read on 2026-11-04T23:27Z, after a `PATCH` of `required_status_checks`
+carrying the `checks` of the `PUT` above, it printed the answer above.
 
 Three rulesets sit beside it, additive — rules aggregate across rulesets
 and classic protection, taking the most restrictive combination.
