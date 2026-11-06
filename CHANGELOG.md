@@ -19,6 +19,83 @@ behind them.
 
 [std]: https://github.com/btclib-org/.github
 
+## v2026.11.7
+
+### `bech32_decode`'s docstring states the checksum's bounds per constant
+
+The bounds hold for the constant passed as `m`; with `m=None` only the
+single-change guarantee holds (closes #79).
+
+### The tests cover the checksum's detection bounds and the length limit
+
+Every detection-bound pattern is tested, and the fuzz tests draw the limit
+around the string's length (closes #76) (closes #15).
+
+### A release is verified by repository id, its signer named without a ref
+
+`SECURITY.md`'s `gh attestation verify` takes `--owner btclib-org` and
+compares the certificate's repository id, which a rename keeps (closes #57).
+
+### btclib-org/.github's reusable workflows are called at a tagged commit
+
+Every call names the commit of the tag v2026.11.5 (issue
+btclib-org/.github#1870, btclib-org/.github#1988, btclib-org/.github#2005).
+
+### The homepage is `https://btclib.org/base58-bech32/`
+
+The documentation stays at `https://base58-bech32.readthedocs.io/`
+(closes #83).
+
+### `ARCHITECTURE.md` describes the package's layers
+
+`tests/imports_test.py` checks each module's imports against them
+(closes #62).
+
+### The coverage floor measures `.github/scripts`
+
+A run that leaves it unmeasured is refused (closes #91) (closes #95).
+
+### Sourcery and CodeRabbit review pull requests; macOS runs on arm64 alone
+
+`check-executables-have-shebangs` is on too (issue btclib-org/.github#1982,
+btclib-org/.github#1998, btclib-org/.github#2005, btclib-org/btclib#2852).
+
+### `CONTRIBUTING.md` and `REVIEWING.md` follow btclib-org/.github
+
+(#84) (issue btclib-org/.github#1846, btclib-org/.github#1904,
+btclib-org/.github#1919, btclib-org/.github#2004, btclib-org/.github#2022,
+btclib-org/.github#2051, btclib-org/.github#2054).
+
+### `RELEASING.md` is shared up to this tree's own section
+
+It names the lint jobs a release run skips (issue btclib-org/.github#1855,
+btclib-org/.github#1989).
+
+### `check_vendored_vectors.py` names the functional-tests repository
+
+Its docstring names it as it is now (closes #82) (closes #89).
+
+### `scorecard.yml` drops its claim to be the one workflow without a dispatch
+
+Its comment says why it takes no `workflow_dispatch` (closes #102).
+
+### The tools move past their advisories
+
+`uv.lock` takes setuptools and filelock past theirs, the publish action is
+v1.14.3, and uv below 0.13.4 refuses to run here (issue
+btclib-org/.github#1844, btclib-org/.github#1849).
+
+### `dependabot.yml` names the `uv.lock` exception and `uv_build`'s ceiling
+
+Its comment says what moves `uv.lock` (issue btclib-org/.github#1818,
+btclib-org/.github#1848).
+
+### The locked and pinned tools move
+
+The dev-tooling group, `uv_build` with the check-sdist hook's ceiling, the
+actions and the hook revisions (closes #54)
+(#60, #67, #71, #72, #73, #77, #78, #92, #100, #101).
+
 ## v2026.10.23
 
 ### `bech32_decode` returns the constant that verified
