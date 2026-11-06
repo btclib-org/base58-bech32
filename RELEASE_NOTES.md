@@ -9,6 +9,24 @@ number says when a release was cut, and promises nothing about
 compatibility, so a breaking change is announced in this file — read it
 before upgrading, rather than a digit.
 
+## v2026.11.7
+
+Nothing breaks a caller of `v2026.10.23`: griffe and `api_gaps.py` find no
+break in the public API against it.
+
+- A script that verifies the release's files with the command of
+  `v2026.10.23`'s `SECURITY.md` refuses these: it names the signer
+  `reusable-build.yml@refs/heads/main`, and this release's certificate
+  names the commit of btclib-org/.github that `release.yml` calls. Name the
+  signer without a ref, as *Supported versions* in
+  [SECURITY.md](./SECURITY.md) does; that command also compares the
+  repository by its id, which a rename keeps.
+- `bech32_decode` with `m=None` keeps only the single-change guarantee of
+  its checksum: three changed characters within 90, and two within 1023,
+  can turn a bech32 string into a bech32m one, which then decodes with
+  `BECH32_M_CONST` returned. A caller that knows its constant passes it, as
+  its docstring says.
+
 ## v2026.10.23
 
 These changes break a caller of `v2026.10.18`.
