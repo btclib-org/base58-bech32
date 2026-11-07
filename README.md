@@ -72,8 +72,8 @@ but the standard library.
 - [CashAddr](https://github.com/bitcoincashorg/bitcoincash.org/blob/master/spec/cashaddr.md),
   the address format of Bitcoin Cash (`cashaddr`)
 
-[ARCHITECTURE.md](./ARCHITECTURE.md) says how these modules layer and
-which may import which.
+[ARCHITECTURE.md](https://github.com/btclib-org/base58-bech32/blob/main/ARCHITECTURE.md)
+says how these modules layer and which may import which.
 
 Every refusal is a `ValueError` or a `TypeError`, under one base,
 `Base58Bech32Exception` (`exceptions`). No decoder's refusal quotes the
@@ -86,10 +86,10 @@ above this one for bitcoin.
 maps each function of the `base58` and `bech32` packages to its
 equivalent here.
 
-The suite answers to vectors their authors publish -- Bitcoin Core's,
-the `base58` package's, Substrate's and the CashAddr specification's --
-and [tests/_data/README.md](./tests/_data/README.md) pins each vendored
-file to the upstream commit it was copied from.
+The suite answers to vectors their authors publish -- Bitcoin Core's, the
+`base58` package's, Substrate's and the CashAddr specification's -- and
+[tests/_data/README.md](https://github.com/btclib-org/base58-bech32/blob/main/tests/_data/README.md)
+pins each vendored file to the upstream commit it was copied from.
 
 ## Installing
 
@@ -126,24 +126,26 @@ example above is the one the suite checks.
 
 ## Security
 
-[SECURITY.md](./SECURITY.md) says how to report a vulnerability, which
-versions are supported, and how a published file is traced back to the
-run that built it.
-[ASSURANCE_CASE.md](./ASSURANCE_CASE.md) argues why what it promises
-holds: the threat model, the trust boundaries, and the weaknesses a
-package of this kind is exposed to.
+[SECURITY.md](https://github.com/btclib-org/base58-bech32/blob/main/SECURITY.md)
+says how to report a vulnerability, which versions are supported, and
+how a published file is traced back to the run that built it.
+[ASSURANCE_CASE.md](https://github.com/btclib-org/base58-bech32/blob/main/ASSURANCE_CASE.md)
+argues why what it promises holds: the threat model, the trust
+boundaries, and the weaknesses a package of this kind is exposed to.
 
 ## Contributing
 
 Development is LLM-based: humans are welcome, as long as they are
 comfortable with agentic development ;-). A contribution must have been
 read and understood by the person who submits it.
-[`CONTRIBUTING.md`](./CONTRIBUTING.md#working-with-an-llm) has the rules.
+[`CONTRIBUTING.md`](https://github.com/btclib-org/base58-bech32/blob/main/CONTRIBUTING.md#working-with-an-llm)
+has the rules.
 
-[CONTRIBUTING.md](./CONTRIBUTING.md) has the commands each CI job runs,
-verbatim. `uv sync` creates the environment; uv is the only tool that has
-to be installed. [REVIEWING.md](./REVIEWING.md) is what a pull request is
-answered against.
+[CONTRIBUTING.md](https://github.com/btclib-org/base58-bech32/blob/main/CONTRIBUTING.md)
+has the commands each CI job runs, verbatim. `uv sync` creates the
+environment; uv is the only tool that has to be installed.
+[REVIEWING.md](https://github.com/btclib-org/base58-bech32/blob/main/REVIEWING.md)
+is what a pull request is answered against.
 
 How the organization decides, and who holds which role, is its
 [GOVERNANCE.md](https://github.com/btclib-org/.github/blob/main/GOVERNANCE.md);
@@ -155,7 +157,8 @@ what it intends to do, and what it deliberately does not, is its
 - Documentation: <https://base58-bech32.readthedocs.io/>
 - Source: <https://github.com/btclib-org/base58-bech32>
 - Releases: <https://github.com/btclib-org/base58-bech32/releases>
-- [CHANGELOG.md](./CHANGELOG.md), and [RELEASE_NOTES.md](./RELEASE_NOTES.md)
+- [CHANGELOG.md](https://github.com/btclib-org/base58-bech32/blob/main/CHANGELOG.md),
+  and [RELEASE_NOTES.md](https://github.com/btclib-org/base58-bech32/blob/main/RELEASE_NOTES.md)
   for what a release asks a user to act on
 
 ---

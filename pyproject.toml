@@ -99,6 +99,9 @@ test = [
     "base58>=2.1.1",
     "bech32>=1.2.0",
     "btclib>=2026.10.16",
+    # tests/docs_conf_test.py executes docs/source/conf.py, which imports
+    # it; the marker and the bound are `docs`'s, below
+    "sphinx>=9.1.0; python_full_version >= '3.12'",
     # `typing.override` is 3.12's and the floor is 3.11, so a test
     # overriding a method takes it from the backport; 4.4 is the release
     # that adds it
