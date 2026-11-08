@@ -4,24 +4,7 @@ Base58, Base58Check, bech32, bech32m, SS58 and CashAddr: the
 binary-to-text codecs of cryptocurrency addresses and keys, in typed
 Python, with nothing of any chain above them.
 
-<!-- The badges are what the reader decides with, in three groups: what the
-software is and whether it can be used, whether it works, and what the
-OpenSSF makes of it.
-
-Inside the second group the gates come first, in the order a commit meets
-them, and the sentinels follow in the order section 10 of the organization
-standard schedules them -- the badge order *is* the calendar order over
-that subset, which is why the two move together or not at all. The day and
-hour each sentinel owns live in that section and are not copied here: a
-reader wanting the schedule reads it there, where it is still true.
-
-One badge per line keeps a change to one line and every line inside MD013,
-whose 80 columns bind only where a space follows them.
-
-A badge that reports no state -- "we use ruff", "we use uv" -- reports a
-choice instead, and those are in CONTRIBUTING.md, beside the prose that
-says how the choice is enforced.
--->
+<!-- Section 2 of btclib-org/.github's README.md says which badges sit here. -->
 [![PyPI version](https://img.shields.io/pypi/v/base58-bech32.svg?logo=pypi)](https://pypi.org/project/base58-bech32/)
 [![GitHub release](https://img.shields.io/github/v/release/btclib-org/base58-bech32.svg)](https://github.com/btclib-org/base58-bech32/releases)
 [![development status](https://img.shields.io/pypi/status/base58-bech32.svg)](https://pypi.org/project/base58-bech32/)
@@ -31,25 +14,6 @@ says how the choice is enforced.
 [![implementation](https://img.shields.io/pypi/implementation/base58-bech32.svg)](https://pypi.org/project/base58-bech32/)
 [![wheel](https://img.shields.io/pypi/wheel/base58-bech32.svg)](https://pypi.org/project/base58-bech32/)
 
-[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/btclib-org/base58-bech32/main.svg)](https://results.pre-commit.ci/latest/github/btclib-org/base58-bech32/main)
-[![lint workflow status](https://github.com/btclib-org/base58-bech32/actions/workflows/lint.yml/badge.svg?branch=main)](https://github.com/btclib-org/base58-bech32/actions/workflows/lint.yml?query=branch%3Amain)
-[![test workflow status](https://github.com/btclib-org/base58-bech32/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/btclib-org/base58-bech32/actions/workflows/test.yml?query=branch%3Amain)
-[![docs workflow status](https://github.com/btclib-org/base58-bech32/actions/workflows/docs.yml/badge.svg?branch=main)](https://github.com/btclib-org/base58-bech32/actions/workflows/docs.yml?query=branch%3Amain)
-[![documentation build](https://app.readthedocs.org/projects/base58-bech32/badge/?version=latest)](https://base58-bech32.readthedocs.io)
-[![vendored-vectors workflow status](https://github.com/btclib-org/base58-bech32/actions/workflows/vendored-vectors.yml/badge.svg?branch=main)](https://github.com/btclib-org/base58-bech32/actions/workflows/vendored-vectors.yml?query=branch%3Amain)
-[![mutation workflow status](https://github.com/btclib-org/base58-bech32/actions/workflows/mutation.yml/badge.svg?branch=main)](https://github.com/btclib-org/base58-bech32/actions/workflows/mutation.yml?query=branch%3Amain)
-[![fuzz workflow status](https://github.com/btclib-org/base58-bech32/actions/workflows/fuzz.yml/badge.svg?branch=main)](https://github.com/btclib-org/base58-bech32/actions/workflows/fuzz.yml?query=branch%3Amain)
-[![deps-latest workflow status](https://github.com/btclib-org/base58-bech32/actions/workflows/deps-latest.yml/badge.svg?branch=main)](https://github.com/btclib-org/base58-bech32/actions/workflows/deps-latest.yml?query=branch%3Amain)
-[![pypi-install workflow status](https://github.com/btclib-org/base58-bech32/actions/workflows/pypi-install.yml/badge.svg?branch=main)](https://github.com/btclib-org/base58-bech32/actions/workflows/pypi-install.yml?query=branch%3Amain)
-[![deps-oldest workflow status](https://github.com/btclib-org/base58-bech32/actions/workflows/deps-oldest.yml/badge.svg?branch=main)](https://github.com/btclib-org/base58-bech32/actions/workflows/deps-oldest.yml?query=branch%3Amain)
-[![os-macos workflow status](https://github.com/btclib-org/base58-bech32/actions/workflows/os-macos.yml/badge.svg?branch=main)](https://github.com/btclib-org/base58-bech32/actions/workflows/os-macos.yml?query=branch%3Amain)
-[![os-ubuntu workflow status](https://github.com/btclib-org/base58-bech32/actions/workflows/os-ubuntu.yml/badge.svg?branch=main)](https://github.com/btclib-org/base58-bech32/actions/workflows/os-ubuntu.yml?query=branch%3Amain)
-[![os-windows workflow status](https://github.com/btclib-org/base58-bech32/actions/workflows/os-windows.yml/badge.svg?branch=main)](https://github.com/btclib-org/base58-bech32/actions/workflows/os-windows.yml?query=branch%3Amain)
-[![links workflow status](https://github.com/btclib-org/base58-bech32/actions/workflows/links.yml/badge.svg?branch=main)](https://github.com/btclib-org/base58-bech32/actions/workflows/links.yml?query=branch%3Amain)
-[![sdist-rebuild workflow status](https://github.com/btclib-org/base58-bech32/actions/workflows/sdist-rebuild.yml/badge.svg?branch=main)](https://github.com/btclib-org/base58-bech32/actions/workflows/sdist-rebuild.yml?query=branch%3Amain)
-[![codeql workflow status](https://github.com/btclib-org/base58-bech32/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/btclib-org/base58-bech32/actions/workflows/codeql.yml?query=branch%3Amain)
-
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/btclib-org/base58-bech32/badge)](https://scorecard.dev/viewer/?uri=github.com/btclib-org/base58-bech32)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/15632/badge)](https://www.bestpractices.dev/projects/15632)
 [![OpenSSF Baseline](https://www.bestpractices.dev/projects/15632/baseline)](https://www.bestpractices.dev/projects/15632)
 
@@ -160,6 +124,28 @@ what it intends to do, and what it deliberately does not, is its
 - [CHANGELOG.md](https://github.com/btclib-org/base58-bech32/blob/main/CHANGELOG.md),
   and [RELEASE_NOTES.md](https://github.com/btclib-org/base58-bech32/blob/main/RELEASE_NOTES.md)
   for what a release asks a user to act on
+
+## Status
+
+<!-- Section 2 of btclib-org/.github's README.md says which badges sit here. -->
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/btclib-org/base58-bech32/main.svg)](https://results.pre-commit.ci/latest/github/btclib-org/base58-bech32/main)
+[![lint workflow status](https://github.com/btclib-org/base58-bech32/actions/workflows/lint.yml/badge.svg?branch=main)](https://github.com/btclib-org/base58-bech32/actions/workflows/lint.yml?query=branch%3Amain)
+[![test workflow status](https://github.com/btclib-org/base58-bech32/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/btclib-org/base58-bech32/actions/workflows/test.yml?query=branch%3Amain)
+[![docs workflow status](https://github.com/btclib-org/base58-bech32/actions/workflows/docs.yml/badge.svg?branch=main)](https://github.com/btclib-org/base58-bech32/actions/workflows/docs.yml?query=branch%3Amain)
+[![documentation build](https://app.readthedocs.org/projects/base58-bech32/badge/?version=latest)](https://base58-bech32.readthedocs.io)
+[![vendored-vectors workflow status](https://github.com/btclib-org/base58-bech32/actions/workflows/vendored-vectors.yml/badge.svg?branch=main)](https://github.com/btclib-org/base58-bech32/actions/workflows/vendored-vectors.yml?query=branch%3Amain)
+[![mutation workflow status](https://github.com/btclib-org/base58-bech32/actions/workflows/mutation.yml/badge.svg?branch=main)](https://github.com/btclib-org/base58-bech32/actions/workflows/mutation.yml?query=branch%3Amain)
+[![fuzz workflow status](https://github.com/btclib-org/base58-bech32/actions/workflows/fuzz.yml/badge.svg?branch=main)](https://github.com/btclib-org/base58-bech32/actions/workflows/fuzz.yml?query=branch%3Amain)
+[![deps-latest workflow status](https://github.com/btclib-org/base58-bech32/actions/workflows/deps-latest.yml/badge.svg?branch=main)](https://github.com/btclib-org/base58-bech32/actions/workflows/deps-latest.yml?query=branch%3Amain)
+[![pypi-install workflow status](https://github.com/btclib-org/base58-bech32/actions/workflows/pypi-install.yml/badge.svg?branch=main)](https://github.com/btclib-org/base58-bech32/actions/workflows/pypi-install.yml?query=branch%3Amain)
+[![deps-oldest workflow status](https://github.com/btclib-org/base58-bech32/actions/workflows/deps-oldest.yml/badge.svg?branch=main)](https://github.com/btclib-org/base58-bech32/actions/workflows/deps-oldest.yml?query=branch%3Amain)
+[![os-macos workflow status](https://github.com/btclib-org/base58-bech32/actions/workflows/os-macos.yml/badge.svg?branch=main)](https://github.com/btclib-org/base58-bech32/actions/workflows/os-macos.yml?query=branch%3Amain)
+[![os-ubuntu workflow status](https://github.com/btclib-org/base58-bech32/actions/workflows/os-ubuntu.yml/badge.svg?branch=main)](https://github.com/btclib-org/base58-bech32/actions/workflows/os-ubuntu.yml?query=branch%3Amain)
+[![os-windows workflow status](https://github.com/btclib-org/base58-bech32/actions/workflows/os-windows.yml/badge.svg?branch=main)](https://github.com/btclib-org/base58-bech32/actions/workflows/os-windows.yml?query=branch%3Amain)
+[![links workflow status](https://github.com/btclib-org/base58-bech32/actions/workflows/links.yml/badge.svg?branch=main)](https://github.com/btclib-org/base58-bech32/actions/workflows/links.yml?query=branch%3Amain)
+[![sdist-rebuild workflow status](https://github.com/btclib-org/base58-bech32/actions/workflows/sdist-rebuild.yml/badge.svg?branch=main)](https://github.com/btclib-org/base58-bech32/actions/workflows/sdist-rebuild.yml?query=branch%3Amain)
+[![codeql workflow status](https://github.com/btclib-org/base58-bech32/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/btclib-org/base58-bech32/actions/workflows/codeql.yml?query=branch%3Amain)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/btclib-org/base58-bech32/badge)](https://scorecard.dev/viewer/?uri=github.com/btclib-org/base58-bech32)
 
 ---
 
