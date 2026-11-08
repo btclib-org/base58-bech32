@@ -4,7 +4,7 @@ Base58, Base58Check, bech32, bech32m, SS58 and CashAddr: the
 binary-to-text codecs of cryptocurrency addresses and keys, in typed
 Python, with nothing of any chain above them.
 
-<!-- Section 2 of btclib-org/.github's README.md says which badges sit here. -->
+<!-- Section 2 of the organization's standard says which badges sit here. -->
 [![PyPI version](https://img.shields.io/pypi/v/base58-bech32.svg?logo=pypi)](https://pypi.org/project/base58-bech32/)
 [![GitHub release](https://img.shields.io/github/v/release/btclib-org/base58-bech32.svg)](https://github.com/btclib-org/base58-bech32/releases)
 [![development status](https://img.shields.io/pypi/status/base58-bech32.svg)](https://pypi.org/project/base58-bech32/)
@@ -127,7 +127,7 @@ what it intends to do, and what it deliberately does not, is its
 
 ## Status
 
-<!-- Section 2 of btclib-org/.github's README.md says which badges sit here. -->
+<!-- Section 2 of the organization's standard says which badges sit here. -->
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/btclib-org/base58-bech32/main.svg)](https://results.pre-commit.ci/latest/github/btclib-org/base58-bech32/main)
 [![lint workflow status](https://github.com/btclib-org/base58-bech32/actions/workflows/lint.yml/badge.svg?branch=main)](https://github.com/btclib-org/base58-bech32/actions/workflows/lint.yml?query=branch%3Amain)
 [![test workflow status](https://github.com/btclib-org/base58-bech32/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/btclib-org/base58-bech32/actions/workflows/test.yml?query=branch%3Amain)
