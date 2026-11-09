@@ -3,7 +3,7 @@ name: fuzz
 
 # ClusterFuzzLite over the decoders of this package, each of which reads
 # a string somebody else hands it: an address or a key pasted by a user
-# or received from a peer. Section 10 of the organization
+# or received from a peer. Section 10 of the organization's
 # standard is where `fuzz` is named as a sentinel every tree parsing a
 # stranger's own input owes.
 #
