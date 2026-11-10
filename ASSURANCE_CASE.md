@@ -119,7 +119,7 @@ to, and what counters each.
   checksum, which is computed from the payload: each codec's tests
   match the whole message of its checksum refusal.
   The rule is section 7's *A refusal carries no secret* in the
-  [btclib-org standard](https://github.com/btclib-org/.github#a-refusal-carries-no-secret).
+  [organization's standard](https://github.com/btclib-org/.github#a-refusal-carries-no-secret).
   Its helper, `assert_secret_free` in `tests/secret_free/__init__.py`, is
   called by each test of `tests/refusals_test.py` that feeds a secret, with
   the spellings its refusal could print. It reads each exception the
