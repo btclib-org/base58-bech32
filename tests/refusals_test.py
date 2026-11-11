@@ -208,6 +208,38 @@ def test_a_mistyped_wif_quotes_neither_checksum() -> None:
     assert_secret_free(excinfo.value, [payload, expected, written])
 
 
+# a key pasted as an SS58 address, the value its first bytes read as, and
+# the refusal: the first byte of `_SECRET` is above 127, and the second
+# key's first two bytes are the two-byte form of prefix 37
+_SS58_PREFIX_REFUSALS: list[tuple[str, bytes, int, str]] = [
+    ("prefix byte", _SECRET, _SECRET[0], "invalid SS58 prefix byte"),
+    (
+        "two-byte form",
+        b"\x49\x40" + _SECRET[2:],
+        37,
+        "invalid SS58 prefix: a one-byte prefix in the two-byte form",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "key, value, err_msg",
+    [row[1:] for row in _SS58_PREFIX_REFUSALS],
+    ids=[r[0] for r in _SS58_PREFIX_REFUSALS],
+)
+def test_an_ss58_prefix_refusal_prints_nothing_read_from_the_key(
+    key: bytes, value: int, err_msg: str
+) -> None:
+    """Neither the key nor the decimal of the value read from its first bytes.
+
+    The decimal is passed as a secret of its own: a piece of the key is
+    six bytes, longer than the one or two the value is read from.
+    """
+    with pytest.raises(Base58Bech32ValueError, match=f"^{err_msg}$") as excinfo:
+        ss58_decode(b58encode(key))
+    assert_secret_free(excinfo.value, [key, str(value)])
+
+
 # a fixed random scalar, the size of a private key
 _SCALAR = int.from_bytes(_SECRET, "big")
 

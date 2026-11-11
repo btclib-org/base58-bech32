@@ -120,10 +120,10 @@ def ss58_decode(address: String) -> tuple[int, bytes]:
         low = ((data[0] << 2) | (data[1] >> 6)) & 0xFF
         prefix = low | ((data[1] & 0b0011_1111) << 8)
         if prefix < 64:
-            err_msg = f"invalid SS58 prefix: {prefix} in the two-byte form"
+            err_msg = "invalid SS58 prefix: a one-byte prefix in the two-byte form"
             raise Base58Bech32ValueError(err_msg)
     else:
-        raise Base58Bech32ValueError(f"invalid SS58 prefix byte: {data[0]}")
+        raise Base58Bech32ValueError("invalid SS58 prefix byte")
 
     payload_size = len(data) - prefix_size - _CHECKSUM_SIZE
     if payload_size not in _PAYLOAD_SIZES:
