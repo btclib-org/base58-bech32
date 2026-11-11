@@ -222,6 +222,9 @@ package = ["src/base58_bech32"]
 # name, and ClusterFuzzLite's configuration with the harnesses it builds,
 # which fuzz.yml reads and nothing installed from the sdist runs
 git-only = [
+    # the bestpractices.dev answers, which nothing installed from the
+    # sdist reads
+    ".bestpractices.json",
     ".claude/",
     ".clusterfuzzlite/",
     ".gitattributes",
@@ -290,6 +293,10 @@ ignore-regex = '`[^`]*`'
 # deep for typos. The hook runs with --write-changes, so a word it
 # "corrects" in a vector is a rewrite of the vector, not a report
 extend-exclude = [
+    # the bestpractices.dev answers, byte for byte as the --seed mode
+    # of btclib-org/.github's .github/scripts/bestpractices.py writes
+    # them, where --write-changes would rewrite a word
+    ".bestpractices.json",
     "**/_data/*.json",
     ".secrets.baseline",
     "uv.lock",
