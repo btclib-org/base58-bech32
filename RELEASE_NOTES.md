@@ -19,11 +19,13 @@ A caller of `v2026.11.7` that matches a refusal's text breaks. griffe and
   `invalid limit: a negative int of 1 bits < 0`, and a 256-bit value
   refused by `convertbits` reads `invalid value: an int of 256 bits`. An
   expected size is written where it fits four bytes, as in
-  `20 bytes instead of 21`, and described otherwise. A refused HRP or
-  CashAddr prefix of at most 16 characters is quoted, as `'A'` where it
-  read `A`, and a longer one is given by its length, as
-  `a str of length 17`. A caller matching a refusal's text matches the
-  new wording.
+  `20 bytes instead of 21`, and described otherwise. Expected sizes read
+  the same whatever iterable holds them: one stands alone, as `21` where
+  a list read `[21]`, and several stand in parentheses, as `(21, 22)`
+  where a list read `[21, 22]` and a generator `<generator object …>`. A
+  refused HRP or CashAddr prefix of at most 16 characters is quoted, as
+  `'A'` where it read `A`, and a longer one is given by its length, as
+  `a str of length 17`.
 - The release's certificate names the commit of btclib-org/.github's
   v2026.11.12, which `release.yml` now calls. The `gh attestation verify`
   command of *Supported versions* in [SECURITY.md](./SECURITY.md) names
