@@ -41,10 +41,11 @@ The README links its own files absolutely, and the badge comment and
 `scorecard.yml` cite the organization standard (issue btclib-org/.github#1856,
 btclib-org/.github#1851).
 
-### `CONTRIBUTING.md` and `RELEASING.md` take btclib-org/.github's shared text
+### The tree takes btclib-org/.github's shared text and names its standard
 
-They name the organization's standard as section 11 asks (issue
-btclib-org/.github#2088, btclib-org/.github#2107, btclib-org/.github#2137).
+`CONTRIBUTING.md`, `RELEASING.md`, `REVIEWING.md` and the shared configs
+take it (#120) (#125) (issue btclib-org/.github#2088,
+btclib-org/.github#2107, btclib-org/.github#2137, btclib-org/.github#2145).
 
 ### The bestpractices.dev answers are held in the tree, and corrected
 
