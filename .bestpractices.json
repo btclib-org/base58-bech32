@@ -288,7 +288,7 @@
   "release_notes_justification": "RELEASE_NOTES.md holds each release's notes, and release.yml publishes the tag's section as the GitHub release body. https://github.com/btclib-org/base58-bech32/releases/latest",
   "release_notes_status": "Met",
   "release_notes_vulns_justification": "No release fixes a published vulnerability, and no advisory exists. v2026.10.23 fixes three issues the maintainer labelled security: the missing length limits of bech32 and b58decode (issues 8 and 9) and the checksum quoted by b58decode_check (issue 28), and RELEASE_NOTES.md names the limit and the quoting. v2026.11.7 fixes no issue labelled security. https://github.com/btclib-org/base58-bech32/releases/tag/v2026.11.7",
-  "release_notes_vulns_status": "N/A",
+  "release_notes_vulns_status": "Met",
   "repo_distributed_justification": "Repository on GitHub, which uses git. git is distributed.",
   "repo_distributed_status": "Met",
   "repo_interim_justification": "development is on the main branch of https://github.com/btclib-org/base58-bech32",
