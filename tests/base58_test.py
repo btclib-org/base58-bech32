@@ -14,7 +14,9 @@ from __future__ import annotations
 import array
 import hmac
 import itertools
+import sys
 from collections.abc import Callable
+from enum import IntEnum
 
 import pytest
 from hypothesis import given
@@ -271,6 +273,52 @@ def test_a_size_is_an_integer() -> None:
     with pytest.raises(Base58Bech32ValueError, match="invalid size: 1 bytes"):
         b58encode_check(b"\1", in_size=2)
     assert b58encode_check(b"\1", in_size=(1, 2)) == encoded
+
+
+def test_an_int_enum_size_is_its_int_value() -> None:
+    """An `IntEnum` `out_size` is compared as the int it is."""
+
+    class Size(IntEnum):
+        ONE = 1
+        TWO = 2
+
+    encoded = b58encode_check(b"\1")
+    assert b58decode_check(encoded, out_size=Size.ONE) == b"\1"
+    err_msg = "^valid checksum, invalid decoded size: 1 bytes instead of "
+    with pytest.raises(Base58Bech32ValueError, match=err_msg):
+        b58decode_check(encoded, out_size=Size.TWO)
+
+
+def test_a_float_size_is_refused() -> None:
+    """`out_size` refuses a float, though `1 == 1.0` would accept it."""
+    encoded = b58encode_check(b"\1")
+    err_msg = "^invalid output size type: float$"
+    with pytest.raises(Base58Bech32TypeError, match=err_msg):
+        b58decode_check(encoded, out_size=1.0)  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize(
+    "out_size, described",
+    [(10**5000, "an int of 16610 bits"), (-(10**5000), "a negative int of 16610 bits")],
+    ids=["positive", "negative"],
+)
+def test_a_huge_size_is_described_in_the_refusal(out_size: int, described: str) -> None:
+    """A size `str()` cannot write is named by its sign and bit length.
+
+    `str()` refuses an int past `sys.get_int_max_str_digits()` digits
+    with a ValueError of its own, which would replace the refusal. The
+    test sets that limit to its smallest value other than zero, whatever
+    `PYTHONINTMAXSTRDIGITS` says, and restores the limit it found.
+    """
+    encoded = b58encode_check(b"\1")
+    err_msg = f"^valid checksum, invalid decoded size: 1 bytes instead of {described}$"
+    limit = sys.get_int_max_str_digits()
+    sys.set_int_max_str_digits(sys.int_info.str_digits_check_threshold)
+    try:
+        with pytest.raises(Base58Bech32ValueError, match=err_msg):
+            b58decode_check(encoded, out_size=out_size)
+    finally:
+        sys.set_int_max_str_digits(limit)
 
 
 def test_a_string_is_text_or_bytes() -> None:
