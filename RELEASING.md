@@ -1111,13 +1111,16 @@ dist=base58-bech32
 test_dist=base58-bech32
 pkg=base58_bech32
 rtd=base58-bech32
-python=3.15
+python=$(grep -Ev '^[[:space:]]*(#|$)' .python-version)
 smoke='from base58_bech32 import base58, bech32, cashaddr, ss58
 import base58_bech32; print(base58_bech32.__version__)'
 ```
 
 `smoke` imports each codec by name, because `import base58_bech32` alone
 imports none of them: the package's docstring says why.
+
+`python` reads `.python-version`, so the block is run from the root of
+the checkout.
 
 `REPOSITORY.md`'s *Branch protection* gives the commands that add the
 bypass of `main-self-merge` back and remove it again.
