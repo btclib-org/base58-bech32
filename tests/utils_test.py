@@ -5,13 +5,13 @@
 """The coercions of `base58_bech32._utils`, against btclib's originals.
 
 `_utils.py` copies `assert_type`, `bytes_from_octets`, `is_integer`,
-`str_from_string`, `_message_text`, `Octets` and `String` from `btclib`
-so that the package imports nothing of it, and a
-copy can drift from its original with every other gate green. So each
-input of one table is handed to both, and the two have to agree: the
-same answer, or a refusal of the same built-in class and message, the
-copy's being this package's own exception where the original's is
-btclib's.
+`str_from_string`, `_message_text`, `_message_field`, `_name_text`,
+`_sizes_text`, `Octets` and `String` from `btclib` so that the package
+imports nothing of it, and a copy can drift from its original with every
+other gate green. So each input of one table is handed to both, and the
+two have to agree: the same answer, or a refusal of the same built-in
+class and message, the copy's being this package's own exception where
+the original's is btclib's.
 
 btclib is a test dependency and never a runtime one, which is what lets
 it be the oracle here: tests/imports_test.py is what keeps it out of the
@@ -59,12 +59,24 @@ _EXPECTED: list[Any] = [str, bytes, int, (str, bytes), (int, float)]
 
 
 class _Unwritable:
-    """A value whose `str()` raises, which a refusal must not quote."""
+    """A value whose `str()` and `len()` raise, for a refusal to describe."""
 
     @override
     def __str__(self) -> str:
         """Refuse to be written."""
         raise RuntimeError
+
+    def __len__(self) -> int:
+        """Refuse to be measured."""
+        raise RuntimeError
+
+
+def test_the_unwritable_value_cannot_be_written() -> None:
+    """The control of the rows that hand it over: both of its reads raise."""
+    with pytest.raises(RuntimeError):
+        str(_Unwritable())
+    with pytest.raises(RuntimeError):
+        len(_Unwritable())
 
 
 # the sizes `bytes_from_octets` checks two octets against
@@ -92,6 +104,24 @@ _CASES: list[tuple[str, Callable[[Any], Any], Callable[[Any], Any], Any]] = [
     *(
         ("_message_text", _utils._message_text, btclib_utils._message_text, v)
         for v in [*_VALUES, 10**5000, -(10**5000), _Unwritable()]
+    ),
+    *(
+        (
+            "_message_field",
+            lambda v, spec=spec: _utils._message_field(v, 32, spec),
+            lambda v, spec=spec: btclib_utils._message_field(v, 32, spec),
+            v,
+        )
+        for spec in ("d", "#x")
+        for v in [*_VALUES, 2**32 - 1, 2**32, 10**5000]
+    ),
+    *(
+        ("_sizes_text", _utils._sizes_text, btclib_utils._sizes_text, v)
+        for v in [(2,), (1, 2), (2**32,), (1, 10**5000), ()]
+    ),
+    *(
+        ("_name_text", _utils._name_text, btclib_utils._name_text, v)
+        for v in ["", "bc", "a" * 16, "a" * 17, *_VALUES, _Unwritable()]
     ),
     *(
         (
@@ -178,6 +208,9 @@ def test_the_table_reaches_every_outcome() -> None:
         ("str_from_string", "ValueError"),
         ("str_from_string", "TypeError"),
         ("_message_text", "answer"),
+        ("_message_field", "answer"),
+        ("_sizes_text", "answer"),
+        ("_name_text", "answer"),
         ("is_integer", "answer"),
         ("assert_type", "answer"),
         ("assert_type", "TypeError"),

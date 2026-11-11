@@ -42,6 +42,7 @@ from base58_bech32._utils import (
     String,
     _assert_byte_shaped,
     _message_text,
+    _sizes_text,
     assert_type,
     bytes_from_octets,
     is_integer,
@@ -325,5 +326,5 @@ def b58decode_check(
         return result
 
     err_msg = "valid checksum, invalid decoded size: "
-    err_msg += f"{len(result)} bytes instead of {_message_text(out_size)}"
+    err_msg += f"{len(result)} bytes instead of {_sizes_text((out_size,))}"
     raise Base58Bech32ValueError(err_msg)

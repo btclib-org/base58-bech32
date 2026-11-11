@@ -163,7 +163,9 @@ def test_the_bech32_differences() -> None:
         bech32.bech32_decode(corrupted, m=bech32.BECH32_1_CONST)
 
     assert bech32_package.convertbits([256], 8, 5) is None
-    with pytest.raises(Base58Bech32ValueError, match="invalid value: 256"):
+    with pytest.raises(
+        Base58Bech32ValueError, match="^invalid value: an int of 9 bits$"
+    ):
         bech32.convertbits([256], 8, 5)
 
     # what the package writes and this refuses
@@ -173,7 +175,9 @@ def test_the_bech32_differences() -> None:
             bech32.bech32_encode(hrp, data)
     with pytest.raises(IndexError):
         bech32_package.bech32_encode("bc", [32])
-    with pytest.raises(Base58Bech32ValueError, match="invalid 5-bit value: 32"):
+    with pytest.raises(
+        Base58Bech32ValueError, match="^invalid 5-bit value: an int of 6 bits$"
+    ):
         bech32.bech32_encode("bc", [32])
 
     # bech32m, which the package refuses

@@ -98,7 +98,7 @@ test = [
     # them, and tests/imports_test.py is what says so
     "base58>=2.1.1",
     "bech32>=1.2.0",
-    "btclib>=2026.10.16",
+    "btclib>=2026.11.10",
     # tests/docs_conf_test.py executes docs/source/conf.py, which imports
     # it; the marker and the bound are `docs`'s, below
     "sphinx>=9.1.0; python_full_version >= '3.12'",

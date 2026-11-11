@@ -29,6 +29,7 @@ from base58_bech32._utils import (
     Octets,
     String,
     _message_text,
+    _name_text,
     assert_type,
     bytes_from_octets,
     is_integer,
@@ -73,7 +74,7 @@ def _assert_valid_prefix(prefix: str) -> None:
     if not prefix:
         raise Base58Bech32ValueError("empty CashAddr prefix")
     if not (prefix.isascii() and prefix.isalpha() and prefix.islower()):
-        raise Base58Bech32ValueError(f"invalid CashAddr prefix: {prefix}")
+        raise Base58Bech32ValueError(f"invalid CashAddr prefix: {_name_text(prefix)}")
 
 
 def cashaddr_encode(prefix: str, kind: int, digest: Octets) -> bytes:

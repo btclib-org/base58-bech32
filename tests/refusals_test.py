@@ -11,6 +11,10 @@ plain `str`, an `int` or a list. And no decoder's refusal quotes the
 string it was handed, nor the payload a corrupted checksum carried:
 what reaches a decoder can be a private key pasted in the wrong field,
 and an exception message ends up in logs and crash reports.
+
+No refusal writes a caller's int that a range check refused, nor a
+string longer than `_utils._MAX_QUOTED_NAME_LENGTH` characters refused
+where a name belongs: either may be a key passed in the wrong place.
 """
 
 from __future__ import annotations
@@ -202,6 +206,118 @@ def test_a_mistyped_wif_quotes_neither_checksum() -> None:
     with pytest.raises(Base58Bech32ValueError, match="^invalid checksum$") as excinfo:
         b58decode_check(mistyped)
     assert_secret_free(excinfo.value, [payload, expected, written])
+
+
+# a fixed random scalar, the size of a private key
+_SCALAR = int.from_bytes(_SECRET, "big")
+
+# each refusal that describes a caller's int, as the sign of the int that
+# reaches it and the call that puts the int there
+_INT_REFUSALS: list[tuple[str, int, Callable[[int], Any]]] = [
+    ("b58encode_check in_size", 1, lambda v: b58encode_check(b"", in_size=v)),
+    (
+        "b58encode_check in_size, in a tuple",
+        1,
+        lambda v: b58encode_check(b"", in_size=(1, v)),
+    ),
+    ("b58decode max_length", -1, lambda v: b58decode("1", max_length=v)),
+    (
+        "b58decode_check out_size",
+        1,
+        lambda v: b58decode_check(b58encode_check(b""), out_size=v),
+    ),
+    ("bech32_encode m", 1, lambda v: bech32_encode("a", [], m=v)),
+    ("bech32_encode limit", -1, lambda v: bech32_encode("a", [], limit=v)),
+    ("bech32_encode 5-bit value", 1, lambda v: bech32_encode("a", [v])),
+    ("bech32_decode m", 1, lambda v: bech32_decode("a12uel5l", m=v)),
+    ("bech32_decode limit", -1, lambda v: bech32_decode("a12uel5l", limit=v)),
+    ("bech32_encode_bytes m", 1, lambda v: bech32_encode_bytes("a", b"", m=v)),
+    ("bech32_decode_bytes m", 1, lambda v: bech32_decode_bytes("a12uel5l", m=v)),
+    ("convertbits from_bits below 1", -1, lambda v: convertbits([], v, 5)),
+    ("convertbits from_bits above 64", 1, lambda v: convertbits([], v, 5)),
+    ("convertbits to_bits below 1", -1, lambda v: convertbits([], 8, v)),
+    ("convertbits to_bits above 64", 1, lambda v: convertbits([], 8, v)),
+    ("convertbits value", 1, lambda v: convertbits([v], 8, 5)),
+    ("convertbits negative value", -1, lambda v: convertbits([v], 8, 5)),
+    ("cashaddr_encode kind", 1, lambda v: cashaddr_encode("p", v, bytes(20))),
+    ("ss58_encode prefix", 1, lambda v: ss58_encode(v, bytes(32))),
+]
+
+
+@pytest.mark.parametrize(
+    "sign, call", [row[1:] for row in _INT_REFUSALS], ids=[r[0] for r in _INT_REFUSALS]
+)
+def test_a_refusal_prints_no_digit_of_a_scalar(
+    sign: int, call: Callable[[int], Any]
+) -> None:
+    """A key passed in an int's place is described, never written.
+
+    Section 7 of the organization's standard: an argument in the wrong
+    place may be a key. The bytes stand for the scalar's hex.
+    """
+    with pytest.raises(Base58Bech32ValueError, match="int of 256 bits") as excinfo:
+        call(sign * _SCALAR)
+    assert_secret_free(excinfo.value, [_SECRET, str(_SCALAR)])
+
+
+# each refusal of a string where a name belongs, the call that puts the
+# string there, the key's hex as that call refuses it, and a short name it
+# refuses
+_NAME_REFUSALS: list[tuple[str, Callable[[str], Any], Callable[[str], str], str]] = [
+    (
+        "bech32_encode HRP, not lowercase",
+        lambda hrp: bech32_encode(hrp, []),
+        str.upper,
+        "A",
+    ),
+    (
+        "bech32_encode HRP, out of range",
+        lambda hrp: bech32_encode(hrp, []),
+        lambda key: key + "\x7f",
+        "a\x7f",
+    ),
+    (
+        "bech32_encode_bytes HRP",
+        lambda hrp: bech32_encode_bytes(hrp, b"", m=BECH32_1_CONST),
+        str.upper,
+        "A",
+    ),
+    (
+        "cashaddr_encode prefix",
+        lambda prefix: cashaddr_encode(prefix, 0, bytes(20)),
+        str,
+        "p1",
+    ),
+    (
+        "cashaddr_decode prefix",
+        lambda prefix: cashaddr_decode("p:", prefix=prefix),
+        str,
+        "p1",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "call, spell, short",
+    [row[1:] for row in _NAME_REFUSALS],
+    ids=[r[0] for r in _NAME_REFUSALS],
+)
+def test_a_long_name_is_described_by_its_length(
+    call: Callable[[str], Any], spell: Callable[[str], str], short: str
+) -> None:
+    """A key's hex where a name belongs is described; a short name is quoted.
+
+    Section 7 of the organization's standard lets a refusal quote a name
+    only where it is too short for a key.
+    """
+    key = spell(_SECRET.hex())
+    with pytest.raises(Base58Bech32ValueError) as excinfo:
+        call(key)
+    assert str(excinfo.value).endswith(f": a str of length {len(key)}")
+    assert_secret_free(excinfo.value, [_SECRET])
+    with pytest.raises(Base58Bech32ValueError) as excinfo:
+        call(short)
+    assert str(excinfo.value).endswith(f": {short!r}")
 
 
 # What the peers refuse, and the refusal this package gives each string.
@@ -413,7 +529,7 @@ def _bitcoinjs_encodes() -> list[Any]:
                 continue
             err_msg = "^HRP character out of range"
             if 128 in row["words"]:
-                err_msg = "^invalid 5-bit value: 128$"
+                err_msg = "^invalid 5-bit value: an int of 8 bits$"
             params.append(
                 pytest.param(
                     row["prefix"],

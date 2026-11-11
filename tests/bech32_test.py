@@ -231,15 +231,21 @@ def test_a_value_that_is_a_subclass_of_int_is_accepted() -> None:
 
 def test_the_first_offending_value_is_the_one_named() -> None:
     """Past the fast path, values are judged in order, as one at a time."""
-    with pytest.raises(Base58Bech32ValueError, match="invalid 5-bit value: 40"):
+    with pytest.raises(
+        Base58Bech32ValueError, match="^invalid 5-bit value: an int of 6 bits$"
+    ):
         bech32_encode("bc", [1, 40, "x"], m=BECH32_1_CONST)  # type: ignore[list-item]
     with pytest.raises(Base58Bech32TypeError, match="invalid 5-bit value type: str"):
         bech32_encode("bc", [1, "x", 40], m=BECH32_1_CONST)  # type: ignore[list-item]
-    with pytest.raises(Base58Bech32ValueError, match="invalid value: 32"):
+    with pytest.raises(
+        Base58Bech32ValueError, match="^invalid value: an int of 6 bits$"
+    ):
         convertbits([1, 32, "x"], 5, 8)  # type: ignore[list-item]
     with pytest.raises(Base58Bech32TypeError, match="invalid value type: str"):
         convertbits([1, "x", 32], 5, 8)  # type: ignore[list-item]
-    with pytest.raises(Base58Bech32ValueError, match="invalid value: -1"):
+    with pytest.raises(
+        Base58Bech32ValueError, match="^invalid value: a negative int of 1 bits$"
+    ):
         convertbits([1, -1], 5, 8)
     # the bound is exclusive: 31 is five bits, 32 is not
     assert convertbits([31], 5, 8) == [248]
@@ -501,12 +507,12 @@ def test_a_value_wider_than_from_bits_is_refused() -> None:
 @pytest.mark.parametrize(
     "from_bits, to_bits, err_msg",
     [
-        (8, 0, "invalid to_bits: 0 < 1"),
-        (8, -2, "invalid to_bits: -2 < 1"),
-        (0, 5, "invalid from_bits: 0 < 1"),
-        (-1, 5, "invalid from_bits: -1 < 1"),
-        (8, 65, "invalid to_bits: 65 > 64"),
-        (65, 5, "invalid from_bits: 65 > 64"),
+        (8, 0, "^invalid to_bits: an int of 0 bits < 1$"),
+        (8, -2, "^invalid to_bits: a negative int of 2 bits < 1$"),
+        (0, 5, "^invalid from_bits: an int of 0 bits < 1$"),
+        (-1, 5, "^invalid from_bits: a negative int of 1 bits < 1$"),
+        (8, 65, "^invalid to_bits: an int of 7 bits > 64$"),
+        (65, 5, "^invalid from_bits: an int of 7 bits > 64$"),
     ],
 )
 def test_a_conversion_width_is_in_range(
@@ -744,9 +750,13 @@ def test_the_limit_is_an_integer(limit: object) -> None:
 
 def test_a_negative_limit_is_refused() -> None:
     """No string is shorter than zero characters; zero refuses every one."""
-    with pytest.raises(Base58Bech32ValueError, match="^invalid limit: -1 < 0$"):
+    with pytest.raises(
+        Base58Bech32ValueError, match="^invalid limit: a negative int of 1 bits < 0$"
+    ):
         bech32_encode("a", [0], limit=-1)
-    with pytest.raises(Base58Bech32ValueError, match="^invalid limit: -1 < 0$"):
+    with pytest.raises(
+        Base58Bech32ValueError, match="^invalid limit: a negative int of 1 bits < 0$"
+    ):
         bech32_decode("a12uel5l", limit=-1)
     with pytest.raises(Base58Bech32ValueError, match="^too many bech32 characters"):
         bech32_decode("a12uel5l", limit=0)
@@ -1065,7 +1075,7 @@ def test_bech32_encode_bytes_takes_octets() -> None:
         bech32_encode_bytes("a", [0, 255], m=BECH32_1_CONST)  # type: ignore[arg-type]
     with pytest.raises(Base58Bech32ValueError, match="^invalid hex string: "):
         bech32_encode_bytes("a", "0", m=BECH32_1_CONST)
-    with pytest.raises(Base58Bech32ValueError, match="^HRP is not lowercase: A$"):
+    with pytest.raises(Base58Bech32ValueError, match="^HRP is not lowercase: 'A'$"):
         bech32_encode_bytes("A", b"", m=BECH32_1_CONST)
 
 
