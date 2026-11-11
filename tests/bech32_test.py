@@ -61,7 +61,8 @@ from base58_bech32.bech32 import (
     convertbits,
 )
 from base58_bech32.exceptions import Base58Bech32TypeError, Base58Bech32ValueError
-from tests import FOLDING
+
+from . import FOLDING
 
 
 def test_the_tap_table_holds_the_taps_it_replaces() -> None:

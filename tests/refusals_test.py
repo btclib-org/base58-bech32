@@ -38,8 +38,9 @@ from base58_bech32.bech32 import (
 from base58_bech32.cashaddr import cashaddr_decode, cashaddr_encode
 from base58_bech32.exceptions import Base58Bech32TypeError, Base58Bech32ValueError
 from base58_bech32.ss58 import ss58_decode, ss58_encode
-from tests import load
-from tests.secret_free import assert_secret_free
+
+from . import load
+from .secret_free import assert_secret_free
 
 # a fixed random 32-byte secret, the size of a private key
 _SECRET = bytes.fromhex(
