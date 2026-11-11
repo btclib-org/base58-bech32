@@ -14,6 +14,7 @@ from __future__ import annotations
 import array
 import hmac
 import itertools
+import sys
 from collections.abc import Callable
 from enum import IntEnum
 
@@ -305,12 +306,19 @@ def test_a_huge_size_is_described_in_the_refusal(out_size: int, described: str) 
     """A size `str()` cannot write is named by its sign and bit length.
 
     `str()` refuses an int past `sys.get_int_max_str_digits()` digits
-    with a ValueError of its own, which would replace the refusal.
+    with a ValueError of its own, which would replace the refusal. The
+    test sets that limit to its smallest value other than zero, whatever
+    `PYTHONINTMAXSTRDIGITS` says, and restores the limit it found.
     """
     encoded = b58encode_check(b"\1")
     err_msg = f"^valid checksum, invalid decoded size: 1 bytes instead of {described}$"
-    with pytest.raises(Base58Bech32ValueError, match=err_msg):
-        b58decode_check(encoded, out_size=out_size)
+    limit = sys.get_int_max_str_digits()
+    sys.set_int_max_str_digits(sys.int_info.str_digits_check_threshold)
+    try:
+        with pytest.raises(Base58Bech32ValueError, match=err_msg):
+            b58decode_check(encoded, out_size=out_size)
+    finally:
+        sys.set_int_max_str_digits(limit)
 
 
 def test_a_string_is_text_or_bytes() -> None:
