@@ -13,8 +13,8 @@ what reaches a decoder can be a private key pasted in the wrong field,
 and an exception message ends up in logs and crash reports.
 
 No refusal writes a caller's int that a range check refused, nor a
-string longer than 16 characters refused where a name belongs: either
-may be a key passed in the wrong place.
+string longer than `_utils._MAX_QUOTED_NAME_LENGTH` characters refused
+where a name belongs: either may be a key passed in the wrong place.
 """
 
 from __future__ import annotations
@@ -308,7 +308,7 @@ def test_a_long_name_is_described_by_its_length(
     """A key's hex where a name belongs is described; a short name is quoted.
 
     Section 7 of the organization's standard lets a refusal quote a name
-    only up to 16 characters, too short for a key.
+    only where it is too short for a key.
     """
     key = spell(_SECRET.hex())
     with pytest.raises(Base58Bech32ValueError) as excinfo:
