@@ -19,6 +19,46 @@ behind them.
 
 [std]: https://github.com/btclib-org/.github
 
+## v2026.11.11
+
+### A refusal describes an int by its sign and bit length
+
+A name too long to quote, such as an HRP or a CashAddr prefix, is described
+by its length (closes #118) (closes #119).
+
+### The tests pass `b58decode_check`'s `out_size` in more types
+
+An IntEnum, a float and a huge int are tested (closes #115).
+
+### btclib-org/.github's reusable workflows are called at v2026.11.12
+
+`reusable-claude-release.yml` is called by hand (issue
+btclib-org/.github#2001).
+
+### The README's status badges are a Status section at its end
+
+The README links its own files absolutely, and the badge comment and
+`scorecard.yml` cite the organization standard (issue btclib-org/.github#1856,
+btclib-org/.github#1851).
+
+### `CONTRIBUTING.md` and `RELEASING.md` take btclib-org/.github's shared text
+
+They name the organization's standard as section 11 asks (issue
+btclib-org/.github#2088, btclib-org/.github#2107, btclib-org/.github#2137).
+
+### The bestpractices.dev answers are held in the tree, and corrected
+
+`.bestpractices.json` holds them (issue btclib-org/.github#2153,
+btclib-org/.github#2159).
+
+### The tests take the shared `secret_free` helper from btclib-org/.github
+
+(issue btclib-org/.github#1950).
+
+### The actions, the dev tooling and the pre-commit hooks are updated
+
+(#121) (#122) (#123).
+
 ## v2026.11.7
 
 ### `bech32_decode`'s docstring states the checksum's bounds per constant

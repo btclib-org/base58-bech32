@@ -9,6 +9,21 @@ number says when a release was cut, and promises nothing about
 compatibility, so a breaking change is announced in this file — read it
 before upgrading, rather than a digit.
 
+## v2026.11.11
+
+Nothing breaks a caller of `v2026.11.7`: griffe and `api_gaps.py` find no
+break in the public API against it.
+
+- A refusal describes an int it does not write out by its sign and bit
+  length, as `an int of 256 bits` or `a negative int of 8 bits`, and a name
+  longer than 16 characters, such as an HRP or a CashAddr prefix, as
+  `a str of length 17` rather than quoting it. A caller matching a
+  refusal's text matches the new wording.
+- The release's certificate names the commit of btclib-org/.github's
+  v2026.11.12, which `release.yml` now calls. The `gh attestation verify`
+  command of *Supported versions* in [SECURITY.md](./SECURITY.md) names
+  the signer without a ref and verifies this release unchanged.
+
 ## v2026.11.7
 
 Nothing breaks a caller of `v2026.10.23`: griffe and `api_gaps.py` find no
