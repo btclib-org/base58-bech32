@@ -234,8 +234,8 @@ def test_an_ss58_prefix_refusal_prints_nothing_read_from_the_key(
 ) -> None:
     """Neither the key nor the decimal of the value read from its first bytes.
 
-    The decimal is passed as a secret of its own: a piece of the key, as
-    `windows` cuts it, is longer than the prefix field the value is read from.
+    The decimal is passed as a secret of its own: `spellings` looks for a
+    piece of the key as hex and as its `repr`, never as a decimal.
     """
     with pytest.raises(Base58Bech32ValueError, match=f"^{err_msg}$") as excinfo:
         ss58_decode(b58encode(key))
