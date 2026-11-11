@@ -135,9 +135,13 @@ def str_from_string(s: String, what: str) -> str:
     a refusal of this package's rather than a `UnicodeDecodeError`. `what`
     names the string in both messages. Nothing is stripped and nothing is
     lowered: which of those is right is the caller's to know.
+
+    A str subclass is returned as the plain str of its characters, as
+    btclib's original returns it, so that no method of its own, such as
+    the `lower` or `rfind` a decoder calls, decides what the decoder reads.
     """
     if isinstance(s, str):
-        return s
+        return str.__str__(s)
 
     if not isinstance(s, (bytes, bytearray, memoryview)):
         err_msg = f"invalid {what} type: {type(s).__name__}"  # type: ignore[unreachable]
