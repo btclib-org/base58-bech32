@@ -182,7 +182,7 @@ def test_hrp_range_predicate_is_the_per_character_test() -> None:
     for code in range(0x3000):
         char = chr(code)
         assert _hrp_in_range(char) == (32 < code < 127), code
-        assert _hrp_in_range("a" + char + "b") == (32 < code < 127), code
+        assert _hrp_in_range(f"a{char}b") == (32 < code < 127), code
     assert _hrp_in_range("")
 
 
