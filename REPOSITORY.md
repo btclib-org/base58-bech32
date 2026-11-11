@@ -707,9 +707,9 @@ repaired, which is section 11's rule.
 
 ## Claude Code review
 
-`claude-review.yml` needs the Claude Code GitHub App on the repository.
-The organization's installation of it, `150677504`, covers selected
-repositories, not all:
+`claude-review.yml` and `claude-release.yml` need the Claude Code
+GitHub App on the repository. The organization's installation of it,
+`150677504`, covers selected repositories, not all:
 
 ```shell
 gh api orgs/btclib-org/installations \
@@ -860,10 +860,11 @@ back with a call of its own.
 above reads any of them back.
 
 **A credential this repository spends and does not hold.**
-`claude-review.yml` reads `secrets.CLAUDE_CODE_OAUTH_TOKEN`, which
-section 11 makes an organization secret at `visibility=all` in both
-stores, so the repository's own stores are expected empty and a copy in
-either would be that decision undone:
+`claude-review.yml` and `claude-release.yml` read
+`secrets.CLAUDE_CODE_OAUTH_TOKEN`, which section 11 makes an
+organization secret at `visibility=all` in both stores, so the
+repository's own stores are expected empty and a copy in either would be
+that decision undone:
 
 ```shell
 gh api repos/btclib-org/base58-bech32/actions/secrets --jq .total_count
