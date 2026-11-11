@@ -303,12 +303,12 @@ def test_a_float_size_is_refused() -> None:
     ids=["positive", "negative"],
 )
 def test_a_huge_size_is_described_in_the_refusal(out_size: int, described: str) -> None:
-    """A size `str()` cannot write is named by its sign and bit length.
+    """A size four unsigned bytes cannot hold is named by sign and bit length.
 
-    `str()` refuses an int past `sys.get_int_max_str_digits()` digits
-    with a ValueError of its own, which would replace the refusal. The
-    test sets that limit to its smallest value other than zero, whatever
-    `PYTHONINTMAXSTRDIGITS` says, and restores the limit it found.
+    The test sets `sys.get_int_max_str_digits()` to its smallest value
+    other than zero, whatever `PYTHONINTMAXSTRDIGITS` says, and restores
+    the limit it found: a refusal that wrote the size would raise a
+    ValueError of its own there.
     """
     encoded = b58encode_check(b"\1")
     err_msg = f"^valid checksum, invalid decoded size: 1 bytes instead of {described}$"
@@ -416,7 +416,10 @@ def test_max_length_is_an_integer(max_length: object) -> None:
 
 def test_a_negative_max_length_is_refused() -> None:
     """No string is shorter than zero characters; zero refuses all but ""."""
-    with pytest.raises(Base58Bech32ValueError, match="^invalid max_length: -1 < 0$"):
+    with pytest.raises(
+        Base58Bech32ValueError,
+        match="^invalid max_length: a negative int of 1 bits < 0$",
+    ):
         b58decode("1", max_length=-1)
     assert b58decode("", max_length=0) == b""
     with pytest.raises(Base58Bech32ValueError, match="^too many base58 characters"):

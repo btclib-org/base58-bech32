@@ -59,6 +59,7 @@ from base58_bech32._utils import (
     Octets,
     String,
     _message_text,
+    _name_text,
     assert_type,
     bytes_from_octets,
     is_integer,
@@ -303,9 +304,9 @@ def bech32_encode(
     if not hrp:
         raise Base58Bech32ValueError("empty HRP")
     if not _hrp_in_range(hrp):
-        raise Base58Bech32ValueError(f"HRP character out of range: {hrp}")
+        raise Base58Bech32ValueError(f"HRP character out of range: {_name_text(hrp)}")
     if hrp != hrp.lower():
-        raise Base58Bech32ValueError(f"HRP is not lowercase: {hrp}")
+        raise Base58Bech32ValueError(f"HRP is not lowercase: {_name_text(hrp)}")
 
     # the fast path accepts an int of 0..31 and nothing else; any other
     # value, an IntEnum included, goes through the per-value loop, which
