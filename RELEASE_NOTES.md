@@ -11,8 +11,8 @@ before upgrading, rather than a digit.
 
 ## v2026.11.11
 
-A caller of `v2026.11.7` that matches a refusal's text breaks. griffe and
-`api_gaps.py` find no break in the public API against it.
+A caller of `v2026.11.7` that matches the text of a refusal below breaks.
+griffe and `api_gaps.py` find no break in the public API against it.
 
 - A refusal describes the int it refuses by its sign and bit length,
   where it wrote the int out: `invalid limit: -1 < 0` reads
