@@ -150,9 +150,7 @@ def _address(data: bytes) -> bytes:
 def test_a_reserved_prefix_is_refused_by_the_decoder() -> None:
     """46 and 47, correctly checksummed, as Substrate's `FormatNotAllowed`."""
     for prefix in (46, 47):
-        with pytest.raises(
-            Base58Bech32ValueError, match=f"reserved SS58 prefix: {prefix}"
-        ):
+        with pytest.raises(Base58Bech32ValueError, match="^reserved SS58 prefix$"):
             ss58_decode(_address(bytes([prefix]) + bytes(32)))
 
 
@@ -161,14 +159,15 @@ def test_the_two_byte_form_of_a_one_byte_prefix_is_refused() -> None:
 
     Substrate decodes it, which gives the account a second address.
     """
-    with pytest.raises(Base58Bech32ValueError, match="prefix: 0 in the two-byte form"):
+    err_msg = "^invalid SS58 prefix: a one-byte prefix in the two-byte form$"
+    with pytest.raises(Base58Bech32ValueError, match=err_msg):
         ss58_decode(_address(b"\x40\x00" + bytes(32)))
     assert ss58_decode(_address(b"\x00" + bytes(32))) == (0, bytes(32))
 
 
 def test_a_prefix_byte_above_127_is_refused() -> None:
     """The top bit of the first byte is no prefix form."""
-    with pytest.raises(Base58Bech32ValueError, match="invalid SS58 prefix byte: 128"):
+    with pytest.raises(Base58Bech32ValueError, match="^invalid SS58 prefix byte$"):
         ss58_decode(_address(b"\x80\x00" + bytes(32)))
 
 
