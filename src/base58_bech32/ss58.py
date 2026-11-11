@@ -129,7 +129,7 @@ def ss58_decode(address: String) -> tuple[int, bytes]:
     if payload_size not in _PAYLOAD_SIZES:
         raise Base58Bech32ValueError(f"invalid SS58 address size: {len(data)} bytes")
     if prefix in _RESERVED:
-        raise Base58Bech32ValueError(f"reserved SS58 prefix: {prefix}")
+        raise Base58Bech32ValueError("reserved SS58 prefix")
 
     body, checksum = data[:-_CHECKSUM_SIZE], data[-_CHECKSUM_SIZE:]
     if not hmac.compare_digest(checksum, _checksum(body)):

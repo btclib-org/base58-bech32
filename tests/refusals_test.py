@@ -209,8 +209,9 @@ def test_a_mistyped_wif_quotes_neither_checksum() -> None:
 
 
 # a key pasted as an SS58 address, the value its first bytes read as, and
-# the refusal: the first byte of `_SECRET` is above 127, and the second
-# key's first two bytes are the two-byte form of prefix 37
+# the refusal: the first byte of `_SECRET` is above 127, the second key's
+# first two bytes are the two-byte form of prefix 37, and the third key is
+# 35 bytes, the size of an address, and starts with the reserved prefix 46
 _SS58_PREFIX_REFUSALS: list[tuple[str, bytes, int, str]] = [
     ("prefix byte", _SECRET, _SECRET[0], "invalid SS58 prefix byte"),
     (
@@ -219,6 +220,7 @@ _SS58_PREFIX_REFUSALS: list[tuple[str, bytes, int, str]] = [
         37,
         "invalid SS58 prefix: a one-byte prefix in the two-byte form",
     ),
+    ("reserved", b"\x2e" + _SECRET[1:] + _SECRET[:3], 46, "reserved SS58 prefix"),
 ]
 
 
@@ -232,8 +234,8 @@ def test_an_ss58_prefix_refusal_prints_nothing_read_from_the_key(
 ) -> None:
     """Neither the key nor the decimal of the value read from its first bytes.
 
-    The decimal is passed as a secret of its own: a piece of the key is
-    six bytes, longer than the one or two the value is read from.
+    The decimal is passed as a secret of its own: a piece of the key, as
+    `windows` cuts it, is longer than the prefix field the value is read from.
     """
     with pytest.raises(Base58Bech32ValueError, match=f"^{err_msg}$") as excinfo:
         ss58_decode(b58encode(key))

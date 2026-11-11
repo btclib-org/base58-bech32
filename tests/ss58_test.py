@@ -150,9 +150,7 @@ def _address(data: bytes) -> bytes:
 def test_a_reserved_prefix_is_refused_by_the_decoder() -> None:
     """46 and 47, correctly checksummed, as Substrate's `FormatNotAllowed`."""
     for prefix in (46, 47):
-        with pytest.raises(
-            Base58Bech32ValueError, match=f"reserved SS58 prefix: {prefix}"
-        ):
+        with pytest.raises(Base58Bech32ValueError, match="^reserved SS58 prefix$"):
             ss58_decode(_address(bytes([prefix]) + bytes(32)))
 
 
