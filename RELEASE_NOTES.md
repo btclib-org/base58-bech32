@@ -9,6 +9,38 @@ number says when a release was cut, and promises nothing about
 compatibility, so a breaking change is announced in this file — read it
 before upgrading, rather than a digit.
 
+## v2026.11.12
+
+A caller of `v2026.11.7` that matches the text of a refusal changed below
+breaks. griffe and `api_gaps.py` find no break in the public API against it.
+
+- A refusal describes the int it refuses by its sign and bit length,
+  where it wrote the int out: `invalid limit: -1 < 0` reads
+  `invalid limit: a negative int of 1 bits < 0`, and a 256-bit value
+  refused by `convertbits` reads `invalid value: an int of 256 bits`. An
+  expected size is written where it fits four bytes, as in
+  `20 bytes instead of 21`, and described otherwise. Expected sizes read
+  the same whatever iterable holds them: one stands alone, as `21` where
+  a list read `[21]`, and several stand in parentheses, as `(21, 22)`
+  where a list read `[21, 22]` and a generator `<generator object …>`. A
+  refused HRP or CashAddr prefix of at most 16 characters is quoted, as
+  `'A'` where it read `A`, and a longer one is given by its length, as
+  `a str of length 17`.
+- `ss58_decode` refuses a prefix with no value read from the string, so a
+  key pasted as an address has none of its bytes printed:
+  `invalid SS58 prefix byte: 200` reads `invalid SS58 prefix byte`,
+  `invalid SS58 prefix: 4 in the two-byte form` reads
+  `invalid SS58 prefix: a one-byte prefix in the two-byte form`, and
+  `reserved SS58 prefix: 46` reads `reserved SS58 prefix`.
+- The bech32 and CashAddr decoders read the string they decode, given as a
+  str subclass, as the plain str of its characters, so a method the
+  subclass overrides, such as `lower`, does not decide what they read
+  from it.
+- The release's certificate names the commit of btclib-org/.github's
+  v2026.11.12, which `release.yml` calls. The `gh attestation verify`
+  command of *Supported versions* in [SECURITY.md](./SECURITY.md) names
+  the signer without a ref and verifies this release unchanged.
+
 ## v2026.11.7
 
 Nothing breaks a caller of `v2026.10.23`: griffe and `api_gaps.py` find no
