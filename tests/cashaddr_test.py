@@ -13,6 +13,7 @@ from __future__ import annotations
 import pytest
 from hypothesis import given
 from hypothesis import strategies as st
+from typing_extensions import override
 
 from base58_bech32.base58 import b58decode_check
 from base58_bech32.cashaddr import (
@@ -146,6 +147,28 @@ def test_the_prefix_refusals() -> None:
         cashaddr_decode(payload, prefix="bchtest")
     with pytest.raises(Base58Bech32ValueError, match="invalid CashAddr prefix: "):
         cashaddr_decode(payload, prefix="BITCOINCASH")
+
+
+class _Matching(str):
+    """A str subclass different from no string."""
+
+    __slots__ = ()
+
+    @override
+    def __ne__(self, other: object) -> bool:
+        """Differ from no string."""
+        return False
+
+
+def test_a_str_subclass_prefix_is_read_as_its_characters() -> None:
+    """Its own `__ne__` does not decide the match; a plain str comes back."""
+    differs = _Matching("bchtest") != "bitcoincash"
+    assert not differs
+    with pytest.raises(Base58Bech32ValueError, match="not the one given"):
+        cashaddr_decode(_ADDRESS, prefix=_Matching("bchtest"))
+    payload = _ADDRESS.split(":")[1]
+    written = cashaddr_decode(payload, prefix=_Matching("bitcoincash"))[0]
+    assert type(written) is str
 
 
 def _string(prefix: str, values: list[int]) -> str:
