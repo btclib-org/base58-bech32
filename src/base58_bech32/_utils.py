@@ -11,6 +11,10 @@ Copies of `btclib.utils.assert_type`, `bytes_from_octets`, `is_integer`,
 exceptions: importing them from `btclib` would make a package of codecs
 depend on the whole of a bitcoin library.
 
+`bytes_from_octets` and `str_from_string` copy a bytes or bytearray
+argument with `_copy_bytes`, where btclib's originals call `bytes()`,
+whose answer a subclass decides, as `_copy_bytes` says.
+
 A copy can drift from its original with every gate green, so
 `tests/utils_test.py` runs both on one table of inputs and asks them for
 the same answer, or for a refusal from the same built-in class.
@@ -63,6 +67,21 @@ def _assert_byte_shaped(octets: bytes | bytearray | memoryview) -> None:
         raise Base58Bech32ValueError(err_msg)
 
 
+def _copy_bytes(octets: bytes | bytearray | memoryview) -> bytes:
+    """Return the octets a buffer holds, read by its base type's own methods.
+
+    `bytes()` of a bytes or bytearray subclass calls its `__bytes__`, and
+    from Python 3.12 that of a bytearray subclass calls its `__buffer__`,
+    so a subclass would decide what is read. No class can subclass
+    `memoryview`.
+    """
+    if isinstance(octets, bytes):
+        return bytes.__bytes__(octets)
+    if isinstance(octets, bytearray):
+        return bytes(bytearray.copy(octets))
+    return bytes(octets)
+
+
 def bytes_from_octets(
     octets: Octets, out_size: int | Iterable[int] | None = None
 ) -> bytes:
@@ -87,7 +106,7 @@ def bytes_from_octets(
             raise Base58Bech32ValueError(f"invalid hex string: {e}") from e
     elif isinstance(octets, (bytes, bytearray, memoryview)):
         _assert_byte_shaped(octets)
-        octets = bytes(octets)
+        octets = _copy_bytes(octets)
     else:
         err_msg = f"invalid octets type: {type(octets).__name__}"  # type: ignore[unreachable]
         raise Base58Bech32TypeError(err_msg)
@@ -152,7 +171,7 @@ def str_from_string(s: String, what: str) -> str:
     # raised outside the `except`: the Unicode error holds the whole
     # value, and must not be left as the new error's context
     try:
-        return bytes(s).decode("ascii")
+        return _copy_bytes(s).decode("ascii")
     except UnicodeDecodeError as e:
         position = e.start
     raise Base58Bech32ValueError(

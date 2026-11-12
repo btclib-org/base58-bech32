@@ -41,6 +41,7 @@ from base58_bech32._utils import (
     Octets,
     String,
     _assert_byte_shaped,
+    _copy_bytes,
     _message_text,
     _sizes_text,
     assert_type,
@@ -251,7 +252,7 @@ def _ascii_bytes(v: String) -> bytes:
     # before len() is read: for either, len() counts elements rather than
     # the octets bytes() would gather
     _assert_byte_shaped(v)
-    return bytes(v)
+    return _copy_bytes(v)
 
 
 def b58decode(
