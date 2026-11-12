@@ -11,14 +11,6 @@ Copies of `btclib.utils.assert_type`, `bytes_from_octets`, `is_integer`,
 exceptions: importing them from `btclib` would make a package of codecs
 depend on the whole of a bitcoin library.
 
-`bytes_from_octets` and `str_from_string` copy a bytes or bytearray
-argument with `_copy_bytes`, where btclib's originals call `bytes()`,
-whose answer a subclass decides, as `_copy_bytes` says.
-
-Each copy tests an argument's type with `_has_type`, where btclib's
-originals call `isinstance`, which an object can answer for a class it
-is not, as `_has_type` says.
-
 A copy can drift from its original with every gate green, so
 `tests/utils_test.py` runs both on one table of inputs and asks them for
 the same answer, or for a refusal from the same built-in class.

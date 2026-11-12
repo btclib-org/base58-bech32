@@ -243,7 +243,7 @@ def test_the_table_reaches_every_outcome() -> None:
 
 
 def test_a_value_that_claims_its_type_is_described_by_its_own() -> None:
-    """Where btclib's originals differ: the class read is the one it is.
+    """A value is described by the class it is, not the one it claims.
 
     A `Mock(spec=...)` sets `__class__` to the type it imitates, so an
     `isinstance` test would describe it with that type's own methods,
