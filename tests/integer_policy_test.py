@@ -9,6 +9,9 @@ One file rather than a case per module, because the decision is one and
 refusal is the json boundary: `true` decodes to `True`, and a schema
 mistake would become a network prefix of one, an address type of one or
 a 5-bit value of one instead of failing beside the input that caused it.
+
+The same fields refuse a value whose `__class__` claims int, for the
+reason `base58_bech32._utils._has_type` gives.
 """
 
 from __future__ import annotations
@@ -16,6 +19,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from enum import IntEnum
 from typing import Any
+from unittest.mock import Mock
 
 import pytest
 
@@ -123,3 +127,12 @@ def test_an_int_subclass_that_is_not_a_bool_is_still_an_integer() -> None:
     assert not is_integer(False)
     assert not is_integer(1.0)
     assert not is_integer("1")
+
+
+@pytest.mark.parametrize("call", _CALLS, ids=_IDS)
+def test_a_value_that_claims_to_be_an_int_is_refused_as_a_type(
+    call: Callable[[Any], object],
+) -> None:
+    """A `Mock(spec=int)` sets `__class__` to int, and is still a Mock."""
+    with pytest.raises(Base58Bech32TypeError):
+        call(Mock(spec=int))

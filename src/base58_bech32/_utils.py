@@ -15,6 +15,10 @@ depend on the whole of a bitcoin library.
 argument with `_copy_bytes`, where btclib's originals call `bytes()`,
 whose answer a subclass decides, as `_copy_bytes` says.
 
+Each copy tests an argument's type with `_has_type`, where btclib's
+originals call `isinstance`, which an object can answer for a class it
+is not, as `_has_type` says.
+
 A copy can drift from its original with every gate green, so
 `tests/utils_test.py` runs both on one table of inputs and asks them for
 the same answer, or for a refusal from the same built-in class.
@@ -23,7 +27,7 @@ the same answer, or for a refusal from the same built-in class.
 from __future__ import annotations
 
 from collections.abc import Iterable
-from typing import Any
+from typing import Any, TypeGuard, TypeVar, overload
 
 from base58_bech32.exceptions import Base58Bech32TypeError, Base58Bech32ValueError
 
@@ -46,6 +50,33 @@ Octets = bytes | str | bytearray | memoryview
 String = bytes | str | bytearray | memoryview
 
 
+_T = TypeVar("_T")
+_U = TypeVar("_U")
+_V = TypeVar("_V")
+
+
+@overload
+def _has_type(value: object, expected: type[_T]) -> TypeGuard[_T]: ...
+
+
+@overload
+def _has_type(
+    value: object, expected: tuple[type[_T], type[_U], type[_V]]
+) -> TypeGuard[_T | _U | _V]: ...
+
+
+def _has_type(value: object, expected: Any) -> bool:
+    """Return whether a value's own class is `expected` or a subclass of it.
+
+    `isinstance` reads the value's `__class__`, which an object can set
+    to a class it is not: `unittest.mock.Mock(spec=bytes)` claims to be
+    bytes, and would then leave a coercion as a built-in error. `type()`
+    answers the class the object is. `expected` is what `issubclass`
+    takes: one class, or a tuple of them.
+    """
+    return issubclass(type(value), expected)
+
+
 def _assert_byte_shaped(octets: bytes | bytearray | memoryview) -> None:
     """Refuse a memoryview whose layout or format is not plain bytes.
 
@@ -57,7 +88,7 @@ def _assert_byte_shaped(octets: bytes | bytearray | memoryview) -> None:
     contiguous and still counts elements where `bytes()` yields
     `itemsize` octets of each.
     """
-    if not isinstance(octets, memoryview):
+    if not _has_type(octets, memoryview):
         return
     if not octets.c_contiguous:
         err_msg = "invalid octets: non-contiguous memoryview"
@@ -75,9 +106,9 @@ def _copy_bytes(octets: bytes | bytearray | memoryview) -> bytes:
     so a subclass would decide what is read. No class can subclass
     `memoryview`.
     """
-    if isinstance(octets, bytes):
+    if _has_type(octets, bytes):
         return bytes.__bytes__(octets)
-    if isinstance(octets, bytearray):
+    if _has_type(octets, bytearray):
         return bytes(bytearray.copy(octets))
     return bytes(octets)
 
@@ -97,29 +128,29 @@ def bytes_from_octets(
     Optionally, it also ensures required output size: one size, or any
     iterable of them, and a bool is neither.
     """
-    if isinstance(octets, str):  # hex string
+    if _has_type(octets, str):  # hex string
         # the message is fromhex's own, which names a position and never
         # the string: an Octets parameter can be key material
         try:
             octets = bytes.fromhex(octets)
         except ValueError as e:
             raise Base58Bech32ValueError(f"invalid hex string: {e}") from e
-    elif isinstance(octets, (bytes, bytearray, memoryview)):
+    elif _has_type(octets, (bytes, bytearray, memoryview)):
         _assert_byte_shaped(octets)
         octets = _copy_bytes(octets)
     else:
-        err_msg = f"invalid octets type: {type(octets).__name__}"  # type: ignore[unreachable]
+        err_msg = f"invalid octets type: {type(octets).__name__}"
         raise Base58Bech32TypeError(err_msg)
 
     if out_size is None:
         return octets
 
-    if isinstance(out_size, int):
+    if _has_type(out_size, int):
         sizes: tuple[int, ...] = (out_size,)
-    elif isinstance(out_size, Iterable):
+    elif _has_type(out_size, Iterable):  # type: ignore[type-abstract]
         sizes = tuple(out_size)
     else:
-        err_msg = f"invalid output size type: {type(out_size).__name__}"  # type: ignore[unreachable]
+        err_msg = f"invalid output size type: {type(out_size).__name__}"
         raise Base58Bech32TypeError(err_msg)
 
     for size in sizes:
@@ -159,11 +190,11 @@ def str_from_string(s: String, what: str) -> str:
     btclib's original returns it, so that no method of its own, such as
     the `lower` or `rfind` a decoder calls, decides what the decoder reads.
     """
-    if isinstance(s, str):
+    if _has_type(s, str):
         return str.__str__(s)
 
-    if not isinstance(s, (bytes, bytearray, memoryview)):
-        err_msg = f"invalid {what} type: {type(s).__name__}"  # type: ignore[unreachable]
+    if not _has_type(s, (bytes, bytearray, memoryview)):
+        err_msg = f"invalid {what} type: {type(s).__name__}"
         raise Base58Bech32TypeError(err_msg)
 
     _assert_byte_shaped(s)
@@ -201,7 +232,7 @@ def _message_text(value: object) -> str:
     the refusal the description is for, as that error rather than this
     library's.
     """
-    if isinstance(value, int) and not isinstance(value, bool):
+    if _has_type(value, int) and not _has_type(value, bool):
         return _int_description(value)
     name = type(value).__name__
     article = "an" if name.lstrip("_")[:1].lower() in tuple("aeiou") else "a"
@@ -230,7 +261,7 @@ def _name_text(value: object) -> str:
     described as `_message_text` describes it.
     """
     # str's own methods, for the reason _int_description gives
-    if isinstance(value, str) and str.__len__(value) <= _MAX_QUOTED_NAME_LENGTH:
+    if _has_type(value, str) and str.__len__(value) <= _MAX_QUOTED_NAME_LENGTH:
         return str.__repr__(value)
     return _message_text(value)
 
@@ -267,20 +298,20 @@ def is_integer(value: Any) -> bool:
 
     `isinstance(x, int)` is True for `True` and `False`, `bool` being a
     subclass of `int`, and `true` is what a json document decodes to
-    `True`. `isinstance` and not `type(value) is int`, so an `IntEnum`
+    `True`. `_has_type` and not `type(value) is int`, so an `IntEnum`
     stays an integer.
     """
-    return isinstance(value, int) and not isinstance(value, bool)
+    return _has_type(value, int) and not _has_type(value, bool)
 
 
 def assert_type(value: Any, expected: Any, what: str) -> None:
     """Refuse a value of a type the signature does not declare.
 
-    `expected` is what `isinstance` takes: one type, or a tuple of them.
+    `expected` is what `issubclass` takes: one type, or a tuple of them.
     `value` is `Any` rather than the declared type, which is what makes
     the check reachable: mypy proves the argument cannot be wrong, and
     the caller who has not run mypy is who this is for.
     """
-    if not isinstance(value, expected):
+    if not _has_type(value, expected):
         err_msg = f"invalid {what} type: {type(value).__name__}"
         raise Base58Bech32TypeError(err_msg)

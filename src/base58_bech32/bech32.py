@@ -300,6 +300,10 @@ def bech32_encode(
     _assert_valid_m(m)
     _assert_valid_limit(limit)
     assert_type(data, list, "5-bit data")
+    # a plain list of the same items, so that no method of a list
+    # subclass's own, such as an `__iter__`, decides what is checked below
+    # and what is written
+    data = list.copy(data)
     assert_type(hrp, str, "HRP")
     # the plain str of its characters, so that no method of a str
     # subclass's own decides the checks below or what is written
