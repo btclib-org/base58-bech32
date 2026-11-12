@@ -19,6 +19,43 @@ behind them.
 
 [std]: https://github.com/btclib-org/.github
 
+## v2026.11.13
+
+### `cashaddr_decode` prints no size read from the version byte
+
+A payload of the wrong length is refused with its length alone, since its
+first byte may be a key's (closes #140).
+
+### Each argument is read by its real type
+
+A subclass given as a string, a prefix, an HRP or octets is read by its base
+type's methods, and a type test reads `type()` (closes #141) (closes #151)
+(closes #152) (closes #156) (closes #157) (closes #159).
+
+### The fuzz header and the vendored vectors check follow btclib-org/.github
+
+`fuzz.yml` states when it runs, and `check_vendored_vectors.py` takes only an
+issue titled exactly as searched (issue btclib-org/.github#1927,
+btclib-org/.github#2152).
+
+### The docs read every included root file's links
+
+`docs/source/conf.py` carries section 14's RootFileLinks part verbatim
+(issue btclib-org/.github#2166).
+
+### Every Sourcery rule is on but dont-import-test-modules
+
+(issue btclib-org/.github#2162, btclib-org/.github#2190).
+
+### The bestpractices.dev answers are re-measured at v2026.11.12
+
+`RELEASING.md` records a save nobody can make as owed (closes #145) (issue
+btclib-org/.github#2205).
+
+### The docs block of `CONTRIBUTING.md` stops on a failed build
+
+(issue btclib-org/.github#2015).
+
 ## v2026.11.12
 
 ### A refusal describes an int by its sign and bit length
