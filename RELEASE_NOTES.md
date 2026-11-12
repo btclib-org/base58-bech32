@@ -9,6 +9,36 @@ number says when a release was cut, and promises nothing about
 compatibility, so a breaking change is announced in this file — read it
 before upgrading, rather than a digit.
 
+## v2026.11.13
+
+A caller of `v2026.11.12` that matches the text of the refusal changed
+below, that passes a str, bytes, bytearray or list subclass whose own
+methods it relies on, or that passes an object claiming a type it is not,
+breaks. griffe and `api_gaps.py` find no break in the public API against
+it.
+
+- `cashaddr_decode` refuses a payload whose length is not the one its
+  version byte gives with no size read from that byte:
+  `invalid CashAddr hash size: 31 bytes instead of 64` reads
+  `invalid CashAddr hash size: 31 bytes, not the version byte's`.
+- A str, bytes or bytearray subclass is read by its base type's methods,
+  so a method the subclass overrides, such as `encode`, `lower`,
+  `__bytes__` or `__ne__`, does not decide what is encoded, decoded or
+  compared. This holds for the string given to `b58decode`,
+  `b58decode_check` and `ss58_decode`, `cashaddr_decode`'s and
+  `cashaddr_encode`'s prefix, `bech32_encode`'s HRP, and octets given as
+  a bytes or bytearray subclass. `cashaddr_decode` returns the prefix as
+  a plain str.
+- A Base58 alphabet given as a bytes subclass is copied to plain bytes
+  before it is checked and cached, so it no longer decides the tables
+  later calls read. `bech32_encode` copies a list subclass before it
+  checks the items.
+- A type test reads the object's own class, not its `__class__`: an
+  object that claims a type it is not, such as `Mock(spec=bytes)`, is
+  refused with a `Base58Bech32TypeError`, where `v2026.11.12` refused it
+  with a built-in `TypeError` or a `Base58Bech32ValueError`, or took it
+  as input: a true `pad`, or a `MagicMock(spec=bytes)` as empty bytes.
+
 ## v2026.11.12
 
 A caller of `v2026.11.7` that matches the text of a refusal changed below
