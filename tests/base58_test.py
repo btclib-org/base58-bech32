@@ -36,7 +36,8 @@ from base58_bech32.base58 import (
     b58encode_check,
 )
 from base58_bech32.exceptions import Base58Bech32TypeError, Base58Bech32ValueError
-from tests import load, vector_id
+
+from . import load, vector_id
 
 # Bitcoin Core's `src/test/data/base58_encode_decode.json`: [hex, base58]
 # rows of Core's `EncodeBase58`/`DecodeBase58`, the codec with no checksum

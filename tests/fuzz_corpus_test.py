@@ -33,7 +33,8 @@ from typing import Any
 import pytest
 
 from base58_bech32.exceptions import Base58Bech32Exception
-from tests.fuzz_test import DECODERS
+
+from .fuzz_test import DECODERS
 
 _FUZZ = Path(__file__).parent.parent / "fuzz"
 _CORPUS = _FUZZ / "corpus"

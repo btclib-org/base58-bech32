@@ -61,7 +61,8 @@ from base58_bech32.bech32 import (
     convertbits,
 )
 from base58_bech32.exceptions import Base58Bech32TypeError, Base58Bech32ValueError
-from tests import FOLDING
+
+from . import FOLDING
 
 
 def test_the_tap_table_holds_the_taps_it_replaces() -> None:
@@ -181,7 +182,7 @@ def test_hrp_range_predicate_is_the_per_character_test() -> None:
     for code in range(0x3000):
         char = chr(code)
         assert _hrp_in_range(char) == (32 < code < 127), code
-        assert _hrp_in_range("a" + char + "b") == (32 < code < 127), code
+        assert _hrp_in_range(f"a{char}b") == (32 < code < 127), code
     assert _hrp_in_range("")
 
 

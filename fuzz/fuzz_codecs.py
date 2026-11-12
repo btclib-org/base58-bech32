@@ -44,7 +44,7 @@ def _round_trip(encoded: bytes, original: str | bytes) -> None:
     """Refuse an encoding that does not give back the string decoded."""
     if isinstance(original, str):
         original = original.encode("ascii")
-    if encoded != original.lower() and encoded != original:
+    if encoded not in (original.lower(), original):
         msg = "a decoded string encodes to another string"
         raise AssertionError(msg)
 

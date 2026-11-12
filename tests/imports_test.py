@@ -32,7 +32,8 @@ from typing import TYPE_CHECKING, cast
 import pytest
 
 import base58_bech32
-from tests import module_names
+
+from . import module_names
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
