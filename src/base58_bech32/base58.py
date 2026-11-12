@@ -42,6 +42,7 @@ from base58_bech32._utils import (
     String,
     _assert_byte_shaped,
     _copy_bytes,
+    _has_type,
     _message_text,
     _sizes_text,
     assert_type,
@@ -117,11 +118,20 @@ def _tables(alphabet: bytes) -> tuple[bytes, bytes]:
     return digit_of, char_of
 
 
-def _assert_valid_alphabet(alphabet: bytes) -> None:
-    """Refuse what is not 58 distinct ascii bytes."""
+def _valid_alphabet(alphabet: bytes) -> bytes:
+    """Return an alphabet as the plain bytes of its octets, if valid.
+
+    What is not 58 distinct ascii bytes is refused. The plain bytes are
+    what is checked, cached and used, so that no method of a bytes
+    subclass's own decides any of it: its `__eq__` and `__hash__` would
+    otherwise pick the `_tables` entry a later plain alphabet reads, and
+    from Python 3.12 its `__buffer__` the tables cached there.
+    """
     # the type first: _tables checks only size, distinctness and ascii
     assert_type(alphabet, bytes, "alphabet")
+    alphabet = _copy_bytes(alphabet)
     _tables(alphabet)
+    return alphabet
 
 
 def _b58encode_from_int(i: int, char_of: bytes) -> bytes:
@@ -164,7 +174,7 @@ def b58encode(v: Octets, *, alphabet: bytes = BITCOIN_ALPHABET) -> bytes:
 
     No checksum: `b58encode_check` is the checksummed form.
     """
-    _assert_valid_alphabet(alphabet)
+    alphabet = _valid_alphabet(alphabet)
     return _b58encode(bytes_from_octets(v), alphabet)
 
 
@@ -180,7 +190,7 @@ def b58encode_check(
     them. Uncapped: a payload of roughly 80 bytes or more encodes to a
     string longer than `MAX_LENGTH`, which `b58decode_check` then refuses.
     """
-    _assert_valid_alphabet(alphabet)
+    alphabet = _valid_alphabet(alphabet)
     v = bytes_from_octets(v, in_size)
     checksum = hashlib.sha256(hashlib.sha256(v).digest()).digest()[:4]
     return _b58encode(v + checksum, alphabet)
@@ -236,7 +246,7 @@ def _ascii_bytes(v: String) -> bytes:
     key. A buffer is copied after `_assert_byte_shaped`, and anything
     else is a type error.
     """
-    if isinstance(v, str):
+    if _has_type(v, str):
         # do not trim spaces
         try:
             return str.encode(v, "ascii")
@@ -245,8 +255,8 @@ def _ascii_bytes(v: String) -> bytes:
         # raised outside the `except`: the Unicode error holds the whole
         # string, and must not be left as the new error's context
         raise Base58Bech32ValueError(err_msg)
-    if not isinstance(v, (bytes, bytearray, memoryview)):
-        err_msg = f"invalid base58 string type: {type(v).__name__}"  # type: ignore[unreachable]
+    if not _has_type(v, (bytes, bytearray, memoryview)):
+        err_msg = f"invalid base58 string type: {type(v).__name__}"
         raise Base58Bech32TypeError(err_msg)
     # a strided memoryview or one whose format is not "B" is refused
     # before len() is read: for either, len() counts elements rather than
@@ -271,7 +281,7 @@ def b58decode(
     as its test `src/test/base58_tests.cpp` at bitcoin/bitcoin 924f4c4ac7
     checks. The `base58` package strips trailing whitespace.
     """
-    _assert_valid_alphabet(alphabet)
+    alphabet = _valid_alphabet(alphabet)
     if max_length is not None:
         if not is_integer(max_length):
             err_msg = f"invalid max_length type: {type(max_length).__name__}"
@@ -301,7 +311,7 @@ def b58decode_check(
     Capped at `MAX_LENGTH` characters, unlike `b58encode_check`: a string
     written from a payload of roughly 80 bytes or more is refused here.
     """
-    _assert_valid_alphabet(alphabet)
+    alphabet = _valid_alphabet(alphabet)
     v = _ascii_bytes(v)
 
     if len(v) > MAX_LENGTH:

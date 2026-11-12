@@ -17,10 +17,12 @@ import itertools
 import sys
 from collections.abc import Callable
 from enum import IntEnum
+from unittest.mock import Mock
 
 import pytest
 from hypothesis import given
 from hypothesis import strategies as st
+from typing_extensions import override
 
 from base58_bech32.base58 import (
     _PLAIN_MAX,
@@ -521,3 +523,71 @@ def test_a_bytes_subclass_is_read_as_its_octets(
     assert subclass(b"abc").__buffer__(0).tobytes() == b"2"
     assert b58decode(subclass(b"abc")) == b58decode(b"abc")
     assert b58encode(subclass(b"abc")) == b58encode(b"abc")
+
+
+class _ZerosBuffer(bytes):
+    """A bytes subclass whose buffer is 58 zeros, whatever its octets."""
+
+    __slots__ = ()
+
+    @override
+    def __buffer__(self, flags: int, /) -> memoryview:
+        """Expose octets that are not this alphabet's."""
+        return memoryview(b"0" * 58)
+
+
+class _EqualsBitcoin(bytes):
+    """A bytes subclass that is equal to Bitcoin's alphabet and hashes as it."""
+
+    __slots__ = ()
+
+    @override
+    def __eq__(self, other: object) -> bool:
+        """Equal every value."""
+        return True
+
+    @override
+    def __hash__(self) -> int:
+        """Hash as Bitcoin's alphabet."""
+        return hash(BITCOIN_ALPHABET)
+
+
+def test_the_alphabet_subclasses_misreport_their_octets() -> None:
+    """The control of the test below: each answers for octets it lacks."""
+    assert _ZerosBuffer(BITCOIN_ALPHABET).__buffer__(0).tobytes() == b"0" * 58
+    assert _EqualsBitcoin(RIPPLE_ALPHABET) == BITCOIN_ALPHABET
+    assert hash(_EqualsBitcoin(RIPPLE_ALPHABET)) == hash(BITCOIN_ALPHABET)
+
+
+@pytest.mark.parametrize(
+    "alphabet, plain",
+    [
+        pytest.param(_ZerosBuffer(BITCOIN_ALPHABET), BITCOIN_ALPHABET, id="buffer"),
+        pytest.param(_EqualsBitcoin(RIPPLE_ALPHABET), RIPPLE_ALPHABET, id="eq-hash"),
+    ],
+)
+def test_a_bytes_subclass_alphabet_is_read_as_its_octets(
+    alphabet: bytes, plain: bytes
+) -> None:
+    """Its own methods decide neither its encoding nor what the cache holds.
+
+    The subclass is the first alphabet the cache sees, so that the plain
+    calls after it would read whatever it left there.
+    """
+    _tables.cache_clear()
+    encoded = b58encode(b"\1\2", alphabet=alphabet)
+    assert b58decode(encoded, alphabet=alphabet) == b"\1\2"
+    assert b58encode(b"\1\2") == b"5T"
+    assert b58decode(b"5T") == b"\1\2"
+    assert encoded == b58encode(b"\1\2", alphabet=plain)
+
+
+@pytest.mark.parametrize(
+    "call", [b58encode, b58encode_check, b58decode, b58decode_check]
+)
+def test_an_alphabet_that_claims_to_be_bytes_is_refused_as_a_type(
+    call: Callable[..., bytes],
+) -> None:
+    """A `Mock(spec=bytes)` sets `__class__` to bytes, and is still a Mock."""
+    with pytest.raises(Base58Bech32TypeError, match="^invalid alphabet type: Mock$"):
+        call(b"1", alphabet=Mock(spec=bytes))

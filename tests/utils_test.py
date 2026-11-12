@@ -22,6 +22,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from typing import Any, get_args
+from unittest.mock import Mock
 
 import pytest
 from btclib import alias as btclib_alias
@@ -239,3 +240,15 @@ def test_the_table_reaches_every_outcome() -> None:
         ("assert_type", "answer"),
         ("assert_type", "TypeError"),
     }
+
+
+def test_a_value_that_claims_its_type_is_described_by_its_own() -> None:
+    """Where btclib's originals differ: the class read is the one it is.
+
+    A `Mock(spec=...)` sets `__class__` to the type it imitates, so an
+    `isinstance` test would describe it with that type's own methods,
+    which raise on a Mock.
+    """
+    assert _utils._message_text(Mock(spec=int)) == "a Mock"
+    assert _utils._name_text(Mock(spec=str)) == "a Mock"
+    assert not _utils.is_integer(Mock(spec=int))

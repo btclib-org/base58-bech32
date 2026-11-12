@@ -55,6 +55,7 @@ from collections.abc import Callable, Iterator
 from functools import partial
 from pathlib import Path
 from typing import Any
+from unittest.mock import Mock
 
 import pytest
 
@@ -66,14 +67,15 @@ from base58_bech32.exceptions import (
 _LIBRARY = Path(__file__).parents[1] / "src" / "base58_bech32"
 
 # a value of no type the alias declares: the caller's own mistake, and a
-# call mypy refuses. The tuples are read round-robin so that a function
+# call mypy refuses. A `Mock(spec=...)` is one, though its `__class__`
+# claims a declared type. The tuples are read round-robin so that a function
 # taking three parameters of one type is called with three different
 # wrong values. Constants and not a strategy: what this gate reports has
 # to be the same on two runs, the lists below being read as statements
 # about the tree
 _WRONG_TYPE: dict[str, tuple[Any, ...]] = {
-    "Octets": (None, 1.5, tuple(range(4))),
-    "String": (None, 1.5, tuple(range(4))),
+    "Octets": (None, 1.5, tuple(range(4)), Mock(spec=bytes), Mock(spec=str)),
+    "String": (None, 1.5, tuple(range(4)), Mock(spec=bytes), Mock(spec=str)),
 }
 
 # a value of a declared type that no valid input carries: a fact about

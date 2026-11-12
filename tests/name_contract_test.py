@@ -201,7 +201,7 @@ def test_the_walk_reaches_what_it_claims() -> None:
     assert _NAMED["base58_bech32._utils.assert_type"] == "None"
 
     # a private name, and a name that promises nothing
-    assert "base58_bech32.base58._assert_valid_alphabet" not in _NAMED
+    assert "base58_bech32._utils._assert_byte_shaped" not in _NAMED
     assert "base58_bech32._utils.bytes_from_octets" not in _NAMED
 
 

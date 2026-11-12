@@ -36,7 +36,10 @@ import functools
 import itertools
 import operator
 import random
+from collections.abc import Iterator
 from enum import IntEnum
+from typing import Any
+from unittest.mock import Mock
 
 import pytest
 from hypothesis import given
@@ -1189,3 +1192,46 @@ def test_a_bytes_subclass_is_read_as_its_characters(
 ) -> None:
     """Its own `__bytes__` and `__buffer__` do not decide what is decoded."""
     assert bech32_decode(subclass(b"a12uel5l")) == bech32_decode("a12uel5l")
+
+
+class _IteratesZero(list[int]):
+    """A list subclass whose iteration yields one zero, whatever it holds."""
+
+    __slots__ = ()
+
+    @override
+    def __iter__(self) -> Iterator[int]:
+        """Yield a value that is not this list's."""
+        return iter([0])
+
+
+def test_a_list_subclass_is_read_as_its_items() -> None:
+    """Its own `__iter__` decides neither what is checked nor written."""
+    assert list(_IteratesZero([99, 99])) == [0]
+    with pytest.raises(
+        Base58Bech32ValueError, match="^invalid 5-bit value: an int of 7 bits$"
+    ):
+        bech32_encode("bc", _IteratesZero([99, 99]), m=BECH32_1_CONST)
+    written = bech32_encode("bc", _IteratesZero([1, 2]), m=BECH32_1_CONST)
+    assert written == bech32_encode("bc", [1, 2], m=BECH32_1_CONST)
+
+
+@pytest.mark.parametrize(
+    "hrp, data, what",
+    [
+        pytest.param(Mock(spec=str), [0], "HRP", id="hrp"),
+        pytest.param("bc", Mock(spec=list), "5-bit data", id="data"),
+    ],
+)
+def test_a_value_that_claims_its_type_is_refused_as_a_type(
+    hrp: Any, data: Any, what: str
+) -> None:
+    """A `Mock(spec=...)` sets `__class__` to the type it imitates."""
+    with pytest.raises(Base58Bech32TypeError, match=f"^invalid {what} type: Mock$"):
+        bech32_encode(hrp, data, m=BECH32_1_CONST)
+
+
+def test_a_pad_that_claims_to_be_a_bool_is_refused_as_a_type() -> None:
+    """A `Mock(spec=bool)` is true, and would pad, were it read as a bool."""
+    with pytest.raises(Base58Bech32TypeError, match="^invalid pad type: Mock$"):
+        convertbits([1], 8, 5, Mock(spec=bool))
