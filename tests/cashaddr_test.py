@@ -168,7 +168,7 @@ def test_the_payload_refusals() -> None:
         cashaddr_decode(_string("p", values))
     # a version byte saying 20 bytes, and 21 of them
     with pytest.raises(
-        Base58Bech32ValueError, match="hash size: 21 bytes instead of 20"
+        Base58Bech32ValueError, match="hash size: 21 bytes, not the version byte's$"
     ):
         cashaddr_decode(_string("p", [0, 0, *[0] * 34]))
     with pytest.raises(Base58Bech32ValueError, match="non-zero padding"):
