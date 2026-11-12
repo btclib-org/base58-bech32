@@ -22,7 +22,8 @@ from base58_bech32.cashaddr import (
     cashaddr_encode,
 )
 from base58_bech32.exceptions import Base58Bech32TypeError, Base58Bech32ValueError
-from tests import FOLDING, load, vector_id
+
+from . import FOLDING, load, vector_id
 
 VECTORS = load("_data", "cashaddr_vectors.json")
 

@@ -22,7 +22,8 @@ from hypothesis import strategies as st
 from base58_bech32.base58 import b58decode, b58encode
 from base58_bech32.exceptions import Base58Bech32TypeError, Base58Bech32ValueError
 from base58_bech32.ss58 import ss58_decode, ss58_encode
-from tests import load, vector_id
+
+from . import load, vector_id
 
 ENCODE = load("_data", "ss58_encode_vectors.json")
 DECODE = load("_data", "ss58_decode_vectors.json")
