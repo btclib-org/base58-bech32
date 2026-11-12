@@ -68,13 +68,20 @@ def _prefix_expand(prefix: str) -> list[int]:
     return [ord(x) & 31 for x in prefix] + [0]
 
 
-def _assert_valid_prefix(prefix: str) -> None:
-    """Refuse a prefix that is not lowercase ascii letters."""
+def _valid_prefix(prefix: str) -> str:
+    """Return a prefix as the plain str of its characters, if valid.
+
+    A prefix that is not lowercase ascii letters is refused. The plain str
+    is what is checked, compared and returned, so that no method of a str
+    subclass's own decides any of it.
+    """
     assert_type(prefix, str, "CashAddr prefix")
+    prefix = str.__str__(prefix)
     if not prefix:
         raise Base58Bech32ValueError("empty CashAddr prefix")
     if not (prefix.isascii() and prefix.isalpha() and prefix.islower()):
         raise Base58Bech32ValueError(f"invalid CashAddr prefix: {_name_text(prefix)}")
+    return prefix
 
 
 def cashaddr_encode(prefix: str, kind: int, digest: Octets) -> bytes:
@@ -85,7 +92,7 @@ def cashaddr_encode(prefix: str, kind: int, digest: Octets) -> bytes:
     `digest` the hash, of one of the sizes from 20 to 64 bytes the
     version byte can say.
     """
-    _assert_valid_prefix(prefix)
+    prefix = _valid_prefix(prefix)
     if not is_integer(kind):
         raise Base58Bech32TypeError(
             f"invalid CashAddr type type: {type(kind).__name__}"
@@ -134,7 +141,7 @@ def _split(text: str) -> tuple[str | None, str]:
 def _decode(address: String, prefix: str | None) -> tuple[str, list[int]]:
     """Verify an address's checksum, and return its prefix and 5-bit values."""
     if prefix is not None:
-        _assert_valid_prefix(prefix)
+        prefix = _valid_prefix(prefix)
     written, payload = _split(str_from_string(address, "CashAddr address"))
     if written is None:
         if prefix is None:

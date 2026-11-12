@@ -23,7 +23,7 @@ from base58_bech32.base58 import b58decode, b58encode
 from base58_bech32.exceptions import Base58Bech32TypeError, Base58Bech32ValueError
 from base58_bech32.ss58 import ss58_decode, ss58_encode
 
-from . import load, vector_id
+from . import EncodesOther, load, vector_id
 
 ENCODE = load("_data", "ss58_encode_vectors.json")
 DECODE = load("_data", "ss58_decode_vectors.json")
@@ -195,6 +195,12 @@ def test_the_prefix_forms() -> None:
     """63 is the last one-byte prefix, and 64 the first two-byte one."""
     assert len(b58decode(ss58_encode(63, bytes(32)))) == 1 + 32 + 2
     assert len(b58decode(ss58_encode(64, bytes(32)))) == 2 + 32 + 2
+
+
+def test_a_str_subclass_is_read_as_its_characters() -> None:
+    """Its own `encode` does not decide what the decoder reads."""
+    address = ss58_encode(42, bytes(32)).decode("ascii")
+    assert ss58_decode(EncodesOther(address)) == (42, bytes(32))
 
 
 @given(

@@ -31,6 +31,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from typing_extensions import override
 
 import base58_bech32
 
@@ -43,6 +44,17 @@ FOLDING = [
     pytest.param("\N{LATIN CAPITAL LETTER I WITH DOT ABOVE}", id="capital-i-with-dot"),
     pytest.param("\N{LATIN SMALL LETTER LONG S}", id="long-s"),
 ]
+
+
+class EncodesOther(str):
+    """A str subclass whose `encode` answers another string's octets."""
+
+    __slots__ = ()
+
+    @override
+    def encode(self, encoding: str = "utf-8", errors: str = "strict") -> bytes:
+        """Return the octets of a string that is not this one."""
+        return b"2"
 
 
 def module_names() -> list[str]:

@@ -37,7 +37,7 @@ from base58_bech32.base58 import (
 )
 from base58_bech32.exceptions import Base58Bech32TypeError, Base58Bech32ValueError
 
-from . import load, vector_id
+from . import EncodesOther, load, vector_id
 
 # Bitcoin Core's `src/test/data/base58_encode_decode.json`: [hex, base58]
 # rows of Core's `EncodeBase58`/`DecodeBase58`, the codec with no checksum
@@ -327,6 +327,14 @@ def test_a_string_is_text_or_bytes() -> None:
     for decode in (b58decode, b58decode_check):
         with pytest.raises(Base58Bech32TypeError, match="invalid base58 string type"):
             decode(58)  # type: ignore[arg-type]
+
+
+def test_a_str_subclass_is_read_as_its_characters() -> None:
+    """Its own `encode` does not decide what either decoder reads."""
+    assert EncodesOther("abc").encode("ascii") == b"2"
+    assert b58decode(EncodesOther("abc")) == b58decode("abc")
+    encoded = b58encode_check(b"hello world").decode("ascii")
+    assert b58decode_check(EncodesOther(encoded)) == b"hello world"
 
 
 def test_wif() -> None:

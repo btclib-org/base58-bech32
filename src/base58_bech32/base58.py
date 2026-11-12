@@ -229,7 +229,8 @@ def _b58decode(v: bytes, alphabet: bytes) -> bytes:
 def _ascii_bytes(v: String) -> bytes:
     """Return the ascii octets of a base58 string, refusing what has none.
 
-    A str is encoded, and a refusal names the position of a character
+    A str is encoded by `str`'s own `encode`, so that a subclass's does
+    not decide the octets. A refusal names the position of a character
     outside ascii and never the character: the string can be a private
     key. A buffer is copied after `_assert_byte_shaped`, and anything
     else is a type error.
@@ -237,7 +238,7 @@ def _ascii_bytes(v: String) -> bytes:
     if isinstance(v, str):
         # do not trim spaces
         try:
-            return v.encode("ascii")
+            return str.encode(v, "ascii")
         except UnicodeEncodeError as e:
             err_msg = f"non-ascii character in base58 string at position {e.start}"
         # raised outside the `except`: the Unicode error holds the whole
