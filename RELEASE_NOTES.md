@@ -32,11 +32,12 @@ breaks. griffe and `api_gaps.py` find no break in the public API against it.
   `invalid SS58 prefix: 4 in the two-byte form` reads
   `invalid SS58 prefix: a one-byte prefix in the two-byte form`, and
   `reserved SS58 prefix: 46` reads `reserved SS58 prefix`.
-- The bech32 and CashAddr decoders read a str subclass as the plain str of
-  its characters, so a method the subclass overrides, such as `lower`,
-  does not decide what they decode.
+- The bech32 and CashAddr decoders read the string they decode, given as a
+  str subclass, as the plain str of its characters, so a method the
+  subclass overrides, such as `lower`, does not decide what they read
+  from it.
 - The release's certificate names the commit of btclib-org/.github's
-  v2026.11.12, which `release.yml` now calls. The `gh attestation verify`
+  v2026.11.12, which `release.yml` calls. The `gh attestation verify`
   command of *Supported versions* in [SECURITY.md](./SECURITY.md) names
   the signer without a ref and verifies this release unchanged.
 

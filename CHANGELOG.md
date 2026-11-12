@@ -34,7 +34,8 @@ reserved prefix are refused with no value (closes #127).
 ### `str_from_string` returns a str subclass as the plain str
 
 No method of the subclass's own decides what the bech32 and CashAddr
-decoders read, as in btclib's original (closes #128).
+decoders read from the string they decode, as in btclib's original
+(closes #128).
 
 ### The tests pass `b58decode_check`'s `out_size` in more types
 
