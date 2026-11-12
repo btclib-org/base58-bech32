@@ -172,9 +172,10 @@ def cashaddr_decode(
     version = data[0]
     if version & 0x80:
         raise Base58Bech32ValueError("reserved bit set in CashAddr version byte")
-    hash_size = _HASH_SIZES[version & 0x07]
-    if len(data) != hash_size + 1:
-        err_msg = f"invalid CashAddr hash size: {len(data) - 1} bytes "
-        err_msg += f"instead of {hash_size}"
+    if len(data) != _HASH_SIZES[version & 0x07] + 1:
+        # the size the version byte gives is not printed: in a string of
+        # the wrong length, that byte may be a key's first
+        err_msg = f"invalid CashAddr hash size: {len(data) - 1} bytes, "
+        err_msg += "not the version byte's"
         raise Base58Bech32ValueError(err_msg)
     return written, version >> 3, bytes(data[1:])

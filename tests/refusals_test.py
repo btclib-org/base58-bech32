@@ -27,6 +27,7 @@ import pytest
 
 from base58_bech32.base58 import b58decode, b58decode_check, b58encode, b58encode_check
 from base58_bech32.bech32 import (
+    _CHAR_OF,
     BECH32_1_CONST,
     BECH32_M_CONST,
     bech32_decode,
@@ -35,7 +36,12 @@ from base58_bech32.bech32 import (
     bech32_encode_bytes,
     convertbits,
 )
-from base58_bech32.cashaddr import cashaddr_decode, cashaddr_encode
+from base58_bech32.cashaddr import (
+    _polymod,
+    _prefix_expand,
+    cashaddr_decode,
+    cashaddr_encode,
+)
 from base58_bech32.exceptions import Base58Bech32TypeError, Base58Bech32ValueError
 from base58_bech32.ss58 import ss58_decode, ss58_encode
 
@@ -241,6 +247,42 @@ def test_an_ss58_prefix_refusal_prints_nothing_read_from_the_key(
     with pytest.raises(Base58Bech32ValueError, match=f"^{err_msg}$") as excinfo:
         ss58_decode(b58encode(key))
     assert_secret_free(excinfo.value, [key, str(value)])
+
+
+def _cashaddr_of(data: bytes) -> str:
+    """Return the CashAddr string of any bytes, correctly checksummed."""
+    values = convertbits(data, 8, 5)
+    mod = _polymod(_prefix_expand("p") + values + [0] * 8)
+    checksum = [(mod >> 5 * (7 - i)) & 31 for i in range(8)]
+    return "p:" + bytes(values + checksum).translate(_CHAR_OF).decode("ascii")
+
+
+# a key pasted as a CashAddr payload, its first byte read as the version
+# byte, and the hash size that byte's low three bits give; not 32, which
+# every refusal's repr holds, in `Base58Bech32ValueError`
+_CASHADDR_SIZE_REFUSALS: list[tuple[str, bytes, int]] = [
+    ("40 bytes", b"\x1c" + _SECRET[1:], 40),
+    ("48 bytes", b"\x05" + _SECRET[1:], 48),
+    ("64 bytes", b"\x07" + _SECRET[1:], 64),
+]
+
+
+@pytest.mark.parametrize(
+    "key, size",
+    [row[1:] for row in _CASHADDR_SIZE_REFUSALS],
+    ids=[r[0] for r in _CASHADDR_SIZE_REFUSALS],
+)
+def test_a_cashaddr_size_refusal_prints_nothing_read_from_the_key(
+    key: bytes, size: int
+) -> None:
+    """Neither the key nor the decimal of the size its first byte gives.
+
+    The decimal is passed as a secret of its own, as for the SS58 prefix.
+    """
+    err_msg = "^invalid CashAddr hash size: 31 bytes, not the version byte's$"
+    with pytest.raises(Base58Bech32ValueError, match=err_msg) as excinfo:
+        cashaddr_decode(_cashaddr_of(key))
+    assert_secret_free(excinfo.value, [key, str(size)])
 
 
 # a fixed random scalar, the size of a private key
