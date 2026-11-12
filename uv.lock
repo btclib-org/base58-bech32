@@ -333,7 +333,7 @@ wheels = [
 
 [[package]]
 name = "base58-bech32"
-version = "2026.11.11"
+version = "2026.11.12"
 source = { editable = "." }
 
 [package.dev-dependencies]

@@ -19,12 +19,22 @@ behind them.
 
 [std]: https://github.com/btclib-org/.github
 
-## v2026.11.11
+## v2026.11.12
 
 ### A refusal describes an int by its sign and bit length
 
 A name too long to quote, such as an HRP or a CashAddr prefix, is described
 by its length (closes #118) (closes #119).
+
+### `ss58_decode`'s prefix refusals print nothing read from the string
+
+A first byte above 127, a one-byte prefix in the two-byte form and a
+reserved prefix are refused with no value (closes #127).
+
+### `str_from_string` returns a str subclass as the plain str
+
+No method of the subclass's own decides what the bech32 and CashAddr
+decoders read, as in btclib's original (closes #128).
 
 ### The tests pass `b58decode_check`'s `out_size` in more types
 
@@ -55,6 +65,11 @@ btclib-org/.github#2159).
 ### The tests take the shared `secret_free` helper from btclib-org/.github
 
 (issue btclib-org/.github#1950).
+
+### `tests/_data/README.md` says btclib's copy of the base58 vectors is gone
+
+btclib carried `base58_encode_decode.json` until btclib-org/btclib@217f77e
+(closes #126).
 
 ### The actions, the dev tooling and the pre-commit hooks are updated
 
