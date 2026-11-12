@@ -177,12 +177,11 @@ free to move under a review:
 - the reviewer reopens a thread whose finding is still blocking, and
   re-reviews the delta rather than the branch.
 
-**What ends the loop is the ack of record**, and the author does not
-supply their own. A reading that says what it found and delivers no
-verdict is a review too and ends nothing; [the standard's *Review*][s-rev]
-has which is which, and `REVIEWING.md` has how each is written. A
-disagreement that survives a second exchange goes to the maintainer
-instead of into a third round.
+**What ends the loop is the ack of record.** A reading that says what
+it found and delivers no verdict is a review too and ends nothing; [the
+standard's *Review*][s-rev] has which is which, and `REVIEWING.md` has
+how each is written. A disagreement that survives a second exchange
+goes to the maintainer instead of into a third round.
 
 **The ack of record is not the approval *Landing it* asks for**: it is
 a bot's review of type COMMENT ([the standard's *Review*][s-rev] says

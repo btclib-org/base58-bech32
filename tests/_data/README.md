@@ -88,7 +88,8 @@ Verdict: **identical**. Rows of `[hex, base58]`: Core's
 `EncodeBase58`/`DecodeBase58`, the codec with no checksum on it, so what
 reads them is `b58encode`/`b58decode` and not the checked pair -- one row
 is 256 bytes, 348 base58 characters, which `b58decode_check` would refuse
-on `MAX_LENGTH`. btclib carries the same file, at the same pin.
+on `MAX_LENGTH`. btclib carried the same file, at the same pin, until
+btclib-org/btclib@217f77e removed it with `btclib.base58`.
 
 ### `tests/_data/bech32_core_invalid_vectors.json`
 

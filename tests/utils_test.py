@@ -71,6 +71,27 @@ class _Unwritable:
         raise RuntimeError
 
 
+class _Str(str):
+    """A str subclass whose `str()` is another string.
+
+    `str_from_string` answers the plain str of its characters, which
+    neither the subclass itself nor its `str()` is.
+    """
+
+    __slots__ = ()
+
+    @override
+    def __str__(self) -> str:
+        """Return a string that is not this one."""
+        return "other"
+
+
+def test_the_str_subclass_writes_another_string() -> None:
+    """The control of the row that hands it over: its `str()` is not itself."""
+    assert str(_Str("abc")) == "other"
+    assert str.__str__(_Str("abc")) == "abc"
+
+
 def test_the_unwritable_value_cannot_be_written() -> None:
     """The control of the rows that hand it over: both of its reads raise."""
     with pytest.raises(RuntimeError):
@@ -99,7 +120,7 @@ _CASES: list[tuple[str, Callable[[Any], Any], Callable[[Any], Any], Any]] = [
             lambda v: btclib_utils.str_from_string(v, "string"),
             v,
         )
-        for v in [*_OCTETS, b"\xff", "\N{SNOWMAN}"]
+        for v in [*_OCTETS, b"\xff", "\N{SNOWMAN}", _Str("abc")]
     ),
     *(
         ("_message_text", _utils._message_text, btclib_utils._message_text, v)
@@ -149,12 +170,15 @@ _CASES: list[tuple[str, Callable[[Any], Any], Callable[[Any], Any], Any]] = [
 def _outcome(function: Callable[[Any], Any], value: Any) -> tuple[str, Any]:
     """Return what one call answered, or the built-in and message it raised.
 
-    The class compared is the built-in beneath the package's own: the
-    copy raises this package's exceptions and the original btclib's, and
-    each is a `ValueError` or a `TypeError` beside its package's base.
+    An answer comes with its type: a str subclass equals the plain str of
+    its characters. The class compared is the built-in beneath the
+    package's own: the copy raises this package's exceptions and the
+    original btclib's, and each is a `ValueError` or a `TypeError` beside
+    its package's base.
     """
     try:
-        return "answer", function(value)
+        answer = function(value)
+        return "answer", (type(answer), answer)
     except (Base58Bech32Exception, BTClibException) as error:
         builtin = next(c for c in type(error).__mro__ if c in {ValueError, TypeError})
         return builtin.__name__, str(error)
