@@ -162,7 +162,8 @@ class _Matching(str):
 
 def test_a_str_subclass_prefix_is_read_as_its_characters() -> None:
     """Its own `__ne__` does not decide the match; a plain str comes back."""
-    assert (_Matching("bchtest") != "bitcoincash") is False
+    differs = _Matching("bchtest") != "bitcoincash"
+    assert not differs
     with pytest.raises(Base58Bech32ValueError, match="not the one given"):
         cashaddr_decode(_ADDRESS, prefix=_Matching("bchtest"))
     payload = _ADDRESS.split(":")[1]
