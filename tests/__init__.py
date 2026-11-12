@@ -57,6 +57,37 @@ class EncodesOther(str):
         return b"2"
 
 
+class BytesOther(bytes):
+    """A bytes subclass whose `bytes()` and buffer are another string's."""
+
+    __slots__ = ()
+
+    @override
+    def __bytes__(self) -> bytes:
+        """Return the octets of a string that is not this one."""
+        return b"2"
+
+    @override
+    def __buffer__(self, flags: int, /) -> memoryview:
+        """Expose the octets of a string that is not this one."""
+        return memoryview(b"2")
+
+
+class BytearrayOther(bytearray):
+    """A bytearray subclass whose `bytes()` and buffer are another string's."""
+
+    __slots__ = ()
+
+    def __bytes__(self) -> bytes:
+        """Return the octets of a string that is not this one."""
+        return b"2"
+
+    @override
+    def __buffer__(self, flags: int, /) -> memoryview:
+        """Expose the octets of a string that is not this one."""
+        return memoryview(b"2")
+
+
 def module_names() -> list[str]:
     """Return every module of the installed base58_bech32, the root included.
 

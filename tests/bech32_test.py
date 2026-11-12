@@ -41,6 +41,7 @@ from enum import IntEnum
 import pytest
 from hypothesis import given
 from hypothesis import strategies as st
+from typing_extensions import override
 
 from base58_bech32.bech32 import (
     _ALPHABET,
@@ -62,7 +63,7 @@ from base58_bech32.bech32 import (
 )
 from base58_bech32.exceptions import Base58Bech32TypeError, Base58Bech32ValueError
 
-from . import FOLDING
+from . import FOLDING, BytearrayOther, BytesOther
 
 
 def test_the_tap_table_holds_the_taps_it_replaces() -> None:
@@ -1155,3 +1156,36 @@ def test_convertbits_excessive_width() -> None:
 
     with pytest.raises(Base58Bech32ValueError, match="invalid from_bits: .* > 64"):
         convertbits([], 2**64, 5)
+
+
+class _Lowercase(str):
+    """A str subclass that claims to be lowercase."""
+
+    __slots__ = ()
+
+    @override
+    def lower(self) -> str:
+        """Return this string, whatever its case."""
+        return self
+
+    @override
+    def __ne__(self, other: object) -> bool:
+        """Differ from no string."""
+        return False
+
+
+def test_an_hrp_str_subclass_is_read_as_its_characters() -> None:
+    """Its own `lower` and `__ne__` do not decide the lowercase check."""
+    hrp = _Lowercase("BC")
+    assert hrp.lower() is hrp
+    assert not operator.ne(hrp, "bc")
+    with pytest.raises(Base58Bech32ValueError, match="^HRP is not lowercase: 'BC'$"):
+        bech32_encode(hrp, [0])
+
+
+@pytest.mark.parametrize("subclass", [BytesOther, BytearrayOther])
+def test_a_bytes_subclass_is_read_as_its_characters(
+    subclass: type[bytes | bytearray],
+) -> None:
+    """Its own `__bytes__` and `__buffer__` do not decide what is decoded."""
+    assert bech32_decode(subclass(b"a12uel5l")) == bech32_decode("a12uel5l")

@@ -37,7 +37,7 @@ from base58_bech32.base58 import (
 )
 from base58_bech32.exceptions import Base58Bech32TypeError, Base58Bech32ValueError
 
-from . import EncodesOther, load, vector_id
+from . import BytearrayOther, BytesOther, EncodesOther, load, vector_id
 
 # Bitcoin Core's `src/test/data/base58_encode_decode.json`: [hex, base58]
 # rows of Core's `EncodeBase58`/`DecodeBase58`, the codec with no checksum
@@ -510,3 +510,14 @@ def test_the_checksum_is_compared_with_compare_digest(
     with pytest.raises(Base58Bech32ValueError, match="invalid checksum"):
         b58decode_check(good[:-1] + b"2")
     assert len(calls) == 2
+
+
+@pytest.mark.parametrize("subclass", [BytesOther, BytearrayOther])
+def test_a_bytes_subclass_is_read_as_its_octets(
+    subclass: type[bytes | bytearray],
+) -> None:
+    """Its own `__bytes__` and `__buffer__` do not decide what is read."""
+    assert bytes(subclass(b"abc")) == b"2"
+    assert subclass(b"abc").__buffer__(0).tobytes() == b"2"
+    assert b58decode(subclass(b"abc")) == b58decode(b"abc")
+    assert b58encode(subclass(b"abc")) == b58encode(b"abc")

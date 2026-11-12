@@ -301,6 +301,9 @@ def bech32_encode(
     _assert_valid_limit(limit)
     assert_type(data, list, "5-bit data")
     assert_type(hrp, str, "HRP")
+    # the plain str of its characters, so that no method of a str
+    # subclass's own decides the checks below or what is written
+    hrp = str.__str__(hrp)
     if not hrp:
         raise Base58Bech32ValueError("empty HRP")
     if not _hrp_in_range(hrp):
