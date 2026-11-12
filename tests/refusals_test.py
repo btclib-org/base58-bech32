@@ -27,7 +27,6 @@ import pytest
 
 from base58_bech32.base58 import b58decode, b58decode_check, b58encode, b58encode_check
 from base58_bech32.bech32 import (
-    _CHAR_OF,
     BECH32_1_CONST,
     BECH32_M_CONST,
     bech32_decode,
@@ -36,16 +35,12 @@ from base58_bech32.bech32 import (
     bech32_encode_bytes,
     convertbits,
 )
-from base58_bech32.cashaddr import (
-    _polymod,
-    _prefix_expand,
-    cashaddr_decode,
-    cashaddr_encode,
-)
+from base58_bech32.cashaddr import cashaddr_decode, cashaddr_encode
 from base58_bech32.exceptions import Base58Bech32TypeError, Base58Bech32ValueError
 from base58_bech32.ss58 import ss58_decode, ss58_encode
 
 from . import load
+from .cashaddr_test import _string
 from .secret_free import assert_secret_free
 
 # a fixed random 32-byte secret, the size of a private key
@@ -249,14 +244,6 @@ def test_an_ss58_prefix_refusal_prints_nothing_read_from_the_key(
     assert_secret_free(excinfo.value, [key, str(value)])
 
 
-def _cashaddr_of(data: bytes) -> str:
-    """Return the CashAddr string of any bytes, correctly checksummed."""
-    values = convertbits(data, 8, 5)
-    mod = _polymod(_prefix_expand("p") + values + [0] * 8)
-    checksum = [(mod >> 5 * (7 - i)) & 31 for i in range(8)]
-    return "p:" + bytes(values + checksum).translate(_CHAR_OF).decode("ascii")
-
-
 # a key pasted as a CashAddr payload, its first byte read as the version
 # byte, and the hash size that byte's low three bits give; not 32, which
 # every refusal's repr holds, in `Base58Bech32ValueError`
@@ -281,7 +268,7 @@ def test_a_cashaddr_size_refusal_prints_nothing_read_from_the_key(
     """
     err_msg = "^invalid CashAddr hash size: 31 bytes, not the version byte's$"
     with pytest.raises(Base58Bech32ValueError, match=err_msg) as excinfo:
-        cashaddr_decode(_cashaddr_of(key))
+        cashaddr_decode(_string("p", convertbits(key, 8, 5)))
     assert_secret_free(excinfo.value, [key, str(size)])
 
 
