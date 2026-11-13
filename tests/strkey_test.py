@@ -316,7 +316,7 @@ def _strkey_changed(draw: st.DrawFn) -> str:
     """Draw a strkey with one character changed, inserted or removed."""
     strkey = draw(_A_STRKEY)
     i = draw(st.integers(0, len(strkey) - 1))
-    char = draw(st.sampled_from(ALPHABET + "a=0"))
+    char = draw(st.sampled_from(f"{ALPHABET}a=0"))
     changed = strkey[:i] + char + strkey[i + 1 :]
     inserted = strkey[:i] + char + strkey[i:]
     removed = strkey[:i] + strkey[i + 1 :]
@@ -325,7 +325,7 @@ def _strkey_changed(draw: st.DrawFn) -> str:
 
 @given(
     text=st.one_of(
-        st.text(alphabet=ALPHABET + "a=0", max_size=80),
+        st.text(alphabet=f"{ALPHABET}a=0", max_size=80),
         st.text(alphabet="A", max_size=80),
         _A_STRKEY,
         _strkey_changed(),
