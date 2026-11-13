@@ -57,14 +57,23 @@ def _has_type(
 ) -> TypeGuard[_T | _U | _V]: ...
 
 
+# what the two above do not match, and mypy narrows nothing on: an
+# abstract base class, which mypy takes as no `type[...]`, and a union
+@overload
+def _has_type(value: object, expected: object) -> bool: ...
+
+
 def _has_type(value: object, expected: Any) -> bool:
     """Return whether a value's own class is `expected` or a subclass of it.
 
     `isinstance` reads the value's `__class__`, which an object can set
     to a class it is not: `unittest.mock.Mock(spec=bytes)` claims to be
-    bytes, and would then leave a coercion as a built-in error. `type()`
-    answers the class the object is. `expected` is what `issubclass`
-    takes: one class, or a tuple of them.
+    bytes, and would then leave a coercion as a built-in error, or as an
+    answer. `type()` answers the class the object is. `expected` is what
+    `issubclass` takes: one class, an abstract base class a class is
+    registered with included, a union, or a tuple of them.
+
+    Every type test of this module is asked through it.
     """
     return issubclass(type(value), expected)
 
@@ -97,6 +106,9 @@ def _copy_bytes(octets: bytes | bytearray | memoryview) -> bytes:
     from Python 3.12 that of a bytearray subclass calls its `__buffer__`,
     so a subclass would decide what is read. No class can subclass
     `memoryview`.
+
+    `bytes.__bytes__` of a `bytes` is the object itself, so the arm every
+    `Octets` parameter of the library runs through allocates nothing.
     """
     if _has_type(octets, bytes):
         return bytes.__bytes__(octets)
@@ -139,8 +151,11 @@ def bytes_from_octets(
 
     if _has_type(out_size, int):
         sizes: tuple[int, ...] = (out_size,)
-    elif _has_type(out_size, Iterable):  # type: ignore[type-abstract]
-        sizes = tuple(out_size)
+    elif _has_type(out_size, Iterable):
+        # a TypeGuard narrows no else branch, so `int` is still in the
+        # union here: btclib's `TypeIs` would need typing_extensions on
+        # Python 3.11, and the package imports the standard library alone
+        sizes = tuple(out_size)  # type: ignore[arg-type]
     else:
         err_msg = f"invalid output size type: {type(out_size).__name__}"
         raise Base58Bech32TypeError(err_msg)
