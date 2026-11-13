@@ -19,6 +19,7 @@ failure names every offender at once rather than the first.
 from __future__ import annotations
 
 import ast
+import sys
 from importlib import import_module
 from pathlib import Path
 from pkgutil import iter_modules
@@ -171,7 +172,9 @@ def test_nothing_becomes_public_by_accident() -> None:
     assert {name: found for name, found in kept_out.items() if found} == UNEXPORTED
 
 
-def test_the_root_publishes_every_top_level_module() -> None:
+def test_the_root_publishes_every_top_level_module(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """`base58_bech32.__all__` is the tree's root, missing nothing top-level.
 
     The list is written out rather than discovered -- a declaration is a
@@ -184,8 +187,14 @@ def test_the_root_publishes_every_top_level_module() -> None:
     )
     assert sorted(base58_bech32.__all__) == top_level
     # and each answers on a package that imported none of them, which is
-    # what the module __getattr__ is for
+    # what the module __getattr__ is for: collecting the suite imports
+    # them all, so each is hidden first, and put back after the test
     for name in top_level:
+        # absent where nothing imported it first, as in a run of this test
+        # alone. The package's own dict and not delattr, whose lookup
+        # would run __getattr__ before the getattr asserted below
+        monkeypatch.delitem(sys.modules, f"base58_bech32.{name}", raising=False)
+        monkeypatch.delitem(vars(base58_bech32), name, raising=False)
         assert getattr(base58_bech32, name).__name__ == f"base58_bech32.{name}"
 
 
