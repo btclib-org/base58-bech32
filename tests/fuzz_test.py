@@ -54,7 +54,7 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from base58_bech32 import base58, bech32, cashaddr, ss58
+from base58_bech32 import base58, bech32, cashaddr, ss58, strkey
 from base58_bech32.bech32 import BECH32_1_CONST, BECH32_M_CONST
 from base58_bech32.exceptions import (
     Base58Bech32TypeError,
@@ -74,6 +74,7 @@ DECODERS: dict[str, Callable[[str | bytes], Any]] = {
     ),
     "ss58.ss58_decode": ss58.ss58_decode,
     "cashaddr.cashaddr_decode": cashaddr.cashaddr_decode,
+    "strkey.strkey_decode": strkey.strkey_decode,
 }
 
 # every character any of the formats writes, and the separators
@@ -82,6 +83,7 @@ _ALPHABET = "".join(
         {
             *base58.BITCOIN_ALPHABET.decode(),
             *"qpzry9x8gf2tvdw0s3jn54khce6mua7l",
+            *"ABCDEFGHIJKLMNOPQRSTUVWXYZ234567",
             ":",
             "1",
         }
@@ -94,6 +96,7 @@ _VALID = [
     "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4",
     "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
     "bitcoincash:qr6m7j9njldwwzlg9v7v53unlr4jkmx6eylep8ekg2",
+    "GA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJVSGZ",
 ]
 
 

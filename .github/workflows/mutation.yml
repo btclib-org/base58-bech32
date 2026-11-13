@@ -45,6 +45,7 @@ on:
           - base58
           - bech32
           - ss58_cashaddr
+          - strkey
 
 # least privilege for the GITHUB_TOKEN: nothing here writes. No issues:
 # write either -- a survivor is a test to write rather than a defect to
@@ -80,7 +81,9 @@ jobs:
         {"profile": "bech32, bech32m and convertbits", "slug": "bech32", "ceiling": 25,
         "sessions": "bech32.toml 15m"},
         {"profile": "SS58 and CashAddr", "slug": "ss58_cashaddr", "ceiling": 25,
-        "sessions": "ss58_cashaddr.toml 15m"}]
+        "sessions": "ss58_cashaddr.toml 15m"},
+        {"profile": "Stellar strkey", "slug": "strkey", "ceiling": 25,
+        "sessions": "strkey.toml 15m"}]
       # the dropdown above, forwarded. A schedule has no `inputs`, so this
       # arrives at the callee as an empty string, which its own `SELECTED`
       # expression reads as every profile

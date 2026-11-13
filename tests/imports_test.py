@@ -265,6 +265,7 @@ _LAYERS: dict[str, frozenset[str]] = {
     "bech32": frozenset({"_utils", "exceptions"}),
     "ss58": frozenset({"_utils", "base58", "exceptions"}),
     "cashaddr": frozenset({"_utils", "bech32", "exceptions"}),
+    "strkey": frozenset({"_utils", "exceptions"}),
     "__init__": frozenset(),
 }
 

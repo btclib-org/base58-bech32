@@ -4,9 +4,9 @@
 
 """The base58_bech32 package: what it publishes, and the version metadata.
 
-Base58, Base58Check, bech32, bech32m, SS58 and CashAddr: binary-to-text
-codecs with nothing of bitcoin above them. The standard library is the
-package's only dependency.
+Base58, Base58Check, bech32, bech32m, SS58, CashAddr and Stellar's
+strkey: binary-to-text codecs with nothing of bitcoin above them. The
+standard library is the package's only dependency.
 
 `__all__` here is the root of the package's public tree: the modules a
 caller reaches from this name. Each of them declares its own `__all__`,
@@ -59,6 +59,7 @@ __all__ = [
     "cashaddr",
     "exceptions",
     "ss58",
+    "strkey",
 ]
 
 

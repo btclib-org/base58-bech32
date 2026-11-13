@@ -1115,7 +1115,7 @@ test_dist=base58-bech32
 pkg=base58_bech32
 rtd=base58-bech32
 python=$(grep -Ev '^[[:space:]]*(#|$)' .python-version)
-smoke='from base58_bech32 import base58, bech32, cashaddr, ss58
+smoke='from base58_bech32 import base58, bech32, cashaddr, ss58, strkey
 import base58_bech32; print(base58_bech32.__version__)'
 ```
 

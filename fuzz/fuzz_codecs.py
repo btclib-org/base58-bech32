@@ -25,7 +25,7 @@ import sys
 
 import atheris
 
-from base58_bech32 import base58, bech32, cashaddr, ss58
+from base58_bech32 import base58, bech32, cashaddr, ss58, strkey
 from base58_bech32.exceptions import Base58Bech32Exception
 
 # tests/fuzz_corpus_test.py reads this by ast.literal_eval, never by
@@ -37,6 +37,7 @@ ENTRY_POINTS = (
     "base58_bech32.bech32:bech32_decode",
     "base58_bech32.ss58:ss58_decode",
     "base58_bech32.cashaddr:cashaddr_decode",
+    "base58_bech32.strkey:strkey_decode",
 )
 
 
@@ -76,6 +77,8 @@ def fuzz_target(data: bytes) -> None:
             _round_trip(ss58.ss58_encode(*ss58.ss58_decode(text)), text)
         with contextlib.suppress(Base58Bech32Exception):
             _round_trip(cashaddr.cashaddr_encode(*cashaddr.cashaddr_decode(text)), text)
+        with contextlib.suppress(Base58Bech32Exception):
+            _round_trip(strkey.strkey_encode(*strkey.strkey_decode(text)), text)
 
 
 def main() -> None:

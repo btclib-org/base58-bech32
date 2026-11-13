@@ -7,8 +7,8 @@ body:
   - type: markdown
     attributes:
       value: >
-        base58-bech32 is the Base58, Base58Check, bech32, bech32m, SS58
-        and CashAddr codecs: bytes to a string and back. What the bytes
+        base58-bech32 is the Base58, Base58Check, bech32, bech32m, SS58,
+        CashAddr and strkey codecs: bytes to a string and back. What the bytes
         mean -- a key, a script, a witness program, a network -- is a
         library above this one, and not this one.
 

@@ -1,15 +1,16 @@
 # Architecture
 
 The package is layered bottom-up. `exceptions` is the base: it imports
-nothing, and `_utils`, `base58`, `bech32`, `ss58` and `cashaddr` raise its
-errors. `_utils` holds the private argument checks and coercions, and
-imports `exceptions` only.
+nothing, and `_utils`, `base58`, `bech32`, `ss58`, `cashaddr` and
+`strkey` raise its errors. `_utils` holds the private argument checks
+and coercions, and imports `exceptions` only.
 
-`base58` and `bech32` are the two codecs. Each imports `_utils` and
-`exceptions`, and neither imports the other. `ss58` builds on `base58`
+`base58`, `bech32` and `strkey` are the codecs that build on no other.
+Each imports `_utils` and `exceptions`, and none imports another codec.
+`ss58` builds on `base58`
 and reuses its alphabet, encoder and decoder; `cashaddr` builds on `bech32` and
 reuses its alphabet and bit regrouping. `ss58` and `cashaddr` do not
-import each other, nor the codec they do not build on.
+import each other, nor a codec they do not build on.
 
 `__init__` imports no module of the package: it loads one when it is
 first asked for.

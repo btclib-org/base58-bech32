@@ -1,8 +1,8 @@
 # base58-bech32
 
-Base58, Base58Check, bech32, bech32m, SS58 and CashAddr: the
-binary-to-text codecs of cryptocurrency addresses and keys, in typed
-Python, with nothing of any chain above them.
+Base58, Base58Check, bech32, bech32m, SS58, CashAddr and Stellar's
+strkey: the binary-to-text codecs of cryptocurrency addresses and keys,
+in typed Python, with nothing of any chain above them.
 
 <!-- Section 2 of the organization's standard says which badges sit here. -->
 [![PyPI version](https://img.shields.io/pypi/v/base58-bech32.svg?logo=pypi)](https://pypi.org/project/base58-bech32/)
@@ -35,6 +35,9 @@ but the standard library.
   both prefix forms (`ss58`)
 - [CashAddr](https://github.com/bitcoincashorg/bitcoincash.org/blob/master/spec/cashaddr.md),
   the address format of Bitcoin Cash (`cashaddr`)
+- [strkey](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0023.md),
+  the text form of Stellar's account ids, keys and addresses, as a
+  version byte and a payload (`strkey`)
 
 [ARCHITECTURE.md](https://github.com/btclib-org/base58-bech32/blob/main/ARCHITECTURE.md)
 says how these modules layer and which may import which.
@@ -51,7 +54,8 @@ maps each function of the `base58` and `bech32` packages to its
 equivalent here.
 
 The suite answers to vectors their authors publish -- Bitcoin Core's, the
-`base58` package's, Substrate's and the CashAddr specification's -- and
+`base58` package's, Substrate's, and the CashAddr and strkey
+specifications' -- and
 [tests/_data/README.md](https://github.com/btclib-org/base58-bech32/blob/main/tests/_data/README.md)
 pins each vendored file to the upstream commit it was copied from.
 
@@ -64,7 +68,7 @@ python -m pip install --upgrade base58-bech32
 ## An address of each format
 
 ```python
-from base58_bech32 import base58, bech32, cashaddr, ss58
+from base58_bech32 import base58, bech32, cashaddr, ss58, strkey
 
 wif = base58.b58encode_check(bytes.fromhex("80" + "11" * 32 + "01"))
 assert base58.b58decode_check(wif, out_size=34)[0] == 0x80
@@ -83,6 +87,12 @@ assert polkadot == b"15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5"
 
 address = "bitcoincash:qr6m7j9njldwwzlg9v7v53unlr4jkmx6eylep8ekg2"
 assert cashaddr.cashaddr_decode(address)[:2] == ("bitcoincash", 0)
+
+account = "GA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJVSGZ"
+version, key = strkey.strkey_decode(account)
+# SEP-0023: 6 << 3 is an ed25519 public key, which the caller checks
+assert (version, len(key)) == (6 << 3, 32)
+assert strkey.strkey_encode(version, key) == account.encode("ascii")
 ```
 
 `tests/readme_test.py` runs every Python block of this file, so the

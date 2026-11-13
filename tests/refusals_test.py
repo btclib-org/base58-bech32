@@ -38,6 +38,7 @@ from base58_bech32.bech32 import (
 from base58_bech32.cashaddr import cashaddr_decode, cashaddr_encode
 from base58_bech32.exceptions import Base58Bech32TypeError, Base58Bech32ValueError
 from base58_bech32.ss58 import ss58_decode, ss58_encode
+from base58_bech32.strkey import strkey_decode, strkey_encode
 
 from . import load
 from .cashaddr_test import _string
@@ -109,6 +110,16 @@ _WRONG_TYPES: list[tuple[str, Callable[[], Any], str]] = [
         lambda: b58encode(b"", alphabet="1"),  # type: ignore[arg-type]
         "invalid alphabet type: str",
     ),
+    (
+        "strkey_encode(version=str)",
+        lambda: strkey_encode("0", _SECRET),  # type: ignore[arg-type]
+        "invalid strkey version byte type: str",
+    ),
+    (
+        "strkey_decode(strkey=None)",
+        lambda: strkey_decode(None),  # type: ignore[arg-type]
+        "invalid strkey type: NoneType",
+    ),
 ]
 
 
@@ -127,6 +138,15 @@ def _corrupted(text: bytes) -> str:
     """Return the string with its last character changed to another one."""
     last = text[-1:]
     return (text[:-1] + (b"2" if last != b"2" else b"3")).decode("ascii")
+
+
+def _unused_bit_set(strkey: bytes) -> bytes:
+    """Return the strkey with the lowest bit of its last character set.
+
+    That bit is of no byte where the strkey's length leaves bits unused.
+    """
+    alphabet = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
+    return strkey[:-1] + bytes([alphabet[alphabet.index(strkey[-1]) | 1]])
 
 
 def _ss58_of(data: bytes) -> bytes:
@@ -180,6 +200,20 @@ _DECODERS: list[tuple[str, Callable[[], Any]]] = [
     (
         "cashaddr_decode, prefix",
         lambda: cashaddr_decode(cashaddr_encode("p", 0, _SECRET), prefix="q"),
+    ),
+    # a secret seed's strkey, which starts with "S"
+    ("strkey_decode", lambda: strkey_decode(_corrupted(strkey_encode(144, _SECRET)))),
+    (
+        "strkey_decode, unused bits",
+        lambda: strkey_decode(_unused_bit_set(strkey_encode(144, _SECRET + b"\x00"))),
+    ),
+    (
+        "strkey_decode, length",
+        lambda: strkey_decode(strkey_encode(144, _SECRET) + b"A"),
+    ),
+    (
+        "strkey_decode, lowercase",
+        lambda: strkey_decode(strkey_encode(144, _SECRET).lower()),
     ),
 ]
 
@@ -305,6 +339,8 @@ _INT_REFUSALS: list[tuple[str, int, Callable[[int], Any]]] = [
     ("convertbits negative value", -1, lambda v: convertbits([v], 8, 5)),
     ("cashaddr_encode kind", 1, lambda v: cashaddr_encode("p", v, bytes(20))),
     ("ss58_encode prefix", 1, lambda v: ss58_encode(v, bytes(32))),
+    ("strkey_encode version byte", 1, lambda v: strkey_encode(v, b"")),
+    ("strkey_encode negative version byte", -1, lambda v: strkey_encode(v, b"")),
 ]
 
 

@@ -10,3 +10,4 @@ tests/_data/cashaddr_vectors.json -text
 tests/_data/fixtures.json -text
 tests/_data/ss58_decode_vectors.json -text
 tests/_data/ss58_encode_vectors.json -text
+tests/_data/strkey_vectors.json -text

@@ -222,6 +222,31 @@ markdown by a script: the checksum vectors, the legacy translations and
 the larger test vectors as `[size, type, address, hash hex]`, the hash
 lowercased.
 
+### `tests/_data/strkey_vectors.json`
+
+```text
+repo    stellar/stellar-protocol
+path    ecosystem/sep-0023.md
+commit  f2d364902615af726b3533021403c8b225aa6e5d  2026-10-14
+blob    743ee270df82d2138d43c99f6c7849f76ab82339
+ours    9d63454752ac121cc4b0a3e556ae11b854d1cfa1
+pulled  2026-11-13
+behind  0 revisions; that commit is the tip of the path
+```
+
+Verdict: **transcribed**. The *Tests* section of Stellar's strkey
+specification, read off its markdown by a script: each valid case as
+`[strkey, version byte, payload hex]`, and each invalid one as
+`[strkey, the reason the specification gives]`. A valid case's payload
+is composed from the fields the specification lists, in the order its
+encoding steps append them: a claimable balance's type byte, the key or
+hash, then a muxed address's id, or a signed payload's length, the
+payload and its zero padding. Its version byte is the key type's base
+value, with the algorithm bits zero.
+
+Some invalid cases decode, and are refused by the rules of their key
+type, above the codec: `tests/strkey_test.py` says which.
+
 ## Not vendored as files
 
 - **Substrate's own addresses**, in `tests/ss58_test.py` beside the
@@ -264,5 +289,5 @@ git ls-files 'tests/_data/*' | grep -cv 'README.md'
 
 - identical byte for byte: `base58_encode_decode.json` and `fixtures.json`.
 - transcribed: `base58_package_vectors.json`, `ss58_encode_vectors.json`,
-  `ss58_decode_vectors.json`, `cashaddr_vectors.json` and
-  `bech32_core_invalid_vectors.json`.
+  `ss58_decode_vectors.json`, `cashaddr_vectors.json`,
+  `bech32_core_invalid_vectors.json` and `strkey_vectors.json`.

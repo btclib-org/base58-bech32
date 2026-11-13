@@ -36,6 +36,7 @@ from base58_bech32.bech32 import (
 from base58_bech32.cashaddr import cashaddr_encode
 from base58_bech32.exceptions import Base58Bech32TypeError
 from base58_bech32.ss58 import ss58_encode
+from base58_bech32.strkey import strkey_encode
 
 _ONE = b58encode_check(b"\x01")
 
@@ -65,6 +66,7 @@ _CASES: list[tuple[str, Callable[[Any], object]]] = [
     ("convertbits to_bits", lambda v: convertbits([1], 8, v)),
     ("ss58 prefix", lambda v: ss58_encode(v, bytes(32))),
     ("cashaddr type", lambda v: cashaddr_encode("p", v, bytes(20))),
+    ("strkey version byte", lambda v: strkey_encode(v, b"")),
 ]
 
 _IDS = [case[0] for case in _CASES]
@@ -106,6 +108,7 @@ def test_the_integers_a_bool_refusal_must_not_take_with_it() -> None:
     assert convertbits([1], 8, 1) == [0, 0, 0, 0, 0, 0, 0, 1]
     assert ss58_encode(1, bytes(32)) != ss58_encode(0, bytes(32))
     assert cashaddr_encode("p", 1, bytes(20)) != cashaddr_encode("p", 0, bytes(20))
+    assert strkey_encode(1, b"") != strkey_encode(0, b"")
 
 
 def test_an_int_subclass_that_is_not_a_bool_is_still_an_integer() -> None:

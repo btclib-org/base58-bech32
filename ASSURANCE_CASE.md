@@ -14,7 +14,8 @@ page points at it instead of repeating it.
   Base58 and Base58Check against Bitcoin Core's vectors and the `base58`
   package's, whose round trips run over the Ripple alphabet too; bech32
   and bech32m against BIP173's and BIP350's; SS58 against Substrate's and
-  polkadot-js'; and CashAddr against the specification's own.
+  polkadot-js'; and CashAddr and strkey against their own
+  specifications'.
   `tests/_data/README.md` says where each file came from, pins every
   vendored one to the upstream commit it was copied from, and says
   whether the two still match, which its *Re-checking a pin* procedure
@@ -105,7 +106,7 @@ to, and what counters each.
 - **Improper input validation (CWE-20).** The trust boundaries above, and
   `tests/integer_policy_test.py`, which refuses a `bool` where an
   integer field -- a size, a 5-bit value, an SS58 prefix, a CashAddr
-  type -- is expected.
+  type, a strkey version byte -- is expected.
 - **Uncaught exceptions on hostile input (CWE-248, CWE-755).**
   `tests/fuzz_test.py`'s contract, driven by Hypothesis and by
   ClusterFuzzLite.
