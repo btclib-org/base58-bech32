@@ -173,16 +173,21 @@ def _refuse(*_: object) -> NoReturn:
     raise AssertionError(msg)
 
 
-# an int each of whose methods that int defines, its constructor aside,
-# is replaced by one failing the test: a field that reads the value
-# through any of them fails it
+# what an int needs to exist and to be read at all: its constructor, and
+# the attribute lookup that int's own dict carries on CPython up to 3.13,
+# through which `isinstance` reads `__class__`
+_KEPT = frozenset({"__new__", "__getattribute__"})
+
+# an int each of whose other methods that int defines is replaced by one
+# failing the test: a field that reads the value through any of them
+# fails it
 _OwnMethodsFail = type(
     "_OwnMethodsFail",
     (int,),
     {
         name: _refuse
         for name, v in vars(int).items()
-        if callable(v) and name != "__new__"
+        if callable(v) and name not in _KEPT
     },
 )
 
