@@ -58,14 +58,14 @@ from operator import xor
 from base58_bech32._utils import (
     Octets,
     String,
+    _int_from_integer,
     _message_text,
     _name_text,
     assert_type,
     bytes_from_octets,
-    is_integer,
     str_from_string,
 )
-from base58_bech32.exceptions import Base58Bech32TypeError, Base58Bech32ValueError
+from base58_bech32.exceptions import Base58Bech32ValueError
 
 __all__ = [
     "BECH32_1_CONST",
@@ -137,30 +137,30 @@ def _create_checksum(hrp: str, data: list[int], m: int) -> list[int]:
     return [(polymod >> 5 * (5 - i)) & 31 for i in range(6)]
 
 
-def _assert_valid_m(m: int | None) -> None:
-    """Refuse an `m` that is neither None nor one of the two constants.
+def _valid_m(m: int | None) -> int | None:
+    """Return `m` as a plain int, or None, if valid: None or a constant.
 
     Any other integer would write, or verify, a checksum no bech32 reader
     accepts, and a bool is refused as for every integer field.
     """
     if m is None:
-        return
-    if not is_integer(m):
-        raise Base58Bech32TypeError(f"invalid m type: {type(m).__name__}")
+        return None
+    m = _int_from_integer(m, "m")
     if m not in (BECH32_1_CONST, BECH32_M_CONST):
         err_msg = f"invalid m: {_message_text(m)}, "
         err_msg += "neither BECH32_1_CONST nor BECH32_M_CONST"
         raise Base58Bech32ValueError(err_msg)
+    return m
 
 
-def _assert_valid_limit(limit: int | None) -> None:
-    """Refuse a `limit` that is neither None nor a non-negative integer."""
+def _valid_limit(limit: int | None) -> int | None:
+    """Return `limit` as a plain int, or None, if valid: not negative."""
     if limit is None:
-        return
-    if not is_integer(limit):
-        raise Base58Bech32TypeError(f"invalid limit type: {type(limit).__name__}")
+        return None
+    limit = _int_from_integer(limit, "limit")
     if limit < 0:
         raise Base58Bech32ValueError(f"invalid limit: {_message_text(limit)} < 0")
+    return limit
 
 
 def _assert_within_limit(length: int, limit: int | None) -> None:
@@ -259,8 +259,8 @@ def bech32_decode(
     1023 minus the HRP's length characters later in the string, so two
     errors can pass within the default limit.
     """
-    _assert_valid_m(m)
-    _assert_valid_limit(limit)
+    m = _valid_m(m)
+    limit = _valid_limit(limit)
     hrp, data, checksum = _decode(bech, limit)
     # the residue depends on the payload: a refusal names the constant it
     # matches and never prints it
@@ -297,8 +297,8 @@ def bech32_encode(
     where it fits the smaller alphanumeric mode, and `bech32_decode` reads
     the `.upper()` of what this writes.
     """
-    _assert_valid_m(m)
-    _assert_valid_limit(limit)
+    m = _valid_m(m)
+    limit = _valid_limit(limit)
     assert_type(data, list, "5-bit data")
     # a plain list of the same items, so that no method of a list
     # subclass's own, such as an `__iter__`, decides what is checked below
@@ -317,15 +317,16 @@ def bech32_encode(
 
     # the fast path accepts an int of 0..31 and nothing else; any other
     # value, an IntEnum included, goes through the per-value loop, which
-    # names the offender or accepts it
+    # names the offender or replaces it with its plain int
     if not all(type(d) is int and 0 <= d < 32 for d in data):
+        plain: list[int] = []
         for d in data:
-            if not is_integer(d):
-                raise Base58Bech32TypeError(
-                    f"invalid 5-bit value type: {type(d).__name__}"
-                )
-            if not 0 <= d < 32:
-                raise Base58Bech32ValueError(f"invalid 5-bit value: {_message_text(d)}")
+            value = _int_from_integer(d, "5-bit value")
+            if not 0 <= value < 32:
+                err_msg = f"invalid 5-bit value: {_message_text(value)}"
+                raise Base58Bech32ValueError(err_msg)
+            plain.append(value)
+        data = plain
     # the HRP, the separator, the data and the six checksum characters
     _assert_within_limit(len(hrp) + 1 + len(data) + 6, limit)
     m = _m_from_wit_ver(data) if m is None else m
@@ -355,13 +356,8 @@ def convertbits(
     leave the regrouping loop.
     """
     assert_type(pad, bool, "pad")
-    for what, width in (("from_bits", from_bits), ("to_bits", to_bits)):
-        if not is_integer(width):
-            raise Base58Bech32TypeError(f"invalid {what} type: {type(width).__name__}")
-        if width < 1:
-            raise Base58Bech32ValueError(f"invalid {what}: {_message_text(width)} < 1")
-        if width > 64:
-            raise Base58Bech32ValueError(f"invalid {what}: {_message_text(width)} > 64")
+    from_bits = _valid_width(from_bits, "from_bits")
+    to_bits = _valid_width(to_bits, "to_bits")
     assert_type(data, Iterable, "data")
 
     values = list(data)
@@ -369,14 +365,24 @@ def convertbits(
     # bits, and the loop judges anything else
     top = 1 << from_bits
     if not all(type(value) is int and 0 <= value < top for value in values):
-        for value in values:
-            if not is_integer(value):
-                raise Base58Bech32TypeError(
-                    f"invalid value type: {type(value).__name__}"
-                )
+        plain: list[int] = []
+        for item in values:
+            value = _int_from_integer(item, "value")
             if value < 0 or (value >> from_bits):
                 raise Base58Bech32ValueError(f"invalid value: {_message_text(value)}")
+            plain.append(value)
+        values = plain
     return _convertbits(values, from_bits, to_bits, pad)
+
+
+def _valid_width(width: int, what: str) -> int:
+    """Return a width as a plain int, if valid: from 1 to 64 bits."""
+    width = _int_from_integer(width, what)
+    if width < 1:
+        raise Base58Bech32ValueError(f"invalid {what}: {_message_text(width)} < 1")
+    if width > 64:
+        raise Base58Bech32ValueError(f"invalid {what}: {_message_text(width)} > 64")
+    return width
 
 
 def _convertbits(
@@ -410,11 +416,11 @@ def _convertbits(
     return ret
 
 
-def _assert_constant(m: int) -> None:
-    """Refuse an `m` that is not one of the two constants, None included."""
-    if not is_integer(m):
-        raise Base58Bech32TypeError(f"invalid m type: {type(m).__name__}")
-    _assert_valid_m(m)
+def _valid_constant(m: int) -> int:
+    """Return `m` as a plain int, if valid: a constant, never None."""
+    m = _int_from_integer(m, "m")
+    _valid_m(m)
+    return m
 
 
 def bech32_encode_bytes(
@@ -434,7 +440,7 @@ def bech32_encode_bytes(
     this pair does not express: it is written with `bech32_encode` and
     `convertbits`. `limit` is as `bech32_decode` takes it.
     """
-    _assert_constant(m)
+    m = _valid_constant(m)
     values = _convertbits(bytes_from_octets(payload), 8, 5, True)
     return bech32_encode(hrp, values, m=m, limit=limit)
 
@@ -450,6 +456,6 @@ def bech32_decode_bytes(
     not zero, is refused, as `convertbits(values, 5, 8, False)` refuses
     it.
     """
-    _assert_constant(m)
+    m = _valid_constant(m)
     hrp, values, _ = bech32_decode(bech, m=m, limit=limit)
     return hrp, bytes(_convertbits(values, 5, 8, False))

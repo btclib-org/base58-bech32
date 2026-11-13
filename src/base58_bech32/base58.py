@@ -43,11 +43,11 @@ from base58_bech32._utils import (
     _assert_byte_shaped,
     _copy_bytes,
     _has_type,
+    _int_from_integer,
     _message_text,
     _sizes_text,
     assert_type,
     bytes_from_octets,
-    is_integer,
 )
 from base58_bech32.exceptions import Base58Bech32TypeError, Base58Bech32ValueError
 
@@ -283,9 +283,7 @@ def b58decode(
     """
     alphabet = _valid_alphabet(alphabet)
     if max_length is not None:
-        if not is_integer(max_length):
-            err_msg = f"invalid max_length type: {type(max_length).__name__}"
-            raise Base58Bech32TypeError(err_msg)
+        max_length = _int_from_integer(max_length, "max_length")
         if max_length < 0:
             err_msg = f"invalid max_length: {_message_text(max_length)} < 0"
             raise Base58Bech32ValueError(err_msg)
@@ -330,9 +328,8 @@ def b58decode_check(
         raise Base58Bech32ValueError("invalid checksum")
 
     # a bool would accept a one-octet payload and call it a checked size
-    if out_size is not None and not is_integer(out_size):
-        err_msg = f"invalid output size type: {type(out_size).__name__}"
-        raise Base58Bech32TypeError(err_msg)
+    if out_size is not None:
+        out_size = _int_from_integer(out_size, "output size")
 
     if out_size is None or len(result) == out_size:
         return result
