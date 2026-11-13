@@ -205,8 +205,10 @@ def test_the_subclasses_answer_as_the_tests_below_rely_on() -> None:
     value = _InRange(-1)
     assert value >= 0
     assert value <= -2
-    assert not value < 0
-    assert not value > -2
+    # the skips keep `__lt__` and `__gt__` under test: de-morgan's rewrite
+    # would call `__ge__` and `__le__`, which the lines above already test
+    assert not value < 0  # sourcery skip: de-morgan
+    assert not value > -2  # sourcery skip: de-morgan
     with pytest.raises(AssertionError):
         _OwnMethodsFail(1) < 2  # noqa: B015
     assert isinstance(_ClaimsBool(1), bool)
