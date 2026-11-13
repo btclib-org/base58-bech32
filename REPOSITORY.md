@@ -228,10 +228,13 @@ JSON
 ```
 
 `main-self-merge` requires a pull request, so a direct push to `main` is
-refused, and a merge needs an approval from somebody other than its
-author. It has no bypass actor either: the standard asks that of a tree
-whose `README.md` carries the OpenSSF Best Practices badge, and this one
-does (section 11 of
+refused. Its one bypass actor is the maintainer, in `pull_request` mode,
+so the maintainer can merge without an approval from somebody other than
+the author, and nobody else can. It is the organization-wide bypass,
+which the maintainer keeps until the backlog settles, with no date set
+(btclib-org/.github#2021). Once it is removed, the ruleset has no bypass
+actor: the standard asks that of a tree whose `README.md` carries the
+OpenSSF Best Practices badge, and this one does (section 11 of
 [the organization's standard](https://github.com/btclib-org/.github#branch-protection-and-rulesets)).
 btclib-org/.github's
 [`GOVERNANCE.md`](https://github.com/btclib-org/.github/blob/main/GOVERNANCE.md#how-a-decision-is-made),
@@ -253,18 +256,18 @@ gh api -X POST repos/btclib-org/base58-bech32/rulesets --input - <<'JSON'
 JSON
 ```
 
-The ruleset has the id `25333526`. It has no bypass actor, read on
-2026-10-19T01:02Z:
+The ruleset has the id `25333526`. Its bypass actor, read on
+2026-11-12T12:45Z:
 
 ```shell
 gh api repos/btclib-org/base58-bech32/rulesets/25333526 --jq .bypass_actors
-# []
+# [{"actor_id":3296421,"actor_type":"User","bypass_mode":"pull_request"}]
 ```
 
 The bypass is added back and removed with a `PUT`. A `PUT` replaces the
 whole ruleset, so each body carries every parameter the ruleset holds,
 which the read above (without `--jq`) shows. The `POST` above omits some
-of them. When added back, the bypass is actor `3296421`, `fametrano`'s
+of them. The bypass is actor `3296421`, `fametrano`'s
 account id (`gh api users/fametrano --jq .id`), in `pull_request` mode.
 To add it:
 
@@ -358,17 +361,22 @@ done
 #  "methods":[],"name":"main-integrity",
 #  "rules":["required_linear_history","non_fast_forward","deletion"],
 #  "target":"branch"}
-# {"bypass":[],"enforcement":"active","include":["refs/heads/main"],
-#  "methods":[["squash"]],"name":"main-self-merge","rules":["pull_request"],
-#  "target":"branch"}
+# {"bypass":[[3296421,"pull_request"]],"enforcement":"active",
+#  "include":["refs/heads/main"],"methods":[["squash"]],
+#  "name":"main-self-merge","rules":["pull_request"],"target":"branch"}
 # {"bypass":[],"enforcement":"active","include":["refs/tags/v*"],
 #  "methods":[],"name":"tag-integrity","rules":["required_signatures"],
 #  "target":"tag"}
+# {"bypass":[[5,"always"]],"enforcement":"active","include":["refs/tags/v*"],
+#  "methods":[],"name":"tag-release-actors",
+#  "rules":["creation","update","deletion"],"target":"tag"}
 ```
 
-Read on 2026-10-19T00:19Z, the loop printed the three rulesets above
-(ids 25333525, 25333526 and 25333527 for `main-integrity`,
-`main-self-merge` and `tag-integrity`), and all three match the standard.
+Read on 2026-11-12T16:16Z, the loop printed the four rulesets above (ids
+25333525, 25333526, 25333527 and 26354160 for `main-integrity`,
+`main-self-merge`, `tag-integrity` and `tag-release-actors`).
+`main-self-merge` holds the bypass *Branch protection* describes, and
+the other three match the standard.
 
 A `v*` tag push that brings an unsigned commit is refused. A tag on a
 commit already on `main` is accepted whether it is signed, unsigned or
