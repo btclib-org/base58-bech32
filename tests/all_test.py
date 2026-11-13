@@ -191,9 +191,10 @@ def test_the_root_publishes_every_top_level_module(
     # them all, so each is hidden first, and put back after the test
     for name in top_level:
         # absent where nothing imported it first, as in a run of this test
-        # alone
+        # alone. The package's own dict and not delattr, whose lookup
+        # would run __getattr__ before the getattr asserted below
         monkeypatch.delitem(sys.modules, f"base58_bech32.{name}", raising=False)
-        monkeypatch.delattr(base58_bech32, name)
+        monkeypatch.delitem(vars(base58_bech32), name, raising=False)
         assert getattr(base58_bech32, name).__name__ == f"base58_bech32.{name}"
 
 
