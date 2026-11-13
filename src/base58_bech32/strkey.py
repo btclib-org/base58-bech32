@@ -36,12 +36,12 @@ import hmac
 from base58_bech32._utils import (
     Octets,
     String,
+    _int_from_integer,
     _message_text,
     bytes_from_octets,
-    is_integer,
     str_from_string,
 )
-from base58_bech32.exceptions import Base58Bech32TypeError, Base58Bech32ValueError
+from base58_bech32.exceptions import Base58Bech32ValueError
 
 __all__ = [
     "strkey_decode",
@@ -70,12 +70,7 @@ def strkey_encode(version: int, payload: Octets) -> bytes:
     `version` is the byte, from 0 to 255, and `payload` the bytes after
     it, of any size.
     """
-    if not is_integer(version):
-        err_msg = f"invalid strkey version byte type: {type(version).__name__}"
-        raise Base58Bech32TypeError(err_msg)
-    # the plain int, so that no comparison of a subclass's own decides the
-    # range check
-    version = int.__index__(version)
+    version = _int_from_integer(version, "strkey version byte")
     if not 0 <= version <= 0xFF:
         err_msg = f"invalid strkey version byte: {_message_text(version)} not in 0..255"
         raise Base58Bech32ValueError(err_msg)

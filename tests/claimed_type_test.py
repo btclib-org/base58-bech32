@@ -202,7 +202,7 @@ def _calls_by_module() -> dict[str, list[str]]:
 
 def test_every_module_with_a_type_test_is_driven() -> None:
     """A module calling a type test of `_utils` has a case above."""
-    tests = {"_has_type", "assert_type", "is_integer"}
+    tests = {"_has_type", "_int_from_integer", "assert_type", "is_integer"}
     testing = {name for name, calls in _calls_by_module().items() if tests & {*calls}}
     assert testing == {case[0] for case in (*_REFUSED, *_NOT_ITERABLE)}
 

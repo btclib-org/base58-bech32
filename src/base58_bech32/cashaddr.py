@@ -28,15 +28,15 @@ from operator import xor
 from base58_bech32._utils import (
     Octets,
     String,
+    _int_from_integer,
     _message_text,
     _name_text,
     assert_type,
     bytes_from_octets,
-    is_integer,
     str_from_string,
 )
 from base58_bech32.bech32 import _CHAR_OF, _DIGIT_OF, _NOT_A_DIGIT, _convertbits
-from base58_bech32.exceptions import Base58Bech32TypeError, Base58Bech32ValueError
+from base58_bech32.exceptions import Base58Bech32ValueError
 
 __all__ = [
     "cashaddr_decode",
@@ -93,10 +93,7 @@ def cashaddr_encode(prefix: str, kind: int, digest: Octets) -> bytes:
     version byte can say.
     """
     prefix = _valid_prefix(prefix)
-    if not is_integer(kind):
-        raise Base58Bech32TypeError(
-            f"invalid CashAddr type type: {type(kind).__name__}"
-        )
+    kind = _int_from_integer(kind, "CashAddr type")
     if not 0 <= kind < 16:
         err_msg = f"invalid CashAddr type: {_message_text(kind)} not in 0..15"
         raise Base58Bech32ValueError(err_msg)

@@ -11,17 +11,20 @@ mistake would become a network prefix of one, an address type of one or
 a 5-bit value of one instead of failing beside the input that caused it.
 
 The same fields refuse a value whose `__class__` claims int, for the
-reason `base58_bech32._utils._has_type` gives.
+reason `base58_bech32._utils._has_type` gives, and read an int subclass
+as its plain int, for the reason `base58_bech32._utils._int_from_integer`
+gives.
 """
 
 from __future__ import annotations
 
 from collections.abc import Callable
 from enum import IntEnum
-from typing import Any
+from typing import Any, NoReturn
 from unittest.mock import Mock
 
 import pytest
+from typing_extensions import override
 
 from base58_bech32._utils import bytes_from_octets, is_integer
 from base58_bech32.base58 import b58decode, b58decode_check, b58encode_check
@@ -34,39 +37,42 @@ from base58_bech32.bech32 import (
     convertbits,
 )
 from base58_bech32.cashaddr import cashaddr_encode
-from base58_bech32.exceptions import Base58Bech32TypeError
+from base58_bech32.exceptions import Base58Bech32TypeError, Base58Bech32ValueError
 from base58_bech32.ss58 import ss58_encode
 from base58_bech32.strkey import strkey_encode
 
 _ONE = b58encode_check(b"\x01")
 
 # every field whose contract is an integer quantity, with the shortest
-# call that reaches its validator
-_CASES: list[tuple[str, Callable[[Any], object]]] = [
-    ("octets size", lambda v: bytes_from_octets(b"\x01", v)),
-    ("base58check payload size", lambda v: b58decode_check(_ONE, out_size=v)),
-    ("base58 max_length", lambda v: b58decode("1", max_length=v)),
-    ("bech32 5-bit value", lambda v: bech32_encode("a", [v])),
-    ("bech32_encode m", lambda v: bech32_encode("a", [0], m=v)),
-    ("bech32_decode m", lambda v: bech32_decode("a12uel5l", m=v)),
-    ("bech32_encode limit", lambda v: bech32_encode("a", [0], limit=v)),
-    ("bech32_decode limit", lambda v: bech32_decode("a12uel5l", limit=v)),
-    ("bech32_encode_bytes m", lambda v: bech32_encode_bytes("a", b"", m=v)),
-    ("bech32_decode_bytes m", lambda v: bech32_decode_bytes("a12uel5l", m=v)),
+# call that reaches its validator and a value the call accepts, the
+# tightest where the field is a bound
+_CASES: list[tuple[str, Callable[[Any], object], int]] = [
+    ("octets size", lambda v: bytes_from_octets(b"\x01", v), 1),
+    ("base58check payload size", lambda v: b58decode_check(_ONE, out_size=v), 1),
+    ("base58 max_length", lambda v: b58decode("1", max_length=v), 1),
+    ("bech32 5-bit value", lambda v: bech32_encode("a", [v]), 1),
+    ("bech32_encode m", lambda v: bech32_encode("a", [0], m=v), 1),
+    ("bech32_decode m", lambda v: bech32_decode("a12uel5l", m=v), 1),
+    ("bech32_encode limit", lambda v: bech32_encode("a", [0], limit=v), 9),
+    ("bech32_decode limit", lambda v: bech32_decode("a12uel5l", limit=v), 8),
+    ("bech32_encode_bytes m", lambda v: bech32_encode_bytes("a", b"", m=v), 1),
+    ("bech32_decode_bytes m", lambda v: bech32_decode_bytes("a12uel5l", m=v), 1),
     (
         "bech32_encode_bytes limit",
         lambda v: bech32_encode_bytes("a", b"", m=1, limit=v),
+        8,
     ),
     (
         "bech32_decode_bytes limit",
         lambda v: bech32_decode_bytes("a12uel5l", m=1, limit=v),
+        8,
     ),
-    ("convertbits value", lambda v: convertbits([v], 1, 8)),
-    ("convertbits from_bits", lambda v: convertbits([1], v, 8)),
-    ("convertbits to_bits", lambda v: convertbits([1], 8, v)),
-    ("ss58 prefix", lambda v: ss58_encode(v, bytes(32))),
-    ("cashaddr type", lambda v: cashaddr_encode("p", v, bytes(20))),
-    ("strkey version byte", lambda v: strkey_encode(v, b"")),
+    ("convertbits value", lambda v: convertbits([v], 1, 8), 1),
+    ("convertbits from_bits", lambda v: convertbits([1], v, 8), 1),
+    ("convertbits to_bits", lambda v: convertbits([1], 8, v), 1),
+    ("ss58 prefix", lambda v: ss58_encode(v, bytes(32)), 1),
+    ("cashaddr type", lambda v: cashaddr_encode("p", v, bytes(20)), 1),
+    ("strkey version byte", lambda v: strkey_encode(v, b""), 1),
 ]
 
 _IDS = [case[0] for case in _CASES]
@@ -139,3 +145,99 @@ def test_a_value_that_claims_to_be_an_int_is_refused_as_a_type(
     """A `Mock(spec=int)` sets `__class__` to int, and is still a Mock."""
     with pytest.raises(Base58Bech32TypeError):
         call(Mock(spec=int))
+
+
+class _InRange(int):
+    """An int whose own comparisons answer that it is within any bound."""
+
+    @override
+    def __lt__(self, other: object) -> bool:
+        return False
+
+    @override
+    def __le__(self, other: object) -> bool:
+        return True
+
+    @override
+    def __gt__(self, other: object) -> bool:
+        return False
+
+    @override
+    def __ge__(self, other: object) -> bool:
+        return True
+
+
+def _refuse(*_: object) -> NoReturn:
+    """Fail the test: a field read the value through a method of its own."""
+    msg = "a method of the int subclass's own was called"
+    raise AssertionError(msg)
+
+
+# what an int needs to exist and to be read at all: its constructor, and
+# the attribute lookup that int's own dict carries on CPython up to 3.13,
+# through which `isinstance` reads `__class__`
+_KEPT = frozenset({"__new__", "__getattribute__"})
+
+# an int each of whose other methods that int defines is replaced by one
+# failing the test: a field that reads the value through any of them
+# fails it
+_OwnMethodsFail = type(
+    "_OwnMethodsFail",
+    (int,),
+    {
+        name: _refuse
+        for name, v in vars(int).items()
+        if callable(v) and name not in _KEPT
+    },
+)
+
+# the same, claiming to be a bool: `isinstance` reads `__class__`, so a
+# field deciding by it would refuse the value as a bool, or trust its
+# methods as a bool's
+_ClaimsBool = type(
+    "_ClaimsBool", (_OwnMethodsFail,), {"__class__": property(lambda _: bool)}
+)
+
+_SUBCLASSES = [_InRange, _OwnMethodsFail, _ClaimsBool]
+
+
+def test_the_subclasses_answer_as_the_tests_below_rely_on() -> None:
+    """Each subclass misleads or fails a field that consults it.
+
+    A subclass whose methods went unused by mistake would leave the two
+    tests below passing on a field that still consults the value.
+    """
+    value = _InRange(-1)
+    assert value >= 0
+    assert value <= -2
+    # the skips keep `__lt__` and `__gt__` under test: de-morgan's rewrite
+    # would call `__ge__` and `__le__`, which the lines above already test
+    assert not value < 0  # sourcery skip: de-morgan
+    assert not value > -2  # sourcery skip: de-morgan
+    with pytest.raises(AssertionError):
+        _OwnMethodsFail(1) < 2  # noqa: B015
+    assert isinstance(_ClaimsBool(1), bool)
+    with pytest.raises(AssertionError):
+        _ClaimsBool(1) < 2  # noqa: B015
+
+
+@pytest.mark.parametrize("call, valid", [case[1:] for case in _CASES], ids=_IDS)
+@pytest.mark.parametrize("subclass", _SUBCLASSES, ids=lambda c: c.__name__)
+def test_an_int_subclass_is_answered_as_its_plain_int(
+    call: Callable[[Any], object], valid: int, subclass: type[int]
+) -> None:
+    """A value the field accepts gives the plain int's answer."""
+    assert call(subclass(valid)) == call(valid)
+
+
+@pytest.mark.parametrize("call", _CALLS, ids=_IDS)
+@pytest.mark.parametrize("subclass", _SUBCLASSES, ids=lambda c: c.__name__)
+def test_an_int_subclass_out_of_range_is_refused_as_its_plain_int(
+    call: Callable[[Any], object], subclass: type[int]
+) -> None:
+    """-1, out of every field's range, is refused as the plain -1 is."""
+    with pytest.raises(Base58Bech32ValueError) as plain:
+        call(-1)
+    with pytest.raises(Base58Bech32ValueError) as refused:
+        call(subclass(-1))
+    assert str(refused.value) == str(plain.value)

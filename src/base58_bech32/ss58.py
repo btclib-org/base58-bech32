@@ -37,12 +37,12 @@ import hmac
 from base58_bech32._utils import (
     Octets,
     String,
+    _int_from_integer,
     _message_text,
     bytes_from_octets,
-    is_integer,
 )
 from base58_bech32.base58 import BITCOIN_ALPHABET, _ascii_bytes, _b58decode, _b58encode
-from base58_bech32.exceptions import Base58Bech32TypeError, Base58Bech32ValueError
+from base58_bech32.exceptions import Base58Bech32ValueError
 
 __all__ = [
     "ss58_decode",
@@ -65,10 +65,8 @@ def _checksum(data: bytes) -> bytes:
     return digest[:_CHECKSUM_SIZE]
 
 
-def _assert_valid_prefix(prefix: int) -> None:
-    if not is_integer(prefix):
-        err_msg = f"invalid SS58 prefix type: {type(prefix).__name__}"
-        raise Base58Bech32TypeError(err_msg)
+def _valid_prefix(prefix: int) -> int:
+    prefix = _int_from_integer(prefix, "SS58 prefix")
     if not 0 <= prefix <= _MAX_PREFIX:
         err_msg = (
             f"invalid SS58 prefix: {_message_text(prefix)} not in 0..{_MAX_PREFIX}"
@@ -76,6 +74,7 @@ def _assert_valid_prefix(prefix: int) -> None:
         raise Base58Bech32ValueError(err_msg)
     if prefix in _RESERVED:
         raise Base58Bech32ValueError(f"reserved SS58 prefix: {prefix}")
+    return prefix
 
 
 def _prefix_bytes(prefix: int) -> bytes:
@@ -94,7 +93,7 @@ def ss58_encode(prefix: int, payload: Octets) -> bytes:
     `prefix` is the network's number, 42 for a generic Substrate chain and
     0 for Polkadot. The address comes back as ascii bytes.
     """
-    _assert_valid_prefix(prefix)
+    prefix = _valid_prefix(prefix)
     data = _prefix_bytes(prefix) + bytes_from_octets(payload, _PAYLOAD_SIZES)
     return _b58encode(data + _checksum(data), BITCOIN_ALPHABET)
 

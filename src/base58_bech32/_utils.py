@@ -9,7 +9,9 @@ Copies of `btclib.utils.assert_type`, `bytes_from_octets`, `is_integer`,
 `_sizes_text`, `_int_description` and `_MAX_QUOTED_NAME_LENGTH`, and of
 `btclib.alias.Octets` and `String`, raising this package's own
 exceptions: importing them from `btclib` would make a package of codecs
-depend on the whole of a bitcoin library.
+depend on the whole of a bitcoin library. `bytes_from_octets` also reads
+each size as a plain int, where btclib's lets an int subclass's own
+`__eq__` decide the size check (btclib-org/btclib#3105).
 
 A copy can drift from its original with every gate green, so
 `tests/utils_test.py` runs both on one table of inputs and asks them for
@@ -160,10 +162,7 @@ def bytes_from_octets(
         err_msg = f"invalid output size type: {type(out_size).__name__}"
         raise Base58Bech32TypeError(err_msg)
 
-    for size in sizes:
-        if not is_integer(size):
-            err_msg = f"invalid output size type: {type(size).__name__}"
-            raise Base58Bech32TypeError(err_msg)
+    sizes = tuple(_int_from_integer(size, "output size") for size in sizes)
 
     size = len(octets)
     if size in sizes:
@@ -309,6 +308,21 @@ def is_integer(value: Any) -> bool:
     stays an integer.
     """
     return _has_type(value, int) and not _has_type(value, bool)
+
+
+def _int_from_integer(value: Any, what: str) -> int:
+    """Return the plain int of an integer, refusing what `is_integer` refuses.
+
+    An int subclass passes `is_integer`, and its own comparisons and
+    operators would decide a range check and what an encoder writes.
+    `int.__add__(value, 0)` answers a plain int of the same value on
+    CPython and on PyPy, so the caller checks and writes that.
+    `int.__index__` does not on PyPy, where it calls the subclass's own
+    `__int__`. `what` names the value in the refusal.
+    """
+    if not is_integer(value):
+        raise Base58Bech32TypeError(f"invalid {what} type: {type(value).__name__}")
+    return int.__add__(value, 0)
 
 
 def assert_type(value: Any, expected: Any, what: str) -> None:
