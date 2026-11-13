@@ -1,0 +1,19 @@
+# Stellar's strkey, mutated: the CRC16 and its byte order, the lengths
+# base-32 refuses and the unused bits of the last character. A check
+# off by one there is a string read that does not re-encode to itself,
+# which SEP-0023's invalid cases are what tell apart.
+
+[cosmic-ray]
+module-path = [
+    "src/base58_bech32/strkey.py",
+]
+
+test-command = """python -m pytest -x -q -n0 -p no:randomly \
+  tests/strkey_test.py"""
+
+timeout = 300
+
+excluded-modules = []
+
+[cosmic-ray.distributor]
+name = "local"

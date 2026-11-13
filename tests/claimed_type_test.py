@@ -46,6 +46,7 @@ from base58_bech32.bech32 import (
 from base58_bech32.cashaddr import cashaddr_decode, cashaddr_encode
 from base58_bech32.exceptions import Base58Bech32TypeError
 from base58_bech32.ss58 import ss58_decode, ss58_encode
+from base58_bech32.strkey import strkey_decode, strkey_encode
 
 from . import module_names
 
@@ -91,6 +92,9 @@ _REFUSED: tuple[tuple[str, Callable[[Any], object], type], ...] = (
     ("ss58", lambda v: ss58_encode(v, bytes(32)), int),
     ("ss58", lambda v: ss58_encode(42, v), bytes),
     ("ss58", ss58_decode, str),
+    ("strkey", lambda v: strkey_encode(v, b""), int),
+    ("strkey", lambda v: strkey_encode(48, v), bytes),
+    ("strkey", strkey_decode, str),
 )
 
 

@@ -18,7 +18,7 @@ name = "base58-bech32"
 # own pull request replaces it by hand with the date the release is cut,
 # YYYY.M.D, whose month need not be the cycle's
 version = "2026.12"
-description = "Base58, Base58Check, bech32, bech32m, SS58 and CashAddr codecs, on the standard library alone"
+description = "Base58, Base58Check, bech32, bech32m, SS58, CashAddr and strkey codecs, on the standard library alone"
 readme = "README.md"
 # PEP 639: a SPDX expression and the files it refers to. COPYRIGHT is not
 # among them: it is the notice every source file opens with, CPY001 below

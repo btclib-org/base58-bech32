@@ -629,7 +629,7 @@ uv pip install "$1"
 .venv/bin/python -c "
 from importlib.metadata import requires, version
 import base58_bech32
-from base58_bech32 import base58, bech32, cashaddr, ss58
+from base58_bech32 import base58, bech32, cashaddr, ss58, strkey
 
 print(version('base58-bech32'), requires('base58-bech32'))
 assert base58_bech32.__version__ == version('base58-bech32')
@@ -639,6 +639,8 @@ address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'
 assert ss58.ss58_decode(address)[0] == 42
 address = 'pref:pr6m7j9njldwwzlg9v7v53unlr4jkmx6ey65nvtks5'
 assert cashaddr.cashaddr_decode(address)[1] == 1
+account = 'GA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJVSGZ'
+assert strkey.strkey_decode(account)[0] == 48
 "
 ```
 

@@ -26,8 +26,8 @@ fix.
 ## What belongs here
 
 Everything this package does: encoding bytes as Base58, Base58Check,
-bech32, bech32m, SS58 and CashAddr strings, decoding them back, and the
-distributions published to PyPI and their provenance. A decoder that
+bech32, bech32m, SS58, CashAddr and strkey strings, decoding them back,
+and the distributions published to PyPI and their provenance. A decoder that
 accepts a string its specification refuses, or raises an exception other
 than the package's own, is a vulnerability to report here. The
 exceptions are the departures the documentation states, such as

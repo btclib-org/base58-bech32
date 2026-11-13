@@ -39,6 +39,13 @@ base58_bech32.ss58 module
    :members:
    :show-inheritance:
 
+base58_bech32.strkey module
+---------------------------
+
+.. automodule:: base58_bech32.strkey
+   :members:
+   :show-inheritance:
+
 Module contents
 ---------------
 
