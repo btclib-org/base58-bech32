@@ -9,6 +9,18 @@ number says when a release was cut, and promises nothing about
 compatibility, so a breaking change is announced in this file — read it
 before upgrading, rather than a digit.
 
+## v2026.11.14
+
+Nothing breaks a caller of `v2026.11.13`: griffe and `api_gaps.py` find no
+break in the public API against it.
+
+- `base58_bech32.strkey` encodes and decodes Stellar's strkeys as
+  SEP-0023 defines them. `strkey_encode(version, payload)` returns the
+  strkey as ascii bytes, and `strkey_decode(strkey)` returns the version
+  byte and the payload. What a version byte names, and the size and
+  layout of the payload it takes, are the caller's to check: a strkey
+  that SEP-0023 refuses for one of them decodes here.
+
 ## v2026.11.13
 
 A caller of `v2026.11.12` that matches the text of the refusal changed

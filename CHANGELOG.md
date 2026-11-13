@@ -19,6 +19,36 @@ behind them.
 
 [std]: https://github.com/btclib-org/.github
 
+## v2026.11.14
+
+### `base58_bech32.strkey` encodes and decodes Stellar's strkeys
+
+`strkey_encode` and `strkey_decode` write and read a version byte and a
+payload as SEP-0023 does (closes #172).
+
+### Every module's type tests are driven with a Mock claiming the type
+
+`tests/claimed_type_test.py` drives a public function of each module with a
+`Mock` and a `MagicMock` claiming the type its type test expects
+(closes #168).
+
+### soupsieve moves past GHSA-mmhr-3c5m-f64f
+
+Only the dev and docs groups lock soupsieve (closes #169).
+
+### `REPOSITORY.md` records the standing bypass of `main-self-merge`
+
+(issue btclib-org/.github#2212).
+
+### `AGENTS.md` points a review at `REVIEWING.md`
+
+(issue btclib-org/.github#2009).
+
+### The bestpractices.dev answers are re-measured at v2026.11.13
+
+The answers that described v2026.11.12 as the latest release describe
+v2026.11.13 (#179).
+
 ## v2026.11.13
 
 ### `cashaddr_decode` prints no size read from the version byte
