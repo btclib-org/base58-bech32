@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import ast
 from collections.abc import Callable
+from importlib import import_module
 from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock, Mock
@@ -46,11 +47,13 @@ from base58_bech32.cashaddr import cashaddr_decode, cashaddr_encode
 from base58_bech32.exceptions import Base58Bech32TypeError
 from base58_bech32.ss58 import ss58_decode, ss58_encode
 
+from . import module_names
+
 _ONE = b58encode_check(b"\x01")
 
 # (module, call, the type the Mock claims): each a type test reached
-# through a public function. Put `isinstance` back in `_has_type` and
-# every case fails: the call answers, or raises another error
+# through a public function, and one `isinstance` would let through, as
+# `test_isinstance_would_let_each_claim_through` shows
 _REFUSED: tuple[tuple[str, Callable[[Any], object], type], ...] = (
     ("_utils", bytes_from_octets, str),
     ("_utils", bytes_from_octets, bytes),
@@ -122,6 +125,46 @@ def test_a_value_that_claims_a_list_is_refused(call: Callable[[Any], object]) ->
         call(Mock(spec=list))
 
 
+def _isinstance(value: object, expected: Any) -> bool:
+    """Test a type as `_has_type` would with `isinstance` back in it."""
+    return isinstance(value, expected)
+
+
+_CLAIMS = [
+    *((case[1], mock, case[2]) for case in _REFUSED for mock in (Mock, MagicMock)),
+    *((case[1], Mock, list) for case in _NOT_ITERABLE),
+]
+
+
+@pytest.mark.parametrize(
+    "call, mock, claimed",
+    _CLAIMS,
+    ids=[f"{i}-{c[1].__name__}-{c[2].__name__}" for i, c in enumerate(_CLAIMS)],
+)
+def test_isinstance_would_let_each_claim_through(
+    monkeypatch: pytest.MonkeyPatch,
+    call: Callable[[Any], object],
+    mock: type[Mock],
+    claimed: type,
+) -> None:
+    """Each case above is one `isinstance` would not refuse as a type.
+
+    So a case that `_has_type` and `isinstance` refuse alike, which tests
+    nothing here, fails. Every module binding `_has_type` gets the
+    `isinstance` version; the call then answers, or raises another error.
+    """
+    for name in module_names():
+        module = import_module(name)
+        if hasattr(module, "_has_type"):
+            monkeypatch.setattr(module, "_has_type", _isinstance)
+    outcome: object
+    try:
+        outcome = call(mock(spec=claimed))
+    except Exception as e:  # noqa: BLE001
+        outcome = e
+    assert not isinstance(outcome, Base58Bech32TypeError)
+
+
 @pytest.mark.parametrize("mock", [Mock, MagicMock])
 def test_a_value_that_claims_an_int_is_answered_as_its_own(mock: type[Mock]) -> None:
     """What answers rather than refuses answers for the object it is."""
@@ -157,7 +200,6 @@ def test_every_module_with_a_type_test_is_driven() -> None:
     """A module calling a type test of `_utils` has a case above."""
     tests = {"_has_type", "assert_type", "is_integer"}
     testing = {name for name, calls in _calls_by_module().items() if tests & {*calls}}
-    assert "cashaddr" in testing
     assert testing == {case[0] for case in (*_REFUSED, *_NOT_ITERABLE)}
 
 

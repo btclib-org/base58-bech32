@@ -190,7 +190,9 @@ def test_the_root_publishes_every_top_level_module(
     # what the module __getattr__ is for: collecting the suite imports
     # them all, so each is hidden first, and put back after the test
     for name in top_level:
-        monkeypatch.delitem(sys.modules, f"base58_bech32.{name}")
+        # absent where nothing imported it first, as in a run of this test
+        # alone
+        monkeypatch.delitem(sys.modules, f"base58_bech32.{name}", raising=False)
         monkeypatch.delattr(base58_bech32, name)
         assert getattr(base58_bech32, name).__name__ == f"base58_bech32.{name}"
 
