@@ -68,17 +68,22 @@ def __getattr__(published: str) -> ModuleType:
 
     PEP 562: this runs only for a name the package does not already have,
     so it answers `base58_bech32.bech32` once and the import machinery's
-    own attribute answers it from then on -- and it never runs for
-    `import base58_bech32.bech32` or `from base58_bech32 import bech32`,
-    which import the submodule themselves. What it makes work is
-    `getattr(base58_bech32, "bech32")` on a fresh interpreter, which is how
-    a walker reading `__all__` descends, and `from base58_bech32 import
-    *`, which asks for each name in the list.
+    own attribute answers it from then on. A from-import of a module not
+    yet imported runs it too, `from base58_bech32 import bech32` and
+    `from base58_bech32 import *` alike: the import machinery looks each
+    name up on the package first, and imports the submodule itself only
+    where that lookup fails. `import base58_bech32.bech32` and
+    `from base58_bech32.bech32 import bech32_decode` never run it.
+
+    What it makes work is attribute access on a fresh interpreter,
+    `getattr(base58_bech32, "bech32")` included, which is how a walker
+    reading `__all__` descends. The from-imports work without it.
 
     Anything not in `__all__` raises `AttributeError`, private modules
-    included: `import base58_bech32._utils` still reaches one. The message
-    is the interpreter's own wording, so a typo reads as it does anywhere
-    else.
+    included. `import base58_bech32._utils` still reaches one, and so does
+    `from base58_bech32 import _utils`, through the import machinery's own
+    fallback. The message is the interpreter's own wording, so a typo reads
+    as it does anywhere else.
     """
     if published in __all__:
         return import_module(f"{__name__}.{published}")
