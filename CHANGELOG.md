@@ -19,6 +19,31 @@ behind them.
 
 [std]: https://github.com/btclib-org/.github
 
+## v2026.11.15
+
+### Every integer field reads an int subclass as its plain int
+
+A subclass's own comparisons and operators decide no range check and
+nothing an encoder writes (closes #180).
+
+### The root `__getattr__` docstring says a from-import runs it
+
+(closes #176).
+
+### prettier leaves `.pre-commit-config.yaml` to pre-commit.ci
+
+The prettier hook and `.prettierignore` exclude it (issue
+btclib-org/.github#2038).
+
+### `CONTRIBUTING.md` prescribes no checkout layout
+
+`AGENTS.md` suggests a worktree per task where an agent works (issue
+btclib-org/.github#2263).
+
+### The bestpractices.dev answers are re-measured at v2026.11.14
+
+The answers that counted up to v2026.11.13 count up to v2026.11.14 (#190).
+
 ## v2026.11.14
 
 ### `base58_bech32.strkey` encodes and decodes Stellar's strkeys
