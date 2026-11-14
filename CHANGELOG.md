@@ -19,6 +19,51 @@ behind them.
 
 [std]: https://github.com/btclib-org/.github
 
+## v2026.11.15
+
+### Every integer field reads an int subclass as its plain int
+
+A subclass's own comparisons and operators decide no range check and
+nothing an encoder writes (closes #180).
+
+### The root `__getattr__` docstring says a from-import runs it
+
+(closes #176).
+
+### prettier leaves `.pre-commit-config.yaml` to pre-commit.ci
+
+The prettier hook and `.prettierignore` exclude it (issue
+btclib-org/.github#2038).
+
+### Every push to `main` starts the suite
+
+`test.yml`'s push trigger filters no path, so a push that changes only
+markdown runs it too (#193).
+
+### `CONTRIBUTING.md` prescribes no checkout layout
+
+`AGENTS.md` suggests a worktree per task where an agent works (issue
+btclib-org/.github#2263).
+
+### `CONTRIBUTING.md` states the test policy
+
+New or changed functionality comes with tests of its own, and a fix with
+a test that fails without it (#193) (#194).
+
+### The merge is explicit and auto-merge is off
+
+`CONTRIBUTING.md` and `REPOSITORY.md` say so (issue
+btclib-org/.github#2272).
+
+### The bestpractices.dev answers are re-measured at v2026.11.14
+
+The answers that counted up to v2026.11.13 count up to v2026.11.14 (#190).
+
+### The bestpractices.dev answers follow each criterion's text
+
+Read literally, some criteria answered Met are Unmet and some answered
+N/A are Met (#193) (#194).
+
 ## v2026.11.14
 
 ### `base58_bech32.strkey` encodes and decodes Stellar's strkeys

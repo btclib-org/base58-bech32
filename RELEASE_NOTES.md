@@ -9,6 +9,20 @@ number says when a release was cut, and promises nothing about
 compatibility, so a breaking change is announced in this file — read it
 before upgrading, rather than a digit.
 
+## v2026.11.15
+
+A caller of `v2026.11.14` that passes an int subclass whose own
+comparisons or operators it relies on breaks. griffe and `api_gaps.py`
+find no break in the public API against it.
+
+- Every integer argument is read as the plain int of its value, so a
+  method an int subclass overrides, such as `__lt__`, `__eq__` or
+  `__rshift__`, decides no range check and nothing an encoder writes. A
+  value out of range that such a subclass passed off as in range is
+  refused with a `Base58Bech32ValueError`: an `m` other than the two
+  constants given to `bech32_encode`, or a negative `max_length` given to
+  `b58decode`, for example.
+
 ## v2026.11.14
 
 Nothing breaks a caller of `v2026.11.13`: griffe and `api_gaps.py` find no
