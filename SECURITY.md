@@ -34,7 +34,10 @@ exceptions are the departures the documentation states, such as
 `bech32_decode` reading strings longer than BIP173's 90 characters. So is a
 refusal that prints a secret: section 7's
 [*A refusal carries no secret*](https://github.com/btclib-org/.github#a-refusal-carries-no-secret)
-says what a refusal may print.
+says what a refusal may print. A flaw in how this package encodes and
+decodes the strings an address is written in that lets funds be stolen,
+lost or locked belongs here too: locked includes an output that
+consensus can spend but standard relay policy refuses.
 
 What the bytes mean is not here: a key, a script or a witness program is
 read by the library above this one. Report a flaw wherever you found it,
