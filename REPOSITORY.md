@@ -20,14 +20,14 @@ place the answer lives, which is what *Topics* and *Publishing* say of
 them.
 
 Each section carries the command that sets its setting and the command
-that reads it back, and the `#` lines under a read-back are what it
-printed on 2026-10-17 (UTC), before `main` was first pushed, except where
-the text beside it gives a later date. A read-back marked *pending* answers
-only once a first release is out, and is read again
-then — section 16's last step. Section 11 makes
-such an answer documentation, with a reader as its check: nothing re-runs
-these commands, so an answer that differs today, a pending one aside, is
-a change made since that date.
+that reads it back, and the `text` or `json` fence under a read-back is
+what it printed on 2026-10-17 (UTC), before `main` was first pushed,
+except where the text beside it gives a later date. A read-back marked
+*pending* answers only once a first release is out, and is read again
+then — section 16's last step. Section 11 makes such an answer
+documentation, with a reader as its check: nothing re-runs these
+commands, so an answer that differs today, a pending one aside, is a
+change made since that date.
 
 ## Creating the repository
 
@@ -76,10 +76,19 @@ Read back:
 gh api repos/btclib-org/base58-bech32 \
   --jq '{visibility, default_branch: .default_branch, has_issues,
          wiki: .has_wiki, projects: .has_projects}'
-# {"default_branch":"main","has_issues":true,"projects":false,
-#  "visibility":"public","wiki":false}
+```
+
+```json
+{"default_branch":"main","has_issues":true,"projects":false,
+ "visibility":"public","wiki":false}
+```
+
+```shell
 gh api -i repos/btclib-org/base58-bech32/pages 2>/dev/null | head -1
-# HTTP/2.0 404 Not Found
+```
+
+```text
+HTTP/2.0 404 Not Found
 ```
 
 `default_branch` already answers `main` on the empty repository; the
@@ -196,17 +205,20 @@ gh api repos/btclib-org/base58-bech32/branches/main/protection \
          force_pushes: .allow_force_pushes.enabled,
          deletions: .allow_deletions.enabled,
          conversation: .required_conversation_resolution.enabled}'
-# {"checks":[["test: every job passed",15368],
-#   ["docs / Build the documentation",15368],
-#   ["lint / Lint and type-check",15368],
-#   ["lint / Dependency review",15368],
-#   ["lint / Sign-off",15368],
-#   ["sourcery / Sourcery",15368]],
-#  "conversation":true,"deletions":false,"enforce_admins":false,
-#  "force_pushes":false,"linear":true,
-#  "reviews":{"dismiss_stale_reviews":true,
-#   "required_approving_review_count":1},
-#  "strict":false}
+```
+
+```json
+{"checks":[["test: every job passed",15368],
+  ["docs / Build the documentation",15368],
+  ["lint / Lint and type-check",15368],
+  ["lint / Dependency review",15368],
+  ["lint / Sign-off",15368],
+  ["sourcery / Sourcery",15368]],
+ "conversation":true,"deletions":false,"enforce_admins":false,
+ "force_pushes":false,"linear":true,
+ "reviews":{"dismiss_stale_reviews":true,
+  "required_approving_review_count":1},
+ "strict":false}
 ```
 
 Read on 2026-11-04T23:27Z, after a `PATCH` of `required_status_checks`
@@ -261,7 +273,10 @@ The ruleset has the id `25333526`. Its bypass actor, read on
 
 ```shell
 gh api repos/btclib-org/base58-bech32/rulesets/25333526 --jq .bypass_actors
-# [{"actor_id":3296421,"actor_type":"User","bypass_mode":"pull_request"}]
+```
+
+```json
+[{"actor_id":3296421,"actor_type":"User","bypass_mode":"pull_request"}]
 ```
 
 The bypass is added back and removed with a `PUT`. A `PUT` replaces the
@@ -317,7 +332,10 @@ Classic protection's own copy of the signature rule is off:
 ```shell
 gh api repos/btclib-org/base58-bech32/branches/main/protection \
   --jq '.required_signatures.enabled'
-# false
+```
+
+```text
+false
 ```
 
 Read on 2026-10-18T06:19Z: `false`, as printed.
@@ -357,19 +375,22 @@ for id in $(gh api repos/btclib-org/base58-bech32/rulesets --jq '.[].id'); do
            methods: [.rules[] | select(.type=="pull_request")
                               | .parameters.allowed_merge_methods]}'
 done
-# {"bypass":[],"enforcement":"active","include":["refs/heads/main"],
-#  "methods":[],"name":"main-integrity",
-#  "rules":["required_linear_history","non_fast_forward","deletion"],
-#  "target":"branch"}
-# {"bypass":[[3296421,"pull_request"]],"enforcement":"active",
-#  "include":["refs/heads/main"],"methods":[["squash"]],
-#  "name":"main-self-merge","rules":["pull_request"],"target":"branch"}
-# {"bypass":[],"enforcement":"active","include":["refs/tags/v*"],
-#  "methods":[],"name":"tag-integrity","rules":["required_signatures"],
-#  "target":"tag"}
-# {"bypass":[[5,"always"]],"enforcement":"active","include":["refs/tags/v*"],
-#  "methods":[],"name":"tag-release-actors",
-#  "rules":["creation","update","deletion"],"target":"tag"}
+```
+
+```text
+{"bypass":[],"enforcement":"active","include":["refs/heads/main"],
+ "methods":[],"name":"main-integrity",
+ "rules":["required_linear_history","non_fast_forward","deletion"],
+ "target":"branch"}
+{"bypass":[[3296421,"pull_request"]],"enforcement":"active",
+ "include":["refs/heads/main"],"methods":[["squash"]],
+ "name":"main-self-merge","rules":["pull_request"],"target":"branch"}
+{"bypass":[],"enforcement":"active","include":["refs/tags/v*"],
+ "methods":[],"name":"tag-integrity","rules":["required_signatures"],
+ "target":"tag"}
+{"bypass":[[5,"always"]],"enforcement":"active","include":["refs/tags/v*"],
+ "methods":[],"name":"tag-release-actors",
+ "rules":["creation","update","deletion"],"target":"tag"}
 ```
 
 Read on 2026-11-12T16:16Z, the loop printed the four rulesets above (ids
@@ -391,19 +412,23 @@ gh api repos/<owner>/<repo>/git/tags/<sha> --jq .verification
 ## Merge methods
 
 **Squash is the only method GitHub can be asked for**, and auto-merge is
-off, so no pull request can be armed and the merge is explicit; the call
-is the one under *Creating the repository*. Read back:
+off, for the reason [section 11 of the organization's
+standard](https://github.com/btclib-org/.github#merge-method) gives; the
+call is the one under *Creating the repository*. Read back:
 
 ```shell
 gh api repos/btclib-org/base58-bech32 \
   --jq '{allow_squash_merge, allow_merge_commit, allow_rebase_merge,
          allow_auto_merge, squash_merge_commit_title,
          squash_merge_commit_message, delete_branch_on_merge}'
-# {"allow_auto_merge":false,"allow_merge_commit":false,
-#  "allow_rebase_merge":false,"allow_squash_merge":true,
-#  "delete_branch_on_merge":true,
-#  "squash_merge_commit_message":"COMMIT_MESSAGES",
-#  "squash_merge_commit_title":"COMMIT_OR_PR_TITLE"}
+```
+
+```json
+{"allow_auto_merge":false,"allow_merge_commit":false,
+ "allow_rebase_merge":false,"allow_squash_merge":true,
+ "delete_branch_on_merge":true,
+ "squash_merge_commit_message":"COMMIT_MESSAGES",
+ "squash_merge_commit_title":"COMMIT_OR_PR_TITLE"}
 ```
 
 Read on 2026-11-14T16:30Z.
@@ -443,8 +468,11 @@ value it gets:
 ```shell
 gh api repos/btclib-org/base58-bech32/actions/permissions/workflow \
   --jq '{default_workflow_permissions, can_approve_pull_request_reviews}'
-# {"can_approve_pull_request_reviews":false,
-#  "default_workflow_permissions":"read"}
+```
+
+```json
+{"can_approve_pull_request_reviews":false,
+ "default_workflow_permissions":"read"}
 ```
 
 The expected answer is `read` and `false`. Where it is not, the
@@ -458,10 +486,19 @@ Read for this repository and for the organization:
 ```shell
 gh api repos/btclib-org/base58-bech32/actions/permissions \
   --jq '{allowed_actions, sha_pinning_required}'
-# {"allowed_actions":"all","sha_pinning_required":true}
+```
+
+```json
+{"allowed_actions":"all","sha_pinning_required":true}
+```
+
+```shell
 gh api orgs/btclib-org/actions/permissions \
   --jq '{allowed_actions, sha_pinning_required}'
-# {"allowed_actions":"all","sha_pinning_required":true}
+```
+
+```json
+{"allowed_actions":"all","sha_pinning_required":true}
 ```
 
 `sha_pinning_required` is set at the organization level: [section 11 of
@@ -472,9 +509,18 @@ fields](https://github.com/btclib-org/.github#tokens-publishing-scanning).
 
 ```shell
 gh api repos/btclib-org/base58-bech32 --jq .web_commit_signoff_required
-# true
+```
+
+```text
+true
+```
+
+```shell
 gh api orgs/btclib-org --jq .web_commit_signoff_required
-# true
+```
+
+```text
+true
 ```
 
 Set at the organization level, [for the reason section 11
@@ -521,17 +567,26 @@ gh api repos/btclib-org/base58-bech32/environments \
   --jq '.environments[] | {name, dbp: .deployment_branch_policy,
          rules: [.protection_rules[] | .type],
          reviewers: [.protection_rules[].reviewers[]?.reviewer.login]}'
-# {"dbp":{"custom_branch_policies":true,"protected_branches":false},
-#  "name":"pypi",
-#  "reviewers":["fametrano","giacomocaironi","pmazzocchi"],
-#  "rules":["required_reviewers","branch_policy"]}
-# {"dbp":null,"name":"testpypi",
-#  "reviewers":["fametrano","giacomocaironi","pmazzocchi"],
-#  "rules":["required_reviewers"]}
+```
+
+```text
+{"dbp":{"custom_branch_policies":true,"protected_branches":false},
+ "name":"pypi",
+ "reviewers":["fametrano","giacomocaironi","pmazzocchi"],
+ "rules":["required_reviewers","branch_policy"]}
+{"dbp":null,"name":"testpypi",
+ "reviewers":["fametrano","giacomocaironi","pmazzocchi"],
+ "rules":["required_reviewers"]}
+```
+
+```shell
 env=repos/btclib-org/base58-bech32/environments/pypi
 gh api "$env/deployment-branch-policies" \
   --jq '.branch_policies[] | [.name, .type]'
-# ["v*","tag"]
+```
+
+```json
+["v*","tag"]
 ```
 
 The two trusted publishers `RELEASING.md`'s *One-time setup* names, on
@@ -550,17 +605,20 @@ for u in https://pypi.org/pypi/base58-bech32/json \
     releases: (.releases | keys),
     files: [.urls[] | .filename]}'
 done
-# 200
-# {"version":"2026.10.23","releases":["2026.10.18","2026.10.23"],
-#  "files":["base58_bech32-2026.10.23-py3-none-any.whl",
-#   "base58_bech32-2026.10.23.tar.gz"]}
-# 200
-# {"version":"2026.10.23.dev801",
-#  "releases":["2026.10.18.dev201","2026.10.18.dev301",
-#   "2026.10.23.dev501","2026.10.23.dev601","2026.10.23.dev701",
-#   "2026.10.23.dev801"],
-#  "files":["base58_bech32-2026.10.23.dev801-py3-none-any.whl",
-#   "base58_bech32-2026.10.23.dev801.tar.gz"]}
+```
+
+```text
+200
+{"version":"2026.10.23","releases":["2026.10.18","2026.10.23"],
+ "files":["base58_bech32-2026.10.23-py3-none-any.whl",
+  "base58_bech32-2026.10.23.tar.gz"]}
+200
+{"version":"2026.10.23.dev801",
+ "releases":["2026.10.18.dev201","2026.10.18.dev301",
+  "2026.10.23.dev501","2026.10.23.dev601","2026.10.23.dev701",
+  "2026.10.23.dev801"],
+ "files":["base58_bech32-2026.10.23.dev801-py3-none-any.whl",
+  "base58_bech32-2026.10.23.dev801.tar.gz"]}
 ```
 
 Then the project pages answer `200` on both indexes, and the release
@@ -571,15 +629,24 @@ for u in https://pypi.org/project/base58-bech32/ \
          https://test.pypi.org/project/base58-bech32/; do
   curl -s -o /dev/null -w '%{http_code}\n' "$u"
 done
-# 200
-# 200
+```
+
+```text
+200
+200
+```
+
+```shell
 gh run view 39913894488 --repo btclib-org/base58-bech32 --json jobs \
   --jq '.jobs[] | select(.name == "Publish to PyPI"
         or .name == "Publish to TestPyPI"
         or (.name | startswith("documented"))) | [.name, .conclusion]'
-# ["documented / Check read the docs built the tag","success"]
-# ["Publish to PyPI","success"]
-# ["Publish to TestPyPI","skipped"]
+```
+
+```text
+["documented / Check read the docs built the tag","success"]
+["Publish to PyPI","success"]
+["Publish to TestPyPI","skipped"]
 ```
 
 Each pending publisher became an ordinary one with its first upload. The
@@ -593,13 +660,22 @@ git grep -n -B1 'uses: pypa/gh-action-pypi-publish' \
   -- .github/workflows/release.yml \
   | sed -e 's#.github/workflows/##' \
         -e 's/@\([0-9a-f]\{7\}\)[0-9a-f]*/@\1…/'
-# release.yml-187-      - name: Publish to TestPyPI
-# release.yml:188:        uses: pypa/gh-action-pypi-publish@dc37677… # v1.14.2
-# --
-# release.yml-230-      - name: Publish to PyPI
-# release.yml:231:        uses: pypa/gh-action-pypi-publish@dc37677… # v1.14.2
+```
+
+```text
+release.yml-187-      - name: Publish to TestPyPI
+release.yml:188:        uses: pypa/gh-action-pypi-publish@dc37677… # v1.14.2
+--
+release.yml-230-      - name: Publish to PyPI
+release.yml:231:        uses: pypa/gh-action-pypi-publish@dc37677… # v1.14.2
+```
+
+```shell
 git grep -n 'password' -- .github/workflows/release.yml
-# (nothing, exit 1)
+```
+
+```text
+(nothing, exit 1)
 ```
 
 The `.dev` versions on TestPyPI are rehearsal uploads; the release
@@ -611,7 +687,10 @@ here rather than from `pyproject.toml`'s own copy of it. Read at 2026-11-02:
 
 ```shell
 gh api repos/btclib-org/base58-bech32 --jq '.homepage'
-# https://btclib.org/base58-bech32/
+```
+
+```text
+https://btclib.org/base58-bech32/
 ```
 
 ## Read the Docs, which is base58-bech32.readthedocs.io
@@ -626,7 +705,10 @@ rather than redirect. The site answers:
 ```shell
 curl -sL -o /dev/null -w '%{http_code} %{url_effective}\n' \
   https://base58-bech32.readthedocs.io/
-# 200 https://base58-bech32.readthedocs.io/en/latest/
+```
+
+```text
+200 https://base58-bech32.readthedocs.io/en/latest/
 ```
 
 Read at 2026-10-18T06:31Z, after Read the Docs build 35219072 of
@@ -637,13 +719,28 @@ The project's public API answers without a token:
 ```shell
 p=https://app.readthedocs.org/api/v3/projects/base58-bech32
 curl -s "$p/" | jq -c '{default_branch, repository: .repository.url}'
-# {"default_branch":"main",
-#  "repository":"https://github.com/btclib-org/base58-bech32.git"}
+```
+
+```json
+{"default_branch":"main",
+ "repository":"https://github.com/btclib-org/base58-bech32.git"}
+```
+
+```shell
 curl -s "$p/" | jq -c '[.programming_language.code, .homepage]'
-# ["py","https://github.com/btclib-org/base58-bech32"]
+```
+
+```json
+["py","https://github.com/btclib-org/base58-bech32"]
+```
+
+```shell
 diff <(curl -s "$p/" | jq -r '.tags[]' | sort) \
      <(gh api repos/btclib-org/base58-bech32 --jq '.topics[]' | sort)
-# (nothing, exit 0)
+```
+
+```text
+(nothing, exit 0)
 ```
 
 The project's tags are the repository's topics, which *Topics* sets, and
@@ -657,20 +754,41 @@ at 2026-10-23T07:40Z:
 curl -s "$p/versions/?active=true" \
   | jq -c '.results[] | select(.slug == "latest" or .slug == "stable")
            | [.slug, .type, .ref]'
-# ["latest","branch",null]
-# ["stable","tag","v2026.10.23"]
+```
+
+```text
+["latest","branch",null]
+["stable","tag","v2026.10.23"]
+```
+
+```shell
 curl -s "$p/versions/?active=true" | jq -c '[.results[].slug]'
-# ["latest","stable","v2026.10.18","v2026.10.23"]
+```
+
+```json
+["latest","stable","v2026.10.18","v2026.10.23"]
+```
+
+```shell
 git tag --list 'v*' --sort=version:refname | tail -1
-# v2026.10.23
+```
+
+```text
+v2026.10.23
+```
+
+```shell
 for v in latest stable v2026.10.18 v2026.10.23; do
   curl -sL -o /dev/null -w '%{http_code} %{url_effective}\n' \
     https://base58-bech32.readthedocs.io/en/$v/
 done
-# 200 https://base58-bech32.readthedocs.io/en/latest/
-# 200 https://base58-bech32.readthedocs.io/en/stable/
-# 200 https://base58-bech32.readthedocs.io/en/v2026.10.18/
-# 200 https://base58-bech32.readthedocs.io/en/v2026.10.23/
+```
+
+```text
+200 https://base58-bech32.readthedocs.io/en/latest/
+200 https://base58-bech32.readthedocs.io/en/stable/
+200 https://base58-bech32.readthedocs.io/en/v2026.10.18/
+200 https://base58-bech32.readthedocs.io/en/v2026.10.23/
 ```
 
 An automation rule, "Activate each v* release tag", activates each new
@@ -696,7 +814,10 @@ is what tells an absent project from one with nothing active:
 ```shell
 curl -s -o /dev/null -w '%{http_code}\n' \
   https://app.readthedocs.org/api/v3/projects/base58-bech32/
-# 200
+```
+
+```text
+200
 ```
 
 **What connects the repository to Read the Docs is the organization-wide
@@ -707,9 +828,18 @@ the repository is expected to carry no hook:
 gh api orgs/btclib-org/installations \
   --jq '.installations[] | select(.app_slug == "read-the-docs-community")
         | [.app_slug, .repository_selection]'
-# ["read-the-docs-community","all"]
+```
+
+```json
+["read-the-docs-community","all"]
+```
+
+```shell
 gh api repos/btclib-org/base58-bech32/hooks --jq length
-# 0
+```
+
+```text
+0
 ```
 
 A hook the second command finds is stale and is deleted rather than
@@ -725,7 +855,10 @@ GitHub App on the repository. The organization's installation of it,
 gh api orgs/btclib-org/installations \
   --jq '.installations[] | select(.app_slug == "claude")
         | [.id, .repository_selection]'
-# [150677504,"selected"]
+```
+
+```json
+[150677504,"selected"]
 ```
 
 Read on 2026-10-18T07:36Z. The maintainer added this repository to that
@@ -738,10 +871,19 @@ Read on 2026-10-18T08:06Z:
 ```shell
 r=btclib-org/base58-bech32
 gh run view 39103299839 --repo $r --json conclusion --jq .conclusion
-# success
+```
+
+```text
+success
+```
+
+```shell
 gh pr view 1 --repo $r --json reviews --jq '[.reviews[]
   | select(.author.login == "claude")] | last | .body | split("\n")[0]'
-# ACK a51fdf386fd7b970bbca70818300ffa8912c222d
+```
+
+```text
+ACK a51fdf386fd7b970bbca70818300ffa8912c222d
 ```
 
 ## Security settings
@@ -778,21 +920,54 @@ Read back:
 
 ```shell
 gh api repos/btclib-org/base58-bech32 --jq '.security_and_analysis'
-# {"dependabot_security_updates":{"status":"enabled"},
-#  "secret_scanning":{"status":"enabled"},
-#  "secret_scanning_non_provider_patterns":{"status":"disabled"},
-#  "secret_scanning_push_protection":{"status":"enabled"},
-#  "secret_scanning_validity_checks":{"status":"disabled"}}
+```
+
+```json
+{"dependabot_security_updates":{"status":"enabled"},
+ "secret_scanning":{"status":"enabled"},
+ "secret_scanning_non_provider_patterns":{"status":"disabled"},
+ "secret_scanning_push_protection":{"status":"enabled"},
+ "secret_scanning_validity_checks":{"status":"disabled"}}
+```
+
+```shell
 gh api -i repos/btclib-org/base58-bech32/vulnerability-alerts | head -1
-# HTTP/2.0 204 No Content
+```
+
+```text
+HTTP/2.0 204 No Content
+```
+
+```shell
 gh api repos/btclib-org/base58-bech32/automated-security-fixes
-# {"enabled":true,"paused":false}
+```
+
+```json
+{"enabled":true,"paused":false}
+```
+
+```shell
 gh api repos/btclib-org/base58-bech32/private-vulnerability-reporting
-# {"enabled":true}
+```
+
+```json
+{"enabled":true}
+```
+
+```shell
 gh api repos/btclib-org/base58-bech32/code-scanning/default-setup --jq .state
-# not-configured
+```
+
+```text
+not-configured
+```
+
+```shell
 gh api repos/btclib-org/base58-bech32/code-quality/setup --jq .state
-# not-configured
+```
+
+```text
+not-configured
 ```
 
 The alerts endpoint has no body and answers with its status, 204 for
@@ -820,15 +995,21 @@ empty:
 diff <(gh api repos/btclib-org/base58-bech32 --jq '.topics[]' | sort) \
      <(sed -n '/^keywords = \[/,/^]/s/^ *"\(.*\)",$/\1/p' pyproject.toml \
        | sort)
-# (nothing, exit 0)
+```
+
+```text
+(nothing, exit 0)
 ```
 
 What the diff compares, the topics as the endpoint returns them:
 
 ```shell
 gh api repos/btclib-org/base58-bech32 --jq '.topics'
-# ["address-encoding","base58","base58check","bech32","bech32m","bitcoin",
-#  "cashaddr","ss58"]
+```
+
+```json
+["address-encoding","base58","base58check","bech32","bech32m","bitcoin",
+ "cashaddr","ss58"]
 ```
 
 ## Plan-gated settings
@@ -840,7 +1021,10 @@ configures, so prose that needs the reasoning — a workflow header,
 
 ```shell
 gh api orgs/btclib-org --jq .plan.name
-# free
+```
+
+```text
+free
 ```
 
 [GitHub's own table](https://docs.github.com/en/actions/reference/limits)
@@ -878,12 +1062,27 @@ that decision undone:
 
 ```shell
 gh api repos/btclib-org/base58-bech32/actions/secrets --jq .total_count
-# 0
+```
+
+```text
+0
+```
+
+```shell
 gh api repos/btclib-org/base58-bech32/dependabot/secrets --jq .total_count
-# 0
+```
+
+```text
+0
+```
+
+```shell
 gh api repos/btclib-org/base58-bech32/actions/organization-secrets \
   --jq '[.total_count, [.secrets[].name]]'
-# [1,["CLAUDE_CODE_OAUTH_TOKEN"]]
+```
+
+```json
+[1,["CLAUDE_CODE_OAUTH_TOKEN"]]
 ```
 
 The third call reads the organization secrets the repository can see.
@@ -896,5 +1095,8 @@ store is read too:
 
 ```shell
 gh api repos/btclib-org/base58-bech32/actions/variables --jq .total_count
-# 0
+```
+
+```text
+0
 ```
