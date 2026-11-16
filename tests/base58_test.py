@@ -113,6 +113,25 @@ def test_the_base58_packages_invalid_input(encoded: str) -> None:
         b58decode(encoded)
 
 
+# what refuses each of the `base58` package's too-short strings here
+_TOO_SHORT_REFUSAL = {
+    "n": "^not enough bytes for checksum, invalid base58 decoded size: 1$",
+    "4h3c6RH": "^invalid checksum$",
+}
+
+
+@pytest.mark.parametrize("encoded", PACKAGE["b58decode_check_too_short"])
+def test_the_base58_packages_too_short_strings(encoded: str) -> None:
+    """The strings the `base58` package's test calls too short are refused.
+
+    That package refuses each as an invalid checksum. Here a string that
+    decodes to fewer bytes than a checksum is refused for its size, and
+    "4h3c6RH", which decodes to enough bytes for one, for its checksum.
+    """
+    with pytest.raises(Base58Bech32ValueError, match=_TOO_SHORT_REFUSAL[encoded]):
+        b58decode_check(encoded)
+
+
 @pytest.mark.parametrize(
     "encoded", ["1 ", " 1", "1\0", "\x001", "\t1\n", "1\x0b", "StV1DL6Cw TryKyV"]
 )

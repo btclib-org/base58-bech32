@@ -44,5 +44,9 @@
     ],
     "b58decode_invalid": [
         "xyz\b"
+    ],
+    "b58decode_check_too_short": [
+        "n",
+        "4h3c6RH"
     ]
 }
