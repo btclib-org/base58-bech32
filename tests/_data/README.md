@@ -122,18 +122,19 @@ asserts that and says why.
 ```text
 repo    keis/base58
 path    test_base58.py
-commit  04e0182bc83d1f6c2e4edc6be330f50492791ba8  2021-10-27
-blob    d458c9a2333d98686c48620426e497e92b4a9b44
-ours    622d0c7ea8986abfa4c977ec5b34e2581ad41fba
-pulled  2026-10-17
+commit  4315d65c38b32f4e7b8a846cb66f89d6a5cc38d9  2026-11-14
+blob    674b32ea8708b11069f81f1973ad412a302544f6
+ours    4f21cc06b4151e5e4a4e8c0e47debddd34cbd4e0
+pulled  2026-11-16
 behind  0 revisions; that commit is the tip of the path
 ```
 
 Verdict: **transcribed**. The known answers of the `base58` package's
 tests, each under the name of the function it tests: the encodings and
 decodings of "hello world", with leading zeros and empty, the checked
-encoding and its corrupted twin, the integer of the whole alphabet, and
-the backspace refused. Bytes are written as hex.
+encoding and its corrupted twin, the strings upstream's test calls too
+short for a checksum, the integer of the whole alphabet, and the
+backspace refused. Bytes are written as hex.
 
 Not taken, being no fixed value: the round trips over every short string
 and the random benchmarks, which `tests/base58_test.py` runs as its own
