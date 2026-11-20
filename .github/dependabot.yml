@@ -6,8 +6,11 @@
 # block of .pre-commit-config.yaml, already rewrites rev: for every repo:
 # but local and meta, so a second bot on the same pin would only compete
 # with it. A hook whose repo: is local is one autoupdate does not reach:
-# typos moves by a hand edit of its additional_dependencies, and pyroma
-# by the uv ecosystem below, uv.lock being where its version is pinned.
+# typos moves by a hand edit of its additional_dependencies, pyroma by
+# the uv ecosystem below, uv.lock being where its version is pinned, and
+# the markdown-it-py of local-link-prefix and readme-absolute-link with
+# the ports of btclib-org/.github, being the version of its test group
+# (section 4 of its README.md).
 #
 # every pull request here runs the whole merge gate, so each ecosystem
 # groups its updates into a single pull request rather than paying for
