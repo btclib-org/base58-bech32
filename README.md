@@ -132,8 +132,8 @@ what it intends to do, and what it deliberately does not, is its
 - Source: <https://github.com/btclib-org/base58-bech32>
 - Releases: <https://github.com/btclib-org/base58-bech32/releases>
 - [CHANGELOG.md](https://github.com/btclib-org/base58-bech32/blob/main/CHANGELOG.md),
-  and [RELEASE_NOTES.md](https://github.com/btclib-org/base58-bech32/blob/main/RELEASE_NOTES.md)
-  for what a release asks a user to act on
+  and [RELEASE_NOTES.md](https://github.com/btclib-org/base58-bech32/blob/main/RELEASE_NOTES.md),
+  which hold the same section for each release
 
 ## Status
 
